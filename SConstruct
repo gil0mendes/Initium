@@ -89,7 +89,7 @@ helptext += 'The following build options can be set on the command line. These w
 helptext += 'for later invocations of SCons, so you do not need to specify them every time:\n'
 helptext += opts.GenerateHelpText(env)
 helptext += '\n'
-helptext += 'For information on how to build KBoot, please refer to documentation/readme.txt.\n'
+helptext += 'For information on how to build LOAS, please refer to README.md.\n'
 Help(helptext)
 
 # Make the output nice.

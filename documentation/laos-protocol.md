@@ -736,11 +736,11 @@ in network byte order.
     
     		struct {
     			uint32_t         flags;
-    			kboot_ip_addr_t  server_ip;
+    			laos_ip_addr_t  server_ip;
     			uint16_t         server_port;
-    			kboot_ip_addr_t  gateway_ip;
-    			kboot_ip_addr_t  client_ip;
-    			kboot_mac_addr_t client_mac;
+    			laos_ip_addr_t  gateway_ip;
+    			laos_ip_addr_t  client_ip;
+    			laos_mac_addr_t client_mac;
     			uint8_t          hw_type;
     			uint8_t          hw_addr_len;
     		} net;
