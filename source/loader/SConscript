@@ -1,0 +1,64 @@
+#
+# The MIT License (MIT)
+#
+# Copyright (c) 2014 Gil Mendes (gil0mendes)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+vars = ['config', 'defaults', 'env']
+
+Import(*vars)
+from util import FeatureSources
+
+sources = FeatureSources(config, [
+
+])
+
+# Set the include search paths.
+env['CPPPATH'] = [
+    Dir('include'),
+    Dir('arch/%s/include' % (config['ARCH'])),
+    Dir('platform/%s/include' % (config['PLATFORM'])),
+]
+
+# Include the generated configuration header.
+env['CCFLAGS'] += ['-include', 'build/%s/config.h' % (env['CONFIG'])]
+env['ASFLAGS'] += ['-include', 'build/%s/config.h' % (env['CONFIG'])]
+
+# Platform code needs the location of the loader binary.
+env['LOADER'] = File('loader.elf')
+
+# Get the list of source files from the architecture/platform.
+arch_sources = SConscript(dirs = ['arch/' + config['ARCH']], exports = vars)
+platform_sources = SConscript(dirs = ['platform/' + config['PLATFORM']], exports = vars)
+sources = arch_sources + platform_sources + sources
+objects = map(env.Object, sources)
+
+# Link the loader.
+linkflags = env['LINKFLAGS'] + ['-Wl,-T,$LDSCRIPT']
+target = env.Program('loader.elf', objects, LINKFLAGS = linkflags)
+Depends(target, env['LDSCRIPT'])
+
+# Generate various information files.
+env.AddPostAction(target, [
+    Action('$OBJDUMP -d $TARGET > ${TARGET.base}.lst', None),
+    Action('$READELF -a $TARGET > ${TARGET.base}.rde', None),
+    Action('$NM -C $TARGET | sort > ${TARGET.base}.sym', None),
+])

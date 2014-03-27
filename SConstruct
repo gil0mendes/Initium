@@ -27,7 +27,7 @@ build_flags = {
     'CCFLAGS': [
         '-Wall', '-Wextra', '-Wno-variadic-macros', '-Wno-unused-parameter',
         '-Wwrite-strings', '-Wmissing-declarations', '-Wredundant-decls',
-        '-Wno-format', '-Wimplicit-function-declaration', '-pipe',
+        '-Wno-format', '-Werror', '-Wno-error=unused', '-pipe',
     ],
     'CFLAGS': ['-std=gnu99'],
     'ASFLAGS': ['-D__ASM__'],
@@ -48,7 +48,7 @@ clang_flags = {
 target_flags = {
     'CCFLAGS': [
         '-gdwarf-2', '-pipe', '-nostdlib', '-nostdinc', '-ffreestanding',
-        '-fno-stack-protector'
+        '-fno-stack-protector', '-Os', '-fno-omit-frame-pointer',
     ],
     'ASFLAGS': ['-nostdinc'],
     'LINKFLAGS': ['-nostdlib', '-Wl,--build-id=none'],
@@ -82,21 +82,21 @@ configs = SConscript('config/SConscript')
 helptext  = 'To build LAOS, a target system configuration must be specified on the command\n'
 helptext += 'line with the CONFIG option. The following configurations are available:\n'
 helptext += '\n'
-for name, config in configs.items():
-    helptext += '  %-12s - %s\n' % (name, config['description'])
+for name in sorted(configs.iterkeys()):
+    helptext += '  %-12s - %s\n' % (name, configs[name]['description'])
 helptext += '\n'
 helptext += 'The following build options can be set on the command line. These will be saved\n'
 helptext += 'for later invocations of SCons, so you do not need to specify them every time:\n'
 helptext += opts.GenerateHelpText(env)
 helptext += '\n'
-helptext += 'For information on how to build LOAS, please refer to README.md.\n'
+helptext += 'For information on how to build LAOS, please refer to documentation/readme.txt.\n'
 Help(helptext)
 
 # Make the output nice.
 verbose = ARGUMENTS.get('V') == '1'
 if not verbose:
     def compile_str(msg, name):
-        return ' \033[0;32m%-6s\033[0m %s' % (msg, name)
+        return ' \033[0;34m%-6s\033[0m %s' % (msg, name)
     env['ARCOMSTR']     = compile_str('AR', '$TARGET')
     env['ASCOMSTR']     = compile_str('ASM', '$SOURCE')
     env['ASPPCOMSTR']   = compile_str('ASM', '$SOURCE')
@@ -125,8 +125,8 @@ host_env = env.Clone()
 
 # Add compiler-specific flags.
 output = Popen([host_env['CC'], '--version'], stdout=PIPE, stderr=PIPE).communicate()[0].strip()
-is_clang = output.find('clang') >= 0
-if is_clang:
+host_env['IS_CLANG'] = output.find('clang') >= 0
+if host_env['IS_CLANG']:
     for (k, v) in clang_flags.items():
         host_env[k] += v
 else:
@@ -187,8 +187,8 @@ for (k, v) in target_flags.items():
 
 # Add compiler-specific flags.
 output = Popen([compiler, '--version'], stdout=PIPE, stderr=PIPE).communicate()[0].strip()
-is_clang = output.find('clang') >= 0
-if is_clang:
+env['IS_CLANG'] = output.find('clang') >= 0
+if env['IS_CLANG']:
     for (k, v) in clang_flags.items():
         env[k] += v
 else:
@@ -212,5 +212,3 @@ SConscript('source/SConscript',
     exports = ['config', 'defaults', 'env'])
 
 Default(defaults)
-
-# EOF

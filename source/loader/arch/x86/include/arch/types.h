@@ -30,15 +30,15 @@
 #ifndef __ARCH_TYPES_H
 #define __ARCH_TYPES_H
 
-// Format character definitions for printf()
-#define PRIxPHYS 	"llx" 		// Format for phys_ptr_t (hexadecimal)
-#define PRIuPHYS	"llu"		// Format for phys_prt_t
+/** Format character definitions for printf(). */
+#define PRIxPHYS	"llx"		/**< Format for phys_ptr_t (hexadecimal). */
+#define PRIuPHYS	"llu"		/**< Format for phys_ptr_t. */
 
-// Integer type that can represent a pointer
+/** Integer type that can represent a pointer. */
 typedef unsigned long ptr_t;
 
-// Integer types that can represent a physical address/size
+/** Integer types that can represent a physical address/size. */
 typedef uint64_t phys_ptr_t;
-typedef uint64_t phys_size_t
+typedef uint64_t phys_size_t;
 
-#endif // __ARCH_TYPES_H
+#endif /* __ARCH_TYPES_H */

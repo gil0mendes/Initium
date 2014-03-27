@@ -24,36 +24,20 @@
 
 /**
  * @file
- * @brief		Compiler-specific macros/definitions.
+ * @brief		Core definitions.
  */
 
-#ifndef __COMPILER_H
-#define __COMPILER_H
+#ifndef __LOADER_H
+#define __LOADER_H
 
-#ifdef __GNUC__
-	#define __unused			__attribute__((unused))
-	#define __used				__attribute__((used))
-	#define __packed			__attribute__((packed))
-	#define __aligned(a)		__attribute__((aligned(a)))
-	#define __noreturn			__attribute__((noreturn))
-	#define __malloc			__attribute__((malloc))
-	#define __printf(a, b)		__attribute__((format(printf, a, b)))
-	#define __deprecated		__attribute__((deprecated))
-	#define __section(s)		__attribute__((section(s)))
-	#define likely(x)			__builtin_expect(!!(x), 1)
-	#define unlikely(x)			__builtin_expect(!!(x), 0)
-#else
-	#error "LAOS does not currently support compilers other than GCC"
-#endif
+#include <arch/loader.h>
 
-#define STRINGIFY(val)		#val
-#define XSTRINGIFY(val)		STRINGIFY(val)
+#include <platform/loader.h>
 
-#define STATIC_ASSERT(cond)	\
-	do { \
-		struct __static_assert { \
-			char static_assert_failed[(cond) ? 1 : -1]; \
-		}; \
-	} while(0);
+#include <types.h>
 
-#endif // __COMPILER_H
+extern char __start[], __end[];
+
+extern void platform_reboot(void);
+
+#endif /* __LOADER_H */

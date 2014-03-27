@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +24,23 @@
 
 /**
  * @file
- * @brief		Compiler-specific macros/definitions.
+ * @brief		BIOS platform startup code
  */
 
-#ifndef __COMPILER_H
-#define __COMPILER_H
+#include <loader.h>
 
-#ifdef __GNUC__
-	#define __unused			__attribute__((unused))
-	#define __used				__attribute__((used))
-	#define __packed			__attribute__((packed))
-	#define __aligned(a)		__attribute__((aligned(a)))
-	#define __noreturn			__attribute__((noreturn))
-	#define __malloc			__attribute__((malloc))
-	#define __printf(a, b)		__attribute__((format(printf, a, b)))
-	#define __deprecated		__attribute__((deprecated))
-	#define __section(s)		__attribute__((section(s)))
-	#define likely(x)			__builtin_expect(!!(x), 1)
-	#define unlikely(x)			__builtin_expect(!!(x), 0)
-#else
-	#error "LAOS does not currently support compilers other than GCC"
-#endif
+/**
+ * Main function of the BIOS loader
+ */
+void patform_init(void)
+{
+	while(true) {}
+}
 
-#define STRINGIFY(val)		#val
-#define XSTRINGIFY(val)		STRINGIFY(val)
-
-#define STATIC_ASSERT(cond)	\
-	do { \
-		struct __static_assert { \
-			char static_assert_failed[(cond) ? 1 : -1]; \
-		}; \
-	} while(0);
-
-#endif // __COMPILER_H
+/**
+ * Reboot the system.
+ */
+void platform_reboot(void)
+{
+	while(true) {}
+}

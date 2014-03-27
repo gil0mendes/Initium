@@ -24,24 +24,24 @@
 
 /**
  * @file
- * @brief		x86 paging definitions
+ * @brief		x86 paging definitions.
  */
 
 #ifndef __ARCH_PAGE_H
 #define __ARCH_PAGE_H
 
-// Page size definitions
-#define PAGE_WIDTH 			12		// width of a page in bits
-#define PAGE_SIZE			0x1000	// Size of a page (4KB)
+/** Page size definitions. */
+#define PAGE_WIDTH		12		/**< Width of a page in bits. */
+#define PAGE_SIZE		0x1000		/**< Size of a page (4KB). */
 
-// Mask to clear page offset and unsupported bits from a virtual address
+/** Mask to clear page offset and unsupported bits from a virtual address. */
 #ifdef CONFIG_64BIT
-	#define PAGE_MASK		0x000ffffffffff0001
+# define PAGE_MASK		0x000ffffffffff000l
 #else
-	#define PAGE_MASK 		0xfffff0001
+# define PAGE_MASK		0xfffff000l
 #endif
 
-// Mask to clear page offset and unsupported bits from a physical address
-#define PHYS_PAGE_MASK 		0x000000fffffff0001
+/** Mask to clear page offset and unsupported bits from a physical address. */
+#define PHYS_PAGE_MASK		0x000000fffffff000l
 
-#endif // __ARCH_PAGE_H
+#endif /* __ARCH_PAGE_H */
