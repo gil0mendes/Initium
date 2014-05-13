@@ -203,7 +203,7 @@ env['ASFLAGS'] += ['-isystem', incdir]
 # Change the Decider to MD5-timestamp to speed up the build a bit.
 Decider('MD5-timestamp')
 
-# Don't use the Default function for compatibility with the main Kiwi
+# Don't use the Default function for compatibility with the main Infinity OS
 # build system.
 defaults = []
 

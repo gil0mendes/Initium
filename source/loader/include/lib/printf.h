@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,19 @@
 
 /**
  * @file
- * @brief		x86 architecture core definitions
+ * @brief		Formatted output function.
  */
 
-#ifndef __ARCH__LOADER_H
-#define __ARCH__LOADER_H
+#ifndef __LIB_PRINTF_H
+#define __LIB_PRINTF_H
 
-// Properties of the architecture (function we provide etc.).
-#define ARCH_HAS_MEMCPY          1
-#define ARCH_HAS_MEMSET          2
+#include <types.h>
 
-#endif // __ARCH__LOADER_H
+/** Type for a do_printf() helper function. */
+typedef void (*printf_helper_t)(char, void *, int *);
+
+extern int do_vprintf(printf_helper_t helper, void *data, const char *fmt,
+	va_list args);
+extern int do_printf(printf_helper_t helper, void *data, const char *fmt, ...);
+
+#endif /* __LIB_PRINTF_H */

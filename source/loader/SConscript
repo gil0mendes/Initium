@@ -28,7 +28,8 @@ Import(*vars)
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-
+  'lib/printf.c',
+  'lib/stirng.c'
 ])
 
 # Set the include search paths.
