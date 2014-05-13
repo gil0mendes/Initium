@@ -30,28 +30,32 @@
 
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH("i386")
-ENTRY(loader_entry)
 
 SECTIONS {
 	. = LOADER_LOAD_ADDR;
 	__start = .;
 
-	/* Init code in start.S must be placed first: execution begins from the
-	 * very start of the loader image. */
-	.init.text : { *(.init.text) }
-	.init.data : { *(.init.data) }
+	.text : {
+		__text_start = .;
 
-	.text ALIGN(32) : {
+		/* Init code in start.S must be placed first: execution begins
+		 * from the very start of the loader image. */
+		*(.init.text)
+
 		*(.text)
 		*(.text.*)
+		__text_end = .;
 	}
 
 	.rodata ALIGN(32) : {
+		__rodata_start = .;
 		*(.rodata)
 		*(.rodata.*)
+		__rodata_end = .;
 	}
 
 	.data ALIGN(32) : {
+		__data_start = .;
 		*(.data)
 		*(.data.*)
 		__data_end = .;

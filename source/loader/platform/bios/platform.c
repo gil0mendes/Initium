@@ -32,7 +32,7 @@
 /**
  * Main function of the BIOS loader
  */
-void patform_init(void)
+void platform_init(void)
 {
 	while(true) {}
 }
