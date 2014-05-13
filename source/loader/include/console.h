@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,29 @@
 
 /**
  * @file
- * @brief		Core definitions.
+ * @brief		Console functions.
  */
 
-#ifndef __LOADER_H
-#define __LOADER_H
-
-#include <arch/loader.h>
-
-#include <platform/loader.h>
+#ifndef __CONSOLE_H
+#define __CONSOLE_H
 
 #include <types.h>
 
-extern char __start[], __end[];
+/** Structure describing a console. */
+typedef struct console {
+	/** Write a character to the console.
+	 * @param ch		Character to write. */
+	void (*putc)(char ch);
+} console_t;
 
-extern void platform_reboot(void);
+/** Debug log size. */
+#define DEBUG_LOG_SIZE		8192
 
-extern int vprintf(const char *fmt, va_list args);
-extern int printf(const char *fmt, ...) __printf(1, 2);
-extern int dvprintf(const char *fmt, va_list args);
-extern int dprintf(const char *fmt, ...) __printf(1, 2);
+extern char debug_log[DEBUG_LOG_SIZE];
+extern size_t debug_log_start;
+extern size_t debug_log_length;
 
-#endif /* __LOADER_H */
+extern console_t *main_console;
+extern console_t *debug_console;
+
+#endif /* __CONSOLE_H */
