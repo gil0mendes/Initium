@@ -23,7 +23,7 @@
  */
 
  #ifndef __DRIVERS_SERIAL_NS16550_H
- #deffine __DRIVERS_SERIAL_NS16550_H
+ #define __DRIVERS_SERIAL_NS16550_H
 
  #include <types.h>
 
@@ -80,8 +80,5 @@ typedef ptr_t ns16550_t;
 
 extern void ns16550_init(ns16550_t base);
 extern void ns16550_config(uint32_t clock_rate, unsigned baud_rate);
-
-};
-
 
 #endif // __DRIVERS_SERIAL_NS16550_H

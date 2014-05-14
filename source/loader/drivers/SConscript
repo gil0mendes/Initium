@@ -26,7 +26,7 @@ Import('config', 'defaults', 'env')
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-  ('DRIVER_SERIAL_NS16550', 'serial/ns16550.cpp'),
+  ('DRIVER_SERIAL_NS16550', 'serial/ns16550.c'),
 ])
 
 Return('sources')

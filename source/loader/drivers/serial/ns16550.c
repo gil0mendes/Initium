@@ -26,7 +26,6 @@
  * @file
  * @brief		16550 UART driver.
  */
-
 #include <arch/io.h>
 
 #include <drivers/serial/ns16550.h>
