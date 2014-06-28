@@ -22,67 +22,55 @@
  * SOFTWARE.
  */
 
-/**
+ /**
  * @file
- * @brief		AMD64 EFI startup code.
+ * @brief		AMD64 relocation function.
  */
 
-#include <arch/page.h>
+#include <efi/efi.h>
 
-#include <x86/asm.h>
+#include <elf.h>
 
-.section .text, "ax", @progbits
-
-/** EFI entry point. */
-FUNCTION_START(loader_entry)
-	/* We are entered with interrupts enabled. We don't want them. */
-	cli
-
-	/* EFI uses the Microsoft x86_64 ABI. Arguments are passed in RCX/RDX. */
-	pushq	%rcx
-	pushq	%rdx
-
-	/* Relocate the loader. */
-	leaq	__start(%rip), %rdi
-	leaq	_DYNAMIC(%rip), %rsi
-	call	efi_arch_relocate
-	popq	%rsi
-	popq	%rdi
-	testq	%rax, %rax
-	jz	1f
-	ret
-1:
-
-	mov	$0x3f8, %dx
-	mov	$'H', %al
-	out	%al, (%dx)
-	mov	$'e', %al
-	out	%al, (%dx)
-	mov	$'l', %al
-	out	%al, (%dx)
-	mov	$'l', %al
-	out	%al, (%dx)
-	mov	$'o', %al
-	out	%al, (%dx)
-	mov	$'\r', %al
-	out	%al, (%dx)
-	mov	$'\n', %al
-	out	%al, (%dx)
-1:	jmp	1b
-FUNCTION_END(loader_entry)
+extern efi_status_t efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn);
 
 /**
- * Dummy PE relocation so that the EFI loader recognizes us as relocatable.
+ * Relocate the loader.
+ *
+ * @param load_base	Load base address.
+ * @param dyn		Pointer to dynamic section.
+ *
+ * @return		Status code describing result of the operation.
  */
+efi_status_t efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn) {
+	elf_rela_t *reloc;
+	elf_addr_t *addr;
+	size_t size, ent, i;
 
-.section .data, "aw", @progbits
+	for (i = 0; dyn[i].d_tag != ELF_DT_NULL; ++i) {
+		switch (dyn[i].d_tag) {
+		case ELF_DT_RELA:
+			reloc = (elf_rela_t *)(dyn[i].d_un.d_ptr + load_base);
+			break;
+		case ELF_DT_RELASZ:
+			size = dyn[i].d_un.d_val;
+			break;
+		case ELF_DT_RELAENT:
+			ent = dyn[i].d_un.d_val;
+			break;
+		}
+	}
 
-__dummy:
-	.long   0
+	for(i = 0; i < size / ent; i++, reloc = (elf_rela_t *)((ptr_t)reloc + ent)) {
+		addr = (elf_addr_t *)(load_base + reloc->r_offset);
 
-.section .reloc, "aw", @progbits
+		switch(ELF64_R_TYPE(reloc->r_info)) {
+		case ELF_R_X86_64_RELATIVE:
+			*addr = (elf_addr_t)load_base + reloc->r_addend;
+			break;
+		default:
+			return EFI_LOAD_ERROR;
+		}
+	}
 
-__dummy_reloc:
-        .long   __dummy - __dummy_reloc
-        .long   10
-        .word   0
+	return EFI_SUCCESS;
+}
