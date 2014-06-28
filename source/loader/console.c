@@ -59,7 +59,7 @@ static void vprintf_helper(char ch, void *data, int *total) {
  * @param args		Arguments to substitute into format.
  * @return		Number of characters printed. */
 int vprintf(const char *fmt, va_list args) {
-	return do_printf(vprintf_helper, NULL, fmt, args);
+	return do_vprintf(vprintf_helper, NULL, fmt, args);
 }
 
 /** Output a formatted message to the main console.
@@ -101,7 +101,7 @@ static void dvprintf_helper(char ch, void *data, int *total) {
  * @param args		Arguments to substitute into format.
  * @return		Number of characters printed. */
 int dvprintf(const char *fmt, va_list args) {
-	return do_printf(dvprintf_helper, NULL, fmt, args);
+	return do_vprintf(dvprintf_helper, NULL, fmt, args);
 }
 
 /** Output a formatted message to the debug console.
