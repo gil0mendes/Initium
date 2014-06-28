@@ -31,7 +31,8 @@ sources = FeatureSources(config, [
   'lib/printf.c',
   'lib/string.c',
 
-  'console.c'
+  'console.c',
+  'error.c'
 ])
 
 # Set the include search paths.

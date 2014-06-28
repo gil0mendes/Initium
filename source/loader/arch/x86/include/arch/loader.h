@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,15 @@
 // Properties of the architecture (function we provide etc.).
 #define ARCH_HAS_MEMCPY          1
 #define ARCH_HAS_MEMSET          2
+
+// Halt the current CPU
+static inline __noreturn void system_halt(void) {
+  while(true) {
+    __asm__ __volatile__(
+           "cli\n"
+           "hlt\n");
+ }
+}
 
 extern void arch_init(void);
 

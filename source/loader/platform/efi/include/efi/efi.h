@@ -30,6 +30,7 @@
 #ifndef __EFI_EFI_H
 #define __EFI_EFI_H
 
+#include <efi/arch/efi.h>
 #include <efi/api.h>
 
 extern efi_system_table_t *efi_system_table;

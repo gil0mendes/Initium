@@ -56,5 +56,5 @@ efi_system_table_t *efi_system_table;
    printf("Hello, I'm LAOS!\n");
 
    // For test
-   while(true) {}
+   internal_error("TODO");
  }
