@@ -46,6 +46,12 @@ efi_system_table_t *efi_system_table;
    // Save EFI system table
    efi_system_table = systab;
 
+   // Initialise console
+   efi_console_init();
+
+   // Hey LAOS. Say hello!
+   printf("Hello, I'm LAOS!\n");
+
    // For test
    while(true) {}
  }

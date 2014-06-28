@@ -29,6 +29,7 @@ from util import FeatureSources
 
 sources = FeatureSources(config, [
   'platform.c',
+  'console.c'
 ])
 
 # Add architecture-specific headers.

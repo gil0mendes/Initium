@@ -23,19 +23,43 @@
  */
 
  /**
- * @file
- * @brief		EFI platform core definitions.
+  * @file
+  * @brief       EFI console functions
+  */
+
+#include <efi/efi.h>
+
+#include <console.h>
+
+// Console out protocol
+static efi_simple_text_output_protocol_t *console_out;
+
+/**
+ * Write a character to the console.
+ *
+ * @param ch   Character to write
  */
+static void efi_console_putc(char ch) {
+  efi_char16_t str[2] = { ch & 0x7F, 0 };
 
-#ifndef __EFI_EFI_H
-#define __EFI_EFI_H
+  console_out->output_string(console_out, str);
+}
 
-#include <efi/api.h>
+// EFI main console implementation
+static console_t efi_console = {
+  .putc = efi_console_putc,
+};
 
-extern efi_system_table_t *efi_system_table;
+/**
+ * Initialize the EFI console
+ */
+void efi_console_init() {
+  // --- Set up main console
+  // Get console
+  console_out = efi_system_table->con_out;
 
-extern void efi_console_init(void);
+  // Clear screen
+  console_out->clear_screen(console_out);
 
-efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab);
-
-#endif /* __EFI_EFI_H */
+  main_console = &efi_console;
+}
