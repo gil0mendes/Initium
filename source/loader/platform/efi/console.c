@@ -40,7 +40,14 @@ static efi_simple_text_output_protocol_t *console_out;
  * @param ch   Character to write
  */
 static void efi_console_putc(char ch) {
-  efi_char16_t str[2] = { ch & 0x7F, 0 };
+  efi_char16_t str[3] = {};
+
+  if (ch == '\n') {
+    str[0] = '\r';
+    str[1] = '\n';
+  } else {
+    str[0] = ch & 0x7F;
+  }
 
   console_out->output_string(console_out, str);
 }
