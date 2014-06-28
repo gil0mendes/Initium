@@ -32,4 +32,8 @@
 
 #include <efi/api.h>
 
+extern efi_system_table_t *efi_system_table;
+
+efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab);
+
 #endif /* __EFI_EFI_H */

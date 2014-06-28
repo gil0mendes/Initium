@@ -22,63 +22,30 @@
  * SOFTWARE.
  */
 
-/**
- * @file
- * @brief		AMD64 EFI startup code.
- */
+ /**
+  * @file
+  * @brief       EFI platform main functions.
+  */
 
-#include <arch/page.h>
+#include <efi/efi.h>
 
-#include <x86/asm.h>
+#include <loader.h>
 
-.section .text, "ax", @progbits
-
-/** EFI entry point. */
-FUNCTION_START(loader_entry)
-	/* We are entered with interrupts enabled. We don't want them. */
-	cli
-
-	/* EFI uses the Microsoft x86_64 ABI. Arguments are passed in RCX/RDX. */
-	pushq	%rcx
-	pushq	%rdx
-
-	/* Relocate the loader. */
-	leaq	 __start(%rip), %rdi
-	leaq	 _DYNAMIC(%rip), %rsi
-	call	 efi_arch_relocate
-  testq  %rax, %rax
-  jnz    .Lreloc_err
-
-  // Zero the BSS section
-  leaq  __bss_start(%rip), %rdi
-  leaq  __bss_end(%rip), %rcx
-  subq  %rdi, %rcx
-  xorb  %al, %al
-  rep   stosb
-
-  // Call the main function
-	popq	%rsi
-	popq	%rdi
-  call  platform_init
-	ret
-
-.Lreloc_err:
-  addq  $16, %rsp
-  ret
-FUNCTION_END(loader_entry)
+// Pointer to the EFI system table
+efi_system_table_t *efi_system_table;
 
 /**
- * Dummy PE relocation so that the EFI loader recognizes us as relocatable.
+ * Main function of the EFI loader.
+ *
+ * @param image       Handle to the loader image
+ * @param systab      Pointer to EFI system table.
+ *
+ * @return   EFI Status code
  */
+ efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab) {
+   // Save EFI system table
+   efi_system_table = systab;
 
-.section .data, "aw", @progbits
-
-__dummy:
-	.long   0
-
-.section .reloc, "aw", @progbits
-
-__dummy_reloc:
-        .long   __dummy - __dummy_reloc
-        .long   10
-        .word   0
+   // For test
+   while(true) {}
+ }
