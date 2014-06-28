@@ -23,9 +23,10 @@ Import('config', 'defaults', 'env')
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-    'console.c',
-    'platform.c',
-    'start.S',
+  'bios.S',
+  'console.c',
+  'platform.c',
+  'start.S',
 ])
 
 # Set the linker script path.
