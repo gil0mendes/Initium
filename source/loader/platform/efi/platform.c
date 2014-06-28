@@ -46,6 +46,9 @@ efi_system_table_t *efi_system_table;
    // Save EFI system table
    efi_system_table = systab;
 
+   // Initialize architecture code
+   arch_init();
+
    // Initialise console
    efi_console_init();
 

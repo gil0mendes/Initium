@@ -39,6 +39,9 @@ void platform_init(void)
   // Initialize the console
   bios_console_init();
 
+  // Initialize architecture code
+  arch_init();
+
   // Temp test for console
   dprintf("Hello, World!\n");
 

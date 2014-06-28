@@ -34,4 +34,6 @@
 #define ARCH_HAS_MEMCPY          1
 #define ARCH_HAS_MEMSET          2
 
+extern void arch_init(void);
+
 #endif // __ARCH__LOADER_H

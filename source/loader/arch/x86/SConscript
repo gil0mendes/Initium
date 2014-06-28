@@ -26,7 +26,12 @@ Import('config', 'defaults', 'env')
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-  'lib/string.c'
+  'lib/string.c',
+
+  'arch.c',
+  'descriptor.c',
+  'entry.S',
+  'exception.c'
 ])
 
 # Set 64-/32-bit-specific flags.
