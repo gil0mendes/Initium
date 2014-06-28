@@ -1,0 +1,170 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Gil Mendes
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <arch/page.h>
+
+#include <x86/asm.h>
+#include <x86/descriptor.h>
+
+.section .text, "ax", @progbits
+
+/** EFI entry point.
+ * @param %rcx		Handle to the loader image.
+ * @param %rdx		Pointer to EFI system table. */
+FUNCTION_START(loader_entry)
+	/* We are entered with interrupts enabled. We don't want them. */
+	cli
+
+	/* EFI uses the Microsoft x86_64 ABI. Arguments are passed in RCX/RDX. */
+	pushq	%rcx
+	pushq	%rdx
+
+	/* Relocate the loader. */
+	leaq	__start(%rip), %rdi
+	leaq	_DYNAMIC(%rip), %rsi
+	call	efi_arch_relocate
+	testq	%rax, %rax
+	jz	1f
+	addq	$16, %rsp
+	ret
+1:
+	/* Zero the BSS section. */
+	leaq	__bss_start(%rip), %rdi
+	leaq	__bss_end(%rip), %rcx
+	subq	%rdi, %rcx
+	xorb	%al, %al
+	rep stosb
+
+	/* Save the EFI GDT and IDT pointers which we must restore before
+	 * calling any EFI functions. */
+	leaq	efi_gdtp(%rip), %rax
+	sgdt	(%rax)
+	leaq	efi_idtp(%rip), %rax
+	sidt	(%rax)
+	leaq	efi_cs(%rip), %rax
+	movw	%cs, (%rax)
+
+	/* Load the GDT. */
+	leaq	loader_gdtp(%rip), %rax
+	lgdt	(%rax)
+	push	$SEGMENT_CS
+	leaq	2f(%rip), %rax
+	push	%rax
+	lretq
+2:
+	/* Call the main function. */
+	popq	%rsi
+	popq	%rdi
+	call	platform_init
+	ret
+FUNCTION_END(loader_entry)
+
+/** EFI call wrapper. */
+FUNCTION_START(__efi_call)
+	/* Switch to the EFI GDT/IDT. */
+	leaq	efi_gdtp(%rip), %rax
+	lgdt	(%rax)
+	leaq	efi_cs(%rip), %rax
+	movzxw	(%rax), %rax
+	push	%rax
+	leaq	1f(%rip), %rax
+	push	%rax
+	lretq
+1:	leaq	efi_idtp(%rip), %rax
+	lidt	(%rax)
+
+	/* Get the function address to call. */
+	leaq	__efi_call_func(%rip), %r10
+	movq	(%r10), %rax
+
+	/* We need to return back here, so swap out the return address on the
+	 * stack to point to the return point below. Save the old address in
+	 * __efi_call_func. */
+	movq	(%rsp), %r11
+	movq	%r11, (%r10)
+	leaq	2f(%rip), %r11
+	movq	%r11, (%rsp)
+
+	/* Enable interrupts. It's possible there's some EFI implementations
+	 * that break if you call them with interrupts off... */
+	sti
+
+	/* Call the function. */
+	jmp	*%rax
+2:
+	/* Disable interrupts again. */
+	cli
+
+	/* Put back the real return address. */
+	leaq	__efi_call_func(%rip), %r10
+	movq	(%r10), %r10
+	push	%r10
+
+	/* Load our GDT/IDT. */
+	leaq	loader_gdtp(%rip), %rax
+	lgdt	(%rax)
+	push	$SEGMENT_CS
+	leaq	3f(%rip), %rax
+	push	%rax
+	lretq
+3:	leaq	loader_idtp(%rip), %rax
+	lidt	(%rax)
+
+	/* And we're done! */
+	ret
+FUNCTION_END(__efi_call)
+
+.section .data, "aw", @progbits
+
+/** EFI function call address. */
+SYMBOL(__efi_call_func)
+	.quad	0
+
+/** Saved EFI code segment. */
+efi_cs:
+	.word	0
+
+/** Saved EFI GDT pointer. */
+efi_gdtp:
+	.word	0
+	.quad	0
+
+/** Saved EFI IDT pointer. */
+efi_idtp:
+	.word	0
+	.quad	0
+
+__dummy:
+	.long	0
+
+/**
+ * Dummy PE relocation so that the EFI loader recognizes us as relocatable.
+ */
+
+.section .reloc, "aw", @progbits
+
+__dummy_reloc:
+	.long	__dummy - __dummy_reloc
+	.long	10
+	.word	0
