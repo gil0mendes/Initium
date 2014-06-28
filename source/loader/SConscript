@@ -46,7 +46,7 @@ env['CCFLAGS'] += ['-include', 'build/%s/config.h' % (env['CONFIG'])]
 env['ASFLAGS'] += ['-include', 'build/%s/config.h' % (env['CONFIG'])]
 
 # Platform code needs the location of the loader binary.
-env['LOADER'] = File('loader.elf');
+env['LOADER'] = File('loader.elf')
 
 # Get the list of source files from the architecture/platform.
 arch_sources = SConscript(dirs = ['arch/' + config['ARCH']], exports = vars)
@@ -56,13 +56,13 @@ sources = arch_sources + platform_sources + drivers_sources + sources
 objects = map(env.Object, sources)
 
 # Link the loader.
-linkflags = env['LINKFLAGS'] + ['-Wl, -T,$LDSCRIPT']
-target = env.Program('loader.elf', objects, LINKFLAGS = linkflags);
+linkflags = env['LINKFLAGS'] + ['-Wl,-T,$LDSCRIPT']
+target = env.Program('loader.elf', objects, LINKFLAGS = linkflags)
 Depends(target, env['LDSCRIPT'])
 
 # Generate various information files.
 env.AddPostAction(target, [
-  Action('$OBJCOPY -d $TARGET > ${TARGET.base}.lst', None),
-  Action('$READELF -a $TARGET > ${TARGET.base}.rde', None),
-  Action('$NM -C $TARGET | sort > ${TARGET.base}.sym', None),
+    Action('$OBJDUMP -d $TARGET > ${TARGET.base}.lst', None),
+    Action('$READELF -a $TARGET > ${TARGET.base}.rde', None),
+    Action('$NM -C $TARGET | sort > ${TARGET.base}.sym', None),
 ])
