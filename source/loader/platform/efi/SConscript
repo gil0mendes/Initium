@@ -29,6 +29,7 @@ from util import FeatureSources
 
 sources = FeatureSources(config, [
   'platform.c',
+  'efi.c',
   'console.c'
 ])
 
