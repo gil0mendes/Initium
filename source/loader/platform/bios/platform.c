@@ -42,10 +42,8 @@ void platform_init(void)
   // Initialize architecture code
   arch_init();
 
-  // Temp test for console
-  dprintf("Hello, World!\n");
-
-	while(true) {}
+  // Temp test for console and error handler
+  internal_error("TODO");
 }
 
 /**

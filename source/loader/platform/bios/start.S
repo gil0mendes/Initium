@@ -294,8 +294,11 @@ PRIVATE_FUNCTION_START(__common_entry)
 	xorb	%al, %al
 	rep stosb
 
-	/* Call the main function. */
-	jmp	platform_init
+	// Call the main function
+	call	platform_init
+
+1:
+    jmp     1b
 FUNCTION_END(__common_entry)
 
 .section .init.data, "aw", @progbits
