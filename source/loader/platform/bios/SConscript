@@ -27,6 +27,7 @@ sources = FeatureSources(config, [
   'console.c',
   'platform.c',
   'start.S',
+  'memory.c',
 ])
 
 # Set the linker script path.

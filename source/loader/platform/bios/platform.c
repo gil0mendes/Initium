@@ -36,11 +36,14 @@
  */
 void platform_init(void)
 {
+  // Initialize architecture code
+  arch_init();
+
   // Initialize the console
   bios_console_init();
 
-  // Initialize architecture code
-  arch_init();
+  // Detect memory
+  bios_memory_init();
 
   // Temp test for console and error handler
   internal_error("TODO");
