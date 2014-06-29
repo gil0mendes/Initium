@@ -49,7 +49,11 @@ void backtrace(int (*print)(const char *fmt, ...)) {
 
 	frame = (stack_frame_t *)x86_read_bp();
 	while(frame) {
-		print(" %p\n", frame->addr);
+#ifdef __PIC__
+		print(" %p (%p)\n", frame->addr, frame->addr - (ptr_t)__start);
+#else
+    	print(" %p\n", frame->addr);
+#endif
 		frame = frame->next;
 	}
 }

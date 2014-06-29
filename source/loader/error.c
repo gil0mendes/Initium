@@ -86,7 +86,11 @@ void __noreturn internal_error(const char *fmt, ...) {
 
 	error_printf("\n\n");
 	error_printf("Please report this error to https://github.com/gil0mendes/LAOS/issues\n");
+#ifdef __PIC__
+	error_printf("Backtrace (base = %p):\n", __start);
+#else
 	error_printf("Backtrace:\n");
+#endif
 	backtrace(error_printf);
 
 	system_halt();
