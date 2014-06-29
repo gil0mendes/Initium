@@ -30,6 +30,7 @@ from util import FeatureSources
 sources = FeatureSources(config, [
   'lib/printf.c',
   'lib/string.c',
+  'lib/qsort.c',
 
   'console.c',
   'error.c',
