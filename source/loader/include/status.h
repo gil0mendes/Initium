@@ -24,29 +24,29 @@
 
 /**
  * @file
- * @brief		Core definitions.
+ * @brief             Status code definitions
  */
 
-#ifndef __LOADER_H
-#define __LOADER_H
+#ifndef __STATUS_H
+#define __STATUS_H
 
-#include <arch/loader.h>
+// Definitions of status codes returned by loader functions
+typedef enum status {
+	STATUS_SUCCESS,			/**< Operation completed successfully. */
+	STATUS_NOT_SUPPORTED,		/**< Operation not supported. */
+	STATUS_UNKNOWN_CMD,		/**< Unknown command. */
+	STATUS_INVALID_ARG,		/**< Invalid argument. */
+	STATUS_TIMED_OUT,		/**< Timed out while waiting. */
+	STATUS_NO_MEMORY,		/**< Out of memory. */
+	STATUS_NOT_DIR,			/**< Path component is not a directory. */
+	STATUS_NOT_FILE,		/**< Path does not refer to a regular file. */
+	STATUS_NOT_FOUND,		/**< Requested object could not be found. */
+	STATUS_UNKNOWN_FS,		/**< Filesystem on device is unknown. */
+	STATUS_CORRUPT_FS,		/**< Corruption detected on the filesystem. */
+	STATUS_SYMLINK_LIMIT,		/**< Exceeded nested symbolic link limit. */
+	STATUS_DEVICE_ERROR,		/**< An error occurred during a hardware operation. */
+	STATUS_UNKNOWN_IMAGE,		/**< Executable image has an unrecognised format. */
+	STATUS_MALFORMED_IMAGE,		/**< Executable image format is incorrect. */
+} status_t;
 
-#include <platform/loader.h>
-
-#include <status.h>
-#include <types.h>
-
-extern char __start[], __end[];
-
-extern int vprintf(const char *fmt, va_list args);
-extern int printf(const char *fmt, ...) __printf(1, 2);
-extern int dvprintf(const char *fmt, va_list args);
-extern int dprintf(const char *fmt, ...) __printf(1, 2);
-
-extern void boot_error(const char *fmt, ...) __noreturn;
-extern void internal_error(const char *fmt, ...) __noreturn;
-
-extern void backtrace(int (*print)(const char *fmt, ...));
-
-#endif /* __LOADER_H */
+#endif /* __STATUS_H */
