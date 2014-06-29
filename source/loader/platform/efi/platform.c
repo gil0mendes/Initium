@@ -58,6 +58,9 @@ efi_system_table_t *efi_system_table;
     // Initialise console
     efi_console_init();
 
+    // Initialise memory map
+    efi_memory_init();
+
     // For test
     internal_error("TODO");
  }
