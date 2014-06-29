@@ -86,5 +86,6 @@ extern void bios_call(uint8_t num, bios_regs_t *regs);
 extern void bios_console_init(void);
 extern void bios_memory_init(void);
 extern void platform_init(void);
+extern void platform_reboot(void);
 
 #endif /* __BIOS_BIOS_H */

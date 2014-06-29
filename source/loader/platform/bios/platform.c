@@ -27,6 +27,8 @@
  * @brief		BIOS platform main functions
  */
 
+#include <arch/io.h>
+
 #include <bios/bios.h>
 
 #include <loader.h>
@@ -36,17 +38,17 @@
  */
 void platform_init(void)
 {
-  // Initialize architecture code
-  arch_init();
+    // Initialize architecture code
+    arch_init();
 
-  // Initialize the console
-  bios_console_init();
+    // Initialize the console
+    bios_console_init();
 
-  // Detect memory
-  bios_memory_init();
+    // Detect memory
+    bios_memory_init();
 
-  // Temp test for console and error handler
-  internal_error("TODO");
+    // Temp test for console and error handler
+    internal_error("TODO");
 }
 
 /**
@@ -54,5 +56,18 @@ void platform_init(void)
  */
 void platform_reboot(void)
 {
-	while(true) {}
+    uint8_t val;
+
+    // Try the keyboard controller
+    do {
+        val = in8(0x64);
+
+        if (val & (1<<0)) {
+            in8(0x60);
+        }
+    } while(val & (1<<1));
+
+    out8(0x64, 0xfe);
+
+    // @TODO If this not work try a triple fault
 }
