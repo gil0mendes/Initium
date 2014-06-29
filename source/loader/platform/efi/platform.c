@@ -31,6 +31,9 @@
 
 #include <loader.h>
 
+// Handle to the loader image
+efi_handle_t efi_image_handle;
+
 // Pointer to the EFI system table
 efi_system_table_t *efi_system_table;
 
@@ -43,18 +46,18 @@ efi_system_table_t *efi_system_table;
  * @return   EFI Status code
  */
  efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab) {
-   // Save EFI system table
-   efi_system_table = systab;
+     // Save image handler
+     efi_image_handle = image;
 
-   // Initialize architecture code
-   arch_init();
+    // Save EFI system table
+    efi_system_table = systab;
 
-   // Initialise console
-   efi_console_init();
+    // Initialize architecture code
+    arch_init();
 
-   // Hey LAOS. Say hello!
-   printf("Hello, I'm LAOS!\n");
+    // Initialise console
+    efi_console_init();
 
-   // For test
-   internal_error("TODO");
+    // For test
+    internal_error("TODO");
  }
