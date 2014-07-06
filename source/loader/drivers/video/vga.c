@@ -49,6 +49,9 @@ static uint16_t vga_cursor_x;
 static uint16_t vga_cursor_y;
 static bool vga_cursor_visible = true;
 
+// VGA draw region
+static draw_region_t vga_region;
+
 /**
  * Write a cell in VGA memory (character + attributes).
  *
@@ -165,10 +168,153 @@ static void vga_console_putc(char ch) {
 	update_hw_cursor();
 }
 
+// ============================================================================
+// Set the VGA console draw region
+//
+// @param region			Region to set
+static void
+vgaSetRegion(draw_region_t *region) {
+	vga_region = *region;
+	vga_cursor_x = vga_region.x;
+	vga_cursor_y = vga_region.y;
+	update_hw_cursor();
+}
+
+// ============================================================================
+// Get the VGA console draw region.
+//
+// @param region	Region structure to fill in
+static void
+vgaGetRegion(draw_region_t *region) {
+	*region = vga_region;
+}
+
+// ============================================================================
+// Clear a portion of the console.
+//
+// @note			Position is relative to the draw region.
+// @param x			Start X position.
+// @param y			Start Y position.
+// @param width		Width of the highlight.
+// @param height	Height of the highlight.
+static void
+vgaClear(int x, int y, int width, int height) {
+	int i, j;
+
+	for(i = vga_region.y + y; i < (vga_region.y + y + height); i++) {
+		for(j = vga_region.x + x; j < (vga_region.x + x + width); j++)
+			vga_mapping[(i * vga_cols) + j] = ' ' | VGA_ATTRIB;
+	}
+}
+
+// ============================================================================
+// Set whether the cursor is visible
+//
+// @param visible 			Whether the cursor is visible
+static void
+vgaShowCursor(bool visible) {
+	vga_cursor_visible = visible;
+	update_hw_cursor();
+}
+
+// ============================================================================
+// Change the highlight on a portation of the console
+//
+// @note 				Position is relative to the draw region
+// @param x		Start X position.
+// @param y		Start Y position.
+// @param width		Width of the highlight.
+// @param height	Height of the highlight.
+static void
+vgaHighlight(int x, int y, int width, int height) {
+	uint16_t word, fg, bg;
+	int i, j;
+
+	for(i = vga_region.y + y; i < (vga_region.y + y + height); i++) {
+		for(j = vga_region.x + x; j < (vga_region.x + x + width); j++) {
+			// Swap the foreground/background colour
+			word = vga_mapping[(i * vga_cols) + j];
+			fg = (word << 4) & 0xF000;
+			bg = (word >> 4) & 0x0F00;
+			vga_mapping[(i * vga_cols) + j] = (word & 0xFF) | fg | bg;
+		}
+	}
+}
+
+// ============================================================================
+// Move the cursor.
+//
+// @note		Position is relative to the draw region.
+// @param x		New X position.
+// @param y		New Y position.
+static void
+vgaMoveCursor(int x, int y) {
+	if(x < 0) {
+		vga_cursor_x = vga_region.x + vga_region.width + x;
+	} else {
+		vga_cursor_x = vga_region.x + x;
+	}
+	if(y < 0) {
+		vga_cursor_y = vga_region.y + vga_region.height + y;
+	} else {
+		vga_cursor_y = vga_region.y + y;
+	}
+
+	// Update cursor
+	update_hw_cursor();
+}
+
+// ============================================================================
+// Scroll the console up by one row
+static void
+vgaScrollUp(void) {
+	int i;
+
+	// Shift down the content of the VGA memory
+	for(i = 0; i < (vga_region.height - 1); i++) {
+		memcpy(vga_mapping + vga_region.x + (vga_cols * (vga_region.y + vga_region.height - i - 1)),
+			vga_mapping + vga_region.x + (vga_cols * (vga_region.y + vga_region.height - i - 2)),
+			vga_region.width * 2);
+	}
+
+	// Fill the first row with blanks
+	for(i = 0; i < vga_region.width; i++) {
+		vga_mapping[(vga_region.y * vga_cols) + vga_region.x + i] &= 0xFF00;
+		vga_mapping[(vga_region.y * vga_cols) + vga_region.x + i] |= ' ';
+	}
+}
+
+// ============================================================================
+// Scroll the console down by one row
+static void
+vgaScrollDown(void) {
+	int i;
+
+	// Shift up the content of the VGA memory
+	for(i = 0; i < (vga_region.height - 1); i++) {
+		memcpy(vga_mapping + vga_region.x + (vga_cols * (vga_region.y + i)),
+			vga_mapping + vga_region.x + (vga_cols * (vga_region.y + i + 1)),
+			vga_region.width * 2);
+	}
+
+	// Fill the last row with blanks
+	for(i = 0; i < vga_region.width; i++) {
+		vga_mapping[((vga_region.y + vga_region.height - 1) * vga_cols) + vga_region.x + i] &= 0xFF00;
+		vga_mapping[((vga_region.y + vga_region.height - 1) * vga_cols) + vga_region.x + i] |= ' ';
+	}
+}
+
 // VGA main console output operations
 static console_out_ops_t vga_console_out_ops = {
-	.reset = vga_console_reset,
-	.putc = vga_console_putc,
+	.reset 		= vga_console_reset,
+	.putc 		= vga_console_putc,
+	.setRegion 	= vgaSetRegion,
+	.clear 		= vgaClear,
+	.showCursor = vgaShowCursor,
+	.highlight 	= vgaHighlight,
+	.moveCursor = vgaMoveCursor,
+	.scrollUp 	= vgaScrollUp,
+	.scrollDown = vgaScrollDown,
 };
 
 /**
@@ -178,7 +324,13 @@ void vga_init(uint16_t cols, uint16_t lines) {
 	vga_cols = cols;
 	vga_lines = lines;
 
+	// Clear screen
 	vga_console_reset();
 
+	// Set output function to console
 	main_console.out = &vga_console_out_ops;
+
+	// Save screen resolution
+	main_console.width = vga_cols;
+	main_console.height = vga_lines;
 }

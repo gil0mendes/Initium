@@ -24,7 +24,7 @@
 
 /**
  * @file
- * @brief 			Console functions
+ * @brief 				Console functions
  */
 
 #ifndef __CONSOLE_H
@@ -32,28 +32,97 @@
 
 #include <types.h>
 
-/** Console output operations structure. */
+// Structure describing a draw region
+typedef struct draw_region {
+	int x;				// X position
+	int y;				// Y position
+	int width;			// Width of region
+	int height;			// Height of region
+	bool scrollable;	// Whether to scroll when cursor reaches the end
+} draw_region_t;
+
+// Console output operations structure
 typedef struct console_out_ops {
-	/** Reset the console to a default state. */
+	// Reset the console to a default state
 	void (*reset)(void);
 
-	/** Write a character to the console.
-	 * @param ch		Character to write. */
+	// Write a character to the console.
+	//
+	// @param ch		Character to write
 	void (*putc)(char ch);
+
+	// Set the draw region
+	//
+	// @note 			Positions the cursor at 0, 0 in the new region
+	// @param region	Structure describing the region
+	void (*setRegion)(draw_region_t *region);
+
+	// Get the VGA console draw region.
+	//
+	// @param region	Region structure to fill in
+	void(*getRegion)(draw_region_t *region);
+
+	// Clear a portion of the console.
+	//
+	// @note			Position is relative to the draw region.
+	// @param x			Start X position.
+	// @param y			Start Y position.
+	// @param width		Width of the highlight.
+	// @param height	Height of the highlight.
+	void (*clear)(int x, int y, int width, int height);
+
+	// Set whether the cursor is visible
+	//
+	// @param visible 		Whether the cursor is visible
+	void (*showCursor)(bool visible);
+
+	// Change the highlight on a portation of the console
+	//
+	// @note 				Position is relative to the draw region
+	// @param x		Start X position.
+	// @param y		Start Y position.
+	// @param width		Width of the highlight.
+	// @param height	Height of the highlight.
+	void (*highlight)(int x, int y, int width, int height);
+
+	// Move the cursor.
+	//
+	// @note		Position is relative to the draw region.
+	// @param x		New X position.
+	// @param y		New Y position.
+	void (*moveCursor)(int x, int y);
+
+	// Scroll the console up by one row
+	void (*scrollUp)(void);
+
+	// Scroll the console down by one row
+	void (*scrollDown)(void);
 } console_out_ops_t;
 
-/** Console input operations structure. */
+// Console input operations structure
 typedef struct console_in_ops {
-	/** Check for a character from the console.
-	 * @return		Whether a character is available. */
+	// Check for a character from the console.
+	//
+	// @return		Whether a character is available.
 	bool (*poll)(void);
 
-	/** Read a character from the console.
-	 * @return		Character read. */
+	// Read a character from the console.
+	//
+	// @return		Character read.
 	uint16_t (*getc)(void);
 } console_in_ops_t;
 
-/** Special key codes. */
+// Structure describing a console
+typedef struct console {
+	int width;					// Width of the console (columns)
+	int height; 				// Height of the console (rows)
+
+	console_out_ops_t *out;		// Output operations
+	console_in_ops_t *in;		// Input operations
+} console_t;
+
+
+// Special key codes
 #define CONSOLE_KEY_UP		0x100
 #define CONSOLE_KEY_DOWN	0x101
 #define CONSOLE_KEY_LEFT	0x102
@@ -72,13 +141,7 @@ typedef struct console_in_ops {
 #define CONSOLE_KEY_F9		0x10f
 #define CONSOLE_KEY_F10		0x110
 
-/** Structure describing a console. */
-typedef struct console {
-	console_out_ops_t *out;		/**< Output operations. */
-	console_in_ops_t *in;		/**< Input operations. */
-} console_t;
-
-/** Debug log size. */
+// Debug log size
 #define DEBUG_LOG_SIZE		8192
 
 extern char debug_log[DEBUG_LOG_SIZE];
@@ -88,4 +151,4 @@ extern size_t debug_log_length;
 extern console_t main_console;
 extern console_t debug_console;
 
-#endif /* __CONSOLE_H */
+#endif // __CONSOLE_H
