@@ -31,7 +31,8 @@ sources = FeatureSources(config, [
   'arch.c',
   'descriptor.c',
   'entry.S',
-  'exception.c'
+  'exception.c',
+  'cpu.c'
 ])
 
 # Set 64-/32-bit-specific flags.

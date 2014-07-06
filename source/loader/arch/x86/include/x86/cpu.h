@@ -192,5 +192,7 @@ static inline void x86_cpuid(uint32_t level, x86_cpuid_t *cpuid) {
 		: "0"(level));
 }
 
+extern void cpuInit(void);
+
 #endif /* __ASM__ */
 #endif /* __ARCH_X86_CPU_H */

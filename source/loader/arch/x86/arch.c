@@ -28,6 +28,7 @@
  */
 
 #include <x86/descriptor.h>
+#include <x86/cpu.h>
 
 #include <loader.h>
 
@@ -37,4 +38,7 @@
 void arch_init(void) {
   // Init descriptor table
   x86_descriptor_init();
+
+  // Init CPU
+  cpuInit();
 }
