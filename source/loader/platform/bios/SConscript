@@ -35,7 +35,7 @@ env['LDSCRIPT'] = env.LDScript('link.ld', 'link.ld.in')
 
 # Build the stage 1 loaders.
 env.LDScript('stage1/stage1.ld', 'stage1/stage1.ld.in')
-stage1s = ['cdboot']
+stage1s = ['cdboot', 'pxeboot']
 for f in stage1s:
     # Build an ELF image.
     linkflags = env['LINKFLAGS'] + ['-Wl,-T,${TARGET.dir}/stage1.ld', '-Wl,-N']
