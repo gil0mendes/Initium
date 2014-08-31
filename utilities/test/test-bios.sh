@@ -15,11 +15,11 @@ cat > ${isodir}/boot/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	kboot "/test32.elf" ["/test32.elf"]
+	laos "/test32.elf" ["/test32.elf"]
 }
 
 entry "Test (64-bit)" {
-	kboot "/test64.elf" ["/test64.elf"]
+	laos "/test64.elf" ["/test64.elf"]
 }
 
 entry "Chainload (hd0)" {
