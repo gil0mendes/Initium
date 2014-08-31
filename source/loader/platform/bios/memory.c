@@ -33,7 +33,9 @@
 #include <loader.h>
 #include <memory.h>
 
-/** Detect physical memory. */
+/**
+ * Detect physical memory.
+ */
 void bios_memory_init(void) {
 	bios_regs_t regs;
 	size_t count = 0, i;
@@ -42,7 +44,7 @@ void bios_memory_init(void) {
 
 	bios_regs_init(&regs);
 
-	/* Obtain a memory map using interrupt 15h, function E820h. */
+	// Obtain a memory map using interrupt 15h, function E820h
 	do {
 		regs.eax = 0xe820;
 		regs.edx = E820_SMAP;
@@ -50,33 +52,36 @@ void bios_memory_init(void) {
 		regs.edi = BIOS_MEM_BASE + (count * sizeof(e820_entry_t));
 		bios_call(0x15, &regs);
 
-		/* If CF is set, the call was not successful. BIOSes are
-		 * allowed to return a non-zero continuation value in EBX and
-		 * return an error on next call to indicate that the end of the
-		 * list has been reached. */
-		if(regs.eflags & X86_FLAGS_CF)
+		// If CF is set, the call was not successful. BIOSes are
+		// allowed to return a non-zero continuation value in EBX and
+		// return an error on next call to indicate that the end of the
+		// list has been reached
+		if(regs.eflags & X86_FLAGS_CF) {
 			break;
+		}
 
 		count++;
 	} while(regs.ebx != 0);
 
-	/* FIXME: Should handle BIOSen that don't support this. */
-	if(count == 0)
+	// FIXME: Should handle BIOSen that don't support this
+	if(count == 0) {
 		boot_error("BIOS does not support E820 memory map");
+	}
 
-	/* Iterate over the obtained memory map and add the entries. */
+	// Iterate over the obtained memory map and add the entries to the
+	// PMM
 	mmap = (e820_entry_t *)BIOS_MEM_BASE;
 	for(i = 0; i < count; i++) {
-		/* We only care about free ranges. */
+		// We only care about free ranges
 		if(mmap[i].type != E820_TYPE_FREE)
 			continue;
 
-		/* The E820 memory map can contain regions that aren't
-		 * page-aligned. However, we want to deal with page-aligned
-		 * regions. Therefore, we round start up and end down to the
-		 * page size, to ensure that we don't resize the region to
-		 * include memory we shouldn't access. If this results in a
-		 * zero-length entry, then we ignore it. */
+		// The E820 memory map can contain regions that aren't
+		// page-aligned. However, we want to deal with page-aligned
+		// regions. Therefore, we round start up and end down to the
+		// page size, to ensure that we don't resize the region to
+		// include memory we shouldn't access. If this results in a
+		// zero-length entry, then we ignore it
 		start = round_up(mmap[i].start, PAGE_SIZE);
 		end = round_down(mmap[i].start + mmap[i].length, PAGE_SIZE);
 
@@ -89,23 +94,23 @@ void bios_memory_init(void) {
 			continue;
 		}
 
-		/* Ensure that the BIOS data area is not marked as free. BIOSes
-		 * don't mark it as reserved in the memory map as it can be
-		 * overwritten if it is no longer needed, but it may be needed
-		 * by the kernel, for example to call BIOS interrupts. */
+		// Ensure that the BIOS data area is not marked as free. BIOSes
+		// don't mark it as reserved in the memory map as it can be
+		// overwritten if it is no longer needed, but it may be needed
+		// by the kernel, for example to call BIOS interrupts
 		if(start == 0) {
 			start = PAGE_SIZE;
 			if(start >= end)
 				continue;
 		}
 
-		/* Add the range to the memory manager. */
+		// Add the range to the memory manager
 		memory_add(start, end - start, MEMORY_TYPE_FREE);
 	}
 
-	/* Mark the memory area we use for BIOS calls as internal. */
+	// Mark the memory area we use for BIOS calls as internal
 	memory_protect(BIOS_MEM_BASE, BIOS_MEM_SIZE + PAGE_SIZE);
 
-	/* Initialize the memory manager. */
+	// Initialize the memory manager
 	memory_init();
 }

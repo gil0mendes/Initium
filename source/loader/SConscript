@@ -32,9 +32,14 @@ sources = FeatureSources(config, [
   'lib/string.c',
   'lib/qsort.c',
 
-  'console.c',
+  'fs.c',
+  'disk.c',
   'error.c',
+  'config.c',
+  'console.c',
   'memory.c',
+  'loader.c',
+  'device.c',
 ])
 
 # Set the include search paths.
@@ -55,7 +60,14 @@ env['LOADER'] = File('loader.elf')
 arch_sources = SConscript(dirs = ['arch/' + config['ARCH']], exports = vars)
 platform_sources = SConscript(dirs = ['platform/' + config['PLATFORM']], exports = vars)
 drivers_sources = SConscript(dirs = ['drivers'], exports = vars)
-sources = arch_sources + platform_sources + drivers_sources + sources
+
+# Add sources for build the menu (GUI/CLI)
+if config['GUI_MODE']:
+    menu_sources = SConscript(dirs = ['menu/gui/'], exports = vars)
+else:
+    menu_sources = SConscript(dirs = ['menu/cli/'], exports = vars)
+
+sources = arch_sources + platform_sources + drivers_sources + menu_sources + sources
 objects = map(env.Object, sources)
 
 # Link the loader.

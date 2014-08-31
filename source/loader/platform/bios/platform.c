@@ -30,8 +30,13 @@
 #include <arch/io.h>
 
 #include <bios/bios.h>
+#include <bios/vbe.h>
 
+#include <disk.h>
 #include <loader.h>
+#include <screen.h>
+
+extern void loader_main(void);
 
 /**
  * Main function of the BIOS loader
@@ -47,8 +52,23 @@ void platform_init(void)
     // Detect memory
     bios_memory_init();
 
-    // Temp test for console and error handler
-    internal_error("TODO");
+    // Initialize disk
+    disk_init();
+
+    #ifdef CONFIG_GUI_MODE
+    // Initialize VBE video mode
+    vbe_init();
+
+    // Initialize with a default mode
+    // TODO: Add a config option to specify a mode
+    vbe_mode_set(default_vbe_mode);
+
+    // Screen initialization
+    screenInit();
+    #endif
+
+    // Call loader main function
+    loader_main();
 }
 
 /**
