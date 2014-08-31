@@ -32,6 +32,8 @@ sources = FeatureSources(config, [
   'lib/string.c',
   'lib/qsort.c',
 
+  ('FS_ISO9660', 'fs/iso9660.c'),
+
   'fs.c',
   'disk.c',
   'error.c',

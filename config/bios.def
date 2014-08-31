@@ -25,6 +25,9 @@
 config = {
 	'description': 'x86 PCs with legacy BIOS',
 	'includes': ['arch/ia32', 'platform/bios'],
+	'config' : {
+		'FS_ISO9660': True
+	}
 }
 
 # EOF
