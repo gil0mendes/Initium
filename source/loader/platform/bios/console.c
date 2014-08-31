@@ -37,7 +37,7 @@
 #include <console.h>
 
 // Serial port definitions
-#define SERIAL_PORT		0x3f8
+#define SERIAL_PORT		    0x3f8
 #define SERIAL_CLOCK		1843200
 #define SERIAL_BAUD_RATE	115200
 
