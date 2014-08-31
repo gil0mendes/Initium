@@ -49,6 +49,7 @@ extern char *strcpy(char *__restrict dest, const char *__restrict src);
 extern char *strncpy(char *__restrict dest, const char *__restrict src,
 	size_t count);
 extern char *strcat(char *__restrict dest, const char *__restrict src);
+extern char *strdup(const char *src);
 extern unsigned long strtoul(const char *cp, char **endp, unsigned int base);
 extern long strtol(const char *cp,char **endp,unsigned int base);
 extern unsigned long long strtoull(const char *cp, char **endp,

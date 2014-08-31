@@ -35,6 +35,7 @@
 #include <lib/string.h>
 
 #include <loader.h>
+#include <memory.h>
 
 #ifndef ARCH_HAS_MEMCPY
 
@@ -371,6 +372,25 @@ char *strcat(char *__restrict dest, const char *__restrict src) {
 		;
 
 	return dest;
+}
+
+/**
+ * Duplicate a string.
+ *
+ * Allocates a buffer big enough to hold the given string and copies the
+ * string to it. The pointer returned should be freed with free();
+ *
+ * @param src 	Pointer to the source buffer
+ * @return			Pointer to the allocated buffer containing the string
+ */
+char *strdup(const char *src) {
+	size_t len = strlen(src) + 1;
+	char *dup;
+
+	dup = malloc(len);
+	memcpy(dup, src, len);
+
+	return dup;
 }
 
 /** Macro to implement strtoul() and strtoull(). */
