@@ -306,10 +306,11 @@ vgaScrollDown(void) {
 
 // VGA main console output operations
 static console_out_ops_t vga_console_out_ops = {
-	.reset 		= vga_console_reset,
-	.putc 		= vga_console_putc,
+	.reset 			= vga_console_reset,
+	.putc 			= vga_console_putc,
 	.setRegion 	= vgaSetRegion,
-	.clear 		= vgaClear,
+	.getRegion 	= vgaGetRegion,
+	.clear 			= vgaClear,
 	.showCursor = vgaShowCursor,
 	.highlight 	= vgaHighlight,
 	.moveCursor = vgaMoveCursor,
