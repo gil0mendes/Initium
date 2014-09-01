@@ -35,6 +35,11 @@
 #include <fs.h>
 #include <loader.h>
 
+struct command;
+struct device;
+struct loader_type;
+struct value;
+
 // Strucuture containing an environment
 typedef struct environ {
 	struct environ *parent; 			// parent environment
