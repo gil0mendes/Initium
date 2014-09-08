@@ -79,6 +79,7 @@ typedef efi_uint64_t efi_virtual_address_t;
 
 // Basic integer types in Macros
 #define BOOLEAN efi_boolean_t
+#define UINT8   efi_uint8_t
 #define UINT32  efi_uint32_t
 #define UINTN   efi_uintn_t
 #define UINT64  efi_uint64_t
@@ -100,7 +101,7 @@ typedef efi_uint64_t efi_virtual_address_t;
 #endif
 
 
-/** EFI GUID structure. */
+// EFI GUID structure
 typedef struct efi_guid {
 	efi_uint32_t data1;
 	efi_uint16_t data2;
@@ -115,31 +116,31 @@ typedef struct efi_guid {
 	efi_uint8_t data11;
 } __aligned(8) efi_guid_t;
 
-/**
- * EFI status codes.
- */
+//
+// EFI status codes.
+//
 
-/** Define an EFI error code (high bit set). */
+// Define an EFI error code (high bit set)
 #define EFI_ERROR(value)		\
 	((((EFI_STATUS)1) << (BITS(EFI_STATUS) - 1)) | (value))
 
-/** Define an EFI warning code (high bit clear). */
+// Define an EFI warning code (high bit clear)
 #define EFI_WARNING(value)			(value)
 
-/** EFI success codes. */
+// EFI success codes
 #define EFI_SUCCESS				0
 
-/** EFI error codes. */
-#define EFI_LOAD_ERROR				EFI_ERROR(1)
-#define EFI_INVALID_PARAMETER			EFI_ERROR(2)
-#define EFI_UNSUPPORTED				EFI_ERROR(3)
-#define EFI_BAD_BUFFER_SIZE			EFI_ERROR(4)
-#define EFI_BUFFER_TOO_SMALL			EFI_ERROR(5)
-#define EFI_NOT_READY				EFI_ERROR(6)
-#define EFI_DEVICE_ERROR			EFI_ERROR(7)
-#define EFI_WRITE_PROTECTED			EFI_ERROR(8)
-#define EFI_OUT_OF_RESOURCES			EFI_ERROR(9)
-#define EFI_VOLUME_CORRUPTED			EFI_ERROR(10)
+// EFI error codes
+#define EFI_LOAD_ERROR              EFI_ERROR(1)
+#define EFI_INVALID_PARAMETER       EFI_ERROR(2)
+#define EFI_UNSUPPORTED             EFI_ERROR(3)
+#define EFI_BAD_BUFFER_SIZE			    EFI_ERROR(4)
+#define EFI_BUFFER_TOO_SMALL			  EFI_ERROR(5)
+#define EFI_NOT_READY				        EFI_ERROR(6)
+#define EFI_DEVICE_ERROR			      EFI_ERROR(7)
+#define EFI_WRITE_PROTECTED			    EFI_ERROR(8)
+#define EFI_OUT_OF_RESOURCES			  EFI_ERROR(9)
+#define EFI_VOLUME_CORRUPTED			  EFI_ERROR(10)
 #define EFI_VOLUME_FULL				EFI_ERROR(11)
 #define EFI_NO_MEDIA				EFI_ERROR(12)
 #define EFI_MEDIA_CHANGED			EFI_ERROR(13)
@@ -163,7 +164,7 @@ typedef struct efi_guid {
 #define EFI_COMPROMISED_DATA			EFI_ERROR(33)
 #define EFI_IP_ADDRESS_CONFLICT			EFI_ERROR(34)
 
-/** EFI warning codes. */
+// EFI warning codes
 #define EFI_WARN_UNKNOWN_GLYPH			EFI_WARNING(1)
 #define EFI_WARN_DELETE_FAILURE			EFI_WARNING(2)
 #define EFI_WARN_WRITE_FAILURE			EFI_WARNING(3)
@@ -681,5 +682,51 @@ typedef struct efi_system_table {
 
 /** EFI system table signature. */
 #define EFI_SYSTEM_TABLE_SIGNATURE		0x5453595320494249ll
+
+//
+// Device Path Structures
+//
+
+typedef struct _EFI_DEVICE_PATH {
+  UINT8   Type;
+  UINT8   SubType;
+  UINT8   Length[2];
+} EFI_DEVICE_PATH;
+
+#define EFI_DP_TYPE_MASK                    0x7F
+#define EFI_DP_TYPE_UNPACKED                0x80
+
+#define END_DEVICE_PATH_TYPE                0x7f
+
+#define END_ENTIRE_DEVICE_PATH_SUBTYPE      0xff
+#define END_INSTANCE_DEVICE_PATH_SUBTYPE    0x01
+#define END_DEVICE_PATH_LENGTH              (sizeof(EFI_DEVICE_PATH))
+
+
+#define DP_IS_END_TYPE(a)
+#define DP_IS_END_SUBTYPE(a)        ( ((a)->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE )
+
+#define DevicePathType(a)           ( ((a)->Type) & EFI_DP_TYPE_MASK )
+#define DevicePathSubType(a)        ( (a)->SubType )
+#define DevicePathNodeLength(a)     ( ((a)->Length[0]) | ((a)->Length[1] << 8) )
+#define NextDevicePathNode(a)       ( (EFI_DEVICE_PATH *) ( ((UINT8 *) (a)) + DevicePathNodeLength(a)))
+#define IsDevicePathEndType(a)      ( DevicePathType(a) == END_DEVICE_PATH_TYPE )
+#define IsDevicePathEndSubType(a)   ( (a)->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE )
+#define IsDevicePathEnd(a)          ( IsDevicePathEndType(a) && IsDevicePathEndSubType(a) )
+#define IsDevicePathUnpacked(a)     ( (a)->Type & EFI_DP_TYPE_UNPACKED )
+
+#define SetDevicePathNodeLength(a,l) {                  \
+            (a)->Length[0] = (UINT8) (l);               \
+            (a)->Length[1] = (UINT8) ((l) >> 8);        \
+            }
+
+#define SetDevicePathEndNode(a)  {                      \
+            (a)->Type = END_DEVICE_PATH_TYPE;           \
+            (a)->SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE;     \
+            (a)->Length[0] = sizeof(EFI_DEVICE_PATH);   \
+            (a)->Length[1] = 0;                         \
+            }
+
+#define HARDWARE_DEVICE_PATH            0x01
 
 #endif /* __EFI_API_H */

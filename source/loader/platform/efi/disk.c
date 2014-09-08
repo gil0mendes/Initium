@@ -33,6 +33,12 @@
 #include <loader.h>
 #include <memory.h>
 
+// Load EFI defenitions
+#include <efi/efi.h>
+
+// Load EFI disk interface definition
+#include <efi/disk.h>
+
 // ============================================================================
 // Get the number of disks in the system.
 //
@@ -48,7 +54,12 @@ get_disk_count(void) {
 //
 void
 platform_disk_detect(void) {
-	uint8_t count, id;
+	// For handles
+	EFI_STATUS 			status;
+	UINTN						handleCount = 0;
+	UINTN						handleIndex;
+	EFI_HANDLE 			*handles;
+
 
 
 }

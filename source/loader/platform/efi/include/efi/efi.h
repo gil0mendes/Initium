@@ -35,6 +35,7 @@
 #include <efi/api.h>
 
 // Load all defined protocols
+#include <efi/protocol/disk_io.h>
 #include <efi/protocol/block_io.h>
 #include <efi/protocol/graphics.h>
 

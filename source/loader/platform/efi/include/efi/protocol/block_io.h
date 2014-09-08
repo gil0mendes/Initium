@@ -27,14 +27,14 @@
  * @brief		EFI Disk API definitions.
  */
 
-#ifndef __EFI_PROTOCOL_DISK_H
-#define __EFI_PROTOCOL_DISK_H
+#ifndef __EFI_PROTOCOL_BLOCK_H
+#define __EFI_PROTOCOL_BLOCK_H
 
 #include <efi/api.h>
 
 // Block IO protocol
 #define BLOCK_IO_PROTOCOL \
-	{ 0x964e5b21, 0x6459, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b} }
+	{ 0x964e5b21, 0x6459, 0x11d2, 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
 
 #define EFI_BLOCK_IO_INTERFACE_REVISION   0x00010000
 #define EFI_BLOCK_IO_INTERFACE_REVISION2  0x00020001
@@ -173,4 +173,4 @@ typedef struct _EFI_BLOCK_IO_PROTOCOL {
 	EFI_BLOCK_FLUSH         FlushBlocks;
 } EFI_BLOCK_IO;
 
-#endif // __EFI_PROTOCOL_DISK_H
+#endif // __EFI_PROTOCOL_BLOCK_H
