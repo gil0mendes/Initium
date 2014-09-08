@@ -85,7 +85,7 @@ static console_out_ops_t efi_console_out_ops = {
  */
 static bool efi_console_poll(void) {
        efi_input_key_t key;
-       efi_status_t ret;
+       EFI_STATUS ret;
 
        if(saved_key.scan_code || saved_key.unicode_char) {
            return true;
@@ -120,7 +120,7 @@ static uint16_t efi_scan_codes[] = {
  */
 static uint16_t efi_console_getc(void) {
        efi_input_key_t key;
-       efi_status_t ret;
+       EFI_STATUS ret;
 
        while(true) {
                if(saved_key.scan_code || saved_key.unicode_char) {
@@ -177,9 +177,9 @@ static console_out_ops_t efi_serial_out_ops = {
  * Initialize the EFI console
  */
 void efi_console_init() {
-    efi_handle_t *handles;
+    EFI_HANDLE *handles;
     efi_uintn_t num_handles;
-    efi_status_t ret;
+    EFI_STATUS ret;
     console_out = efi_system_table->con_out;
     console_in = efi_system_table->con_in;
 

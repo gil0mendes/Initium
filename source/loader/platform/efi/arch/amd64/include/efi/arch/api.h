@@ -25,28 +25,93 @@
  /**
  * @file
  * @brief		AMD64 EFI API definitions.
+ *
+ * The implementation is based on https://github.com/vathpela/gnu-efi
  */
 
 #ifndef __EFI_ARCH_API_H
 #define __EFI_ARCH_API_H
 
-/**
- * EFI calling convention attribute.
- *
- * On x86_64, EFI uses the Microsoft calling convention, therefore we must
- * mark all EFI APIs with the ms_abi attribute so that the right calling
- * convention is used.
- */
-#define __efiapi       __attribute__((ms_abi))
+#ifndef __GNUC__
+#pragma pack()
+#endif
 
-/**
- * EFI call wrapper.
- *
- * We must wrap EFI calls to restore the firmware's GDT/IDT before calling, and
- * restore ours afterward. This is a slightly nasty hack to call functions via
- * a wrapper (in start.S), that keeps type safety and relies on the compiler to
- * put all arguments in the right place.
- */
+//
+// To export & import functions in the EFI emulator environment
+//
+
+#ifdef EFI_NT_EMULATOR
+    #define EXPORTAPI           __declspec( dllexport )
+#else
+    #define EXPORTAPI
+#endif
+
+#if defined(GNU_EFI_USE_MS_ABI)
+    #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+        #define HAVE_USE_MS_ABI 1
+    #else
+        #error Compiler is too old for GNU_EFI_USE_MS_ABI
+    #endif
+#else
+  #define HAVE_USE_MS_ABI 1
+#endif
+
+//
+// EFIAPI           - prototype calling convention for EFI function pointers
+// BOOTSERVICE      - prototype for implementation of a boot service interface
+// RUNTIMESERVICE   - prototype for implementation of a runtime service interface
+// RUNTIMEFUNCTION  - prototype for implementation of a runtime function that is not a service
+// RUNTIME_CODE     - pragma macro for declaring runtime code
+//
+
+#ifndef EFIAPI                  // Forces EFI calling conventions reguardless of compiler options
+    #ifdef _MSC_EXTENSIONS
+        #define EFIAPI __cdecl  // Force C calling convention for Microsoft C compiler
+    #elif defined(HAVE_USE_MS_ABI)
+        // Force amd64/ms calling conventions.
+        #define EFIAPI __attribute__((ms_abi))
+    #else
+        #define EFIAPI          // Substitute expresion to force C calling convention
+    #endif
+#endif
+
+#define BOOTSERVICE
+#define RUNTIMESERVICE
+#define RUNTIMEFUNCTION
+
+
+#define RUNTIME_CODE(a)         alloc_text("rtcode", a)
+#define BEGIN_RUNTIME_DATA()    data_seg("rtdata")
+#define END_RUNTIME_DATA()      data_seg("")
+
+#define VOLATILE    volatile
+
+#define MEMORY_FENCE()
+
+//
+// Some compilers don't support the forward reference construct:
+// typedef struct XXXXXX
+//
+// The folliwing macro provide a workaround for such cases
+//
+#ifdef NO_INTERFACE_DECL
+#define INTERFACE_DECL(x)
+#else
+#ifdef __GNUC__
+#define INTERFACE_DECL(x) struct x
+#else
+#define INTERFACE_DECL(x) typedef struct x
+#endif
+#endif
+
+//
+// EFI call wrapper.
+//
+// We must wrap EFI calls to restore the firmware's GDT/IDT before calling, and
+// restore ours afterward. This is a slightly nasty hack to call functions via
+// a wrapper (in start.S), that keeps type safety and relies on the compiler to
+// put all arguments in the right place.
+//
 #define efi_call(func, args...) \
        __extension__ \
        ({ \
@@ -56,6 +121,6 @@
        })
 
 extern void *__efi_call_func;
-extern unsigned long __efi_call(void) __efiapi;
+extern unsigned long __efi_call(void) EFIAPI;
 
 #endif /* __EFI_ARCH_API_H */

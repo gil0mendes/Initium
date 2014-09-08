@@ -79,7 +79,7 @@ getScreenSize(uint32_t *screenWidth, uint32_t *screenHeight) {
 // Returns TRUE if successful, FALSE if not.
 bool
 setScreenSize(uint32_t width_ts, uint32_t height_ts) {
-	efi_status_t status = EFI_SUCCESS;
+	EFI_STATUS status = EFI_SUCCESS;
 	efi_graphics_output_mode_information_t *info;
 	uint32_t modeNum = 0;
 	efi_uintn_t size;
@@ -132,9 +132,9 @@ setScreenSize(uint32_t width_ts, uint32_t height_ts) {
 void
 screenInit(void) {
 	// For handles
-	efi_handle_t *handles;
+	EFI_HANDLE *handles;
 	efi_uintn_t num_handles;
-	efi_status_t status = EFI_SUCCESS;
+	EFI_STATUS status = EFI_SUCCESS;
 
 	// Look for a graphics capability
 	status = efi_locate_handle(EFI_BY_PROTOCOL, &graphics_guid, NULL, &handles,

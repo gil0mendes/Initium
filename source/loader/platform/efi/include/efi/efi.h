@@ -34,17 +34,19 @@
 
 #include <efi/api.h>
 
+// Load all defined protocols
+#include <efi/protocol/block_io.h>
 #include <efi/protocol/graphics.h>
 
-extern efi_handle_t efi_image_handle;
+extern EFI_HANDLE efi_image_handle;
 extern efi_system_table_t *efi_system_table;
 
-extern efi_status_t efi_locate_handle(efi_locate_search_type_t search_type,
-       efi_guid_t *protocol, void *search_key, efi_handle_t **_handles,
+extern EFI_STATUS efi_locate_handle(efi_locate_search_type_t search_type,
+       efi_guid_t *protocol, void *search_key, EFI_HANDLE **_handles,
        efi_uintn_t *_num_handles);
-extern efi_status_t efi_open_protocol(efi_handle_t handle, efi_guid_t *protocol,
+extern EFI_STATUS efi_open_protocol(EFI_HANDLE handle, efi_guid_t *protocol,
         efi_uint32_t attributes, void **_interface);
-extern efi_status_t efi_get_memory_map(efi_memory_descriptor_t **_memory_map,
+extern EFI_STATUS efi_get_memory_map(efi_memory_descriptor_t **_memory_map,
        efi_uintn_t *_num_entries, efi_uintn_t *_map_key);
 
 extern void efi_console_init(void);

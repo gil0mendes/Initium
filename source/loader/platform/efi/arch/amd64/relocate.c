@@ -37,7 +37,7 @@
  *
  * @return		Status code describing result of the operation.
  */
-efi_status_t efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn) {
+EFI_STATUS efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn) {
 	elf_rela_t *reloc = NULL;
 	elf_addr_t *addr;
 	size_t size = 0, ent = 0, i;

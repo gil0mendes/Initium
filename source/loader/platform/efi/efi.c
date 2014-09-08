@@ -49,13 +49,13 @@
 // @param _num_handles Where to store the number of handles returned.
 //
 // @return             EFI status code.
-efi_status_t
+EFI_STATUS
 efi_locate_handle(efi_locate_search_type_t search_type, efi_guid_t *protocol,
-      void *search_key, efi_handle_t **_handles, efi_uintn_t *_num_handles)
+      void *search_key, EFI_HANDLE **_handles, efi_uintn_t *_num_handles)
 {
-       efi_handle_t *handles = NULL;
+       EFI_HANDLE *handles = NULL;
        efi_uintn_t size = 0;
-       efi_status_t ret;
+       EFI_STATUS ret;
 
        // Call a first time to get the needed buffer size
        ret = efi_call(efi_system_table->boot_services->locate_handle,
@@ -70,7 +70,7 @@ efi_locate_handle(efi_locate_search_type_t search_type, efi_guid_t *protocol,
        }
 
        *_handles = handles;
-       *_num_handles = size / sizeof(efi_handle_t);
+       *_num_handles = size / sizeof(EFI_HANDLE);
        return ret;
 }
 
@@ -86,8 +86,8 @@ efi_locate_handle(efi_locate_search_type_t search_type, efi_guid_t *protocol,
 // @param _interface   Where to store pointer to opened interface.
 //
 // @return             EFI status code.
-efi_status_t
-efi_open_protocol(efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
+EFI_STATUS
+efi_open_protocol(EFI_HANDLE handle, efi_guid_t *protocol, efi_uint32_t attributes,
   void **interface)
 {
        return efi_call(efi_system_table->boot_services->open_protocol, handle,
@@ -107,14 +107,14 @@ efi_open_protocol(efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attrib
 // @param _map_key     Where to store the key for the current memory map.
 //
 // @return             EFI status code.
-efi_status_t
+EFI_STATUS
 efi_get_memory_map(efi_memory_descriptor_t **_memory_map, efi_uintn_t *_num_entries,
   efi_uintn_t *_map_key)
 {
        efi_memory_descriptor_t *memory_map = NULL, *orig;
        efi_uintn_t size = 0, descriptor_size, num_entries, i;
        efi_uint32_t descriptor_version;
-       efi_status_t ret;
+       EFI_STATUS ret;
 
        // Call a first time to get the needed buffer size
        ret = efi_call(efi_system_table->boot_services->get_memory_map, &size,
