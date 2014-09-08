@@ -83,6 +83,8 @@ typedef efi_uint64_t efi_virtual_address_t;
 #define UINT32  efi_uint32_t
 #define UINTN   efi_uintn_t
 #define UINT64  efi_uint64_t
+#define CHAR8   efi_char8_t
+#define CHAR16  efi_char16_t
 
 #define VOID    void
 
@@ -115,6 +117,8 @@ typedef struct efi_guid {
 	efi_uint8_t data10;
 	efi_uint8_t data11;
 } __aligned(8) efi_guid_t;
+
+#define EFI_GUID efi_guid_t
 
 //
 // EFI status codes.
