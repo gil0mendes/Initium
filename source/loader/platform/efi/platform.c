@@ -30,6 +30,9 @@
 #include <efi/efi.h>
 
 #include <loader.h>
+#include <screen.h>
+
+extern void loader_main(void);
 
 // Handle to the loader image
 efi_handle_t efi_image_handle;
@@ -46,8 +49,8 @@ efi_system_table_t *efi_system_table;
  * @return   EFI Status code
  */
  efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab) {
-     // Save image handler
-     efi_image_handle = image;
+    // Save image handler
+    efi_image_handle = image;
 
     // Save EFI system table
     efi_system_table = systab;
@@ -61,6 +64,11 @@ efi_system_table_t *efi_system_table;
     // Initialise memory map
     efi_memory_init();
 
-    // For test
-    internal_error("TODO");
- }
+    // Initialize screen
+    screenInit();
+
+    // Call loader main function
+    loader_main();
+
+    return EFI_SUCCESS;
+}

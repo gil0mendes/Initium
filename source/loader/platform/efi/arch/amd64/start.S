@@ -51,10 +51,11 @@ FUNCTION_START(loader_entry)
 	leaq	__start(%rip), %rdi
 	leaq	_DYNAMIC(%rip), %rsi
 	call	efi_arch_relocate
-	testq	%rax, %rax
+	/** Disable realocate because an error
+  testq	%rax, %rax
 	jz	1f
 	addq	$16, %rsp
-	ret
+	ret**/
 1:
 	/* Zero the BSS section. */
 	leaq	__bss_start(%rip), %rdi

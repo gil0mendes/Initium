@@ -65,6 +65,11 @@ SECTIONS {
     *(.init.data)
 		*(.data)
 		*(.data.*)
+
+    // builtins section
+    __builtins_start = .;
+    *(.builtins)
+    __builtins_end = .;
 	}
 
 	. = ALIGN(PAGE_SIZE);

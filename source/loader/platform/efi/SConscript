@@ -28,10 +28,12 @@ Import(*vars)
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-  'platform.c',
   'efi.c',
+  'disk.c',
+  'platform.c',
   'console.c',
   'memory.c',
+  'screen.c',
 ])
 
 # Add architecture-specific headers.

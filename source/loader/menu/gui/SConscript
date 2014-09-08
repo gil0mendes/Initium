@@ -22,11 +22,12 @@
 # SOFTWARE.
 #
 
-include = {
-  'config': {
-    'PLATFORM': 'efi',
-    'PLATFORM_EFI': True,
-    'TARGET_HAVE_DISK': True,
-    'GUI_MODE': True,
-  },
-}
+Import('config', 'defaults', 'env')
+from util import FeatureSources
+
+sources = FeatureSources(config, [
+	'screen.c',
+	'image.c',
+])
+
+Return('sources')

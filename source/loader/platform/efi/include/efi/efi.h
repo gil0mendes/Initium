@@ -34,6 +34,8 @@
 
 #include <efi/api.h>
 
+#include <efi/protocol/graphics.h>
+
 extern efi_handle_t efi_image_handle;
 extern efi_system_table_t *efi_system_table;
 
