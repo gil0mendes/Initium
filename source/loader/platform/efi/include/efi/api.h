@@ -43,7 +43,7 @@
 # define EFIAPI
 #endif
 
-/** Basic integer types. */
+// Basic integer types
 typedef unsigned char efi_boolean_t;
 #ifdef CONFIG_64BIT
 typedef int64_t   efi_intn_t;
@@ -76,6 +76,14 @@ typedef uint8_t efi_ipv6_address_t[16];
 typedef uint8_t efi_ip_address_t[16] __aligned(4);
 typedef efi_uint64_t efi_physical_address_t;
 typedef efi_uint64_t efi_virtual_address_t;
+
+// Basic integer types in Macros
+#define BOOLEAN efi_boolean_t
+#define UINT32  efi_uint32_t
+#define UINTN   efi_uintn_t
+#define UINT64  efi_uint64_t
+
+#define VOID    void
 
 //
 // Prototype argument decoration for EFI parameters to indicate
