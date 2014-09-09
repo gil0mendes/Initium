@@ -317,7 +317,7 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_FILE_GET_POSITION) (
     IN struct _EFI_FILE_PROTOCOL  *This,
-    OUT UINT64                  *Position
+    OUT UINT64                  	*Position
     );
 
 // ============================================================================
@@ -326,9 +326,9 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_FILE_GET_INFO) (
     IN struct _EFI_FILE_PROTOCOL  *This,
-    IN EFI_GUID                 *InformationType,
-    IN OUT UINTN                *BufferSize,
-    OUT VOID                    *Buffer
+    IN EFI_GUID                 	*InformationType,
+    IN OUT UINTN                	*BufferSize,
+    OUT VOID                    	*Buffer
     );
 
 // ============================================================================
@@ -337,9 +337,9 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_FILE_SET_INFO) (
     IN struct _EFI_FILE_PROTOCOL  *This,
-    IN EFI_GUID                 *InformationType,
-    IN UINTN                    BufferSize,
-    IN VOID                     *Buffer
+    IN EFI_GUID                 	*InformationType,
+    IN UINTN                    	BufferSize,
+    IN VOID                     	*Buffer
     );
 
 // ============================================================================
@@ -367,3 +367,81 @@ typedef struct _EFI_FILE_PROTOCOL {
 		EFI_FILE_WRITE_EX				WriteEx;			// Added for revision 2
 		EFI_FILE_FLUSH_EX 			FlushEx;			// Added for revision 2
 } EFI_FILE, *EFI_FILE_PROTOCOL;
+
+//
+// EFI_FILE_INFO
+//
+// Provides a GUID and a data structure that can be used with
+// EFI_FILE_PROTOCOL.SetInfo() and EFI_FILE_PROTOCOL.GetInfo()
+//
+
+#define EFI_FILE_INFO_ID \
+	{0x09576e92, 0x6d3f, 0x11d2, 0x8e39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b}
+
+typedef struct {
+	UINT64 					Size;
+	UINT64 					FileSize;
+	UINT64 					PhysicalSize;
+	EFI_TIME 				CreateTime;
+	EFI_TIME 				LastAcessTime;
+	EFI_TIME 				ModificationTime;
+	UINT64					Attribute;
+	CHAR16 					FileName[];
+} EFI_FILE_INFO;
+
+//
+// EFI_FILE_SYSTEM_INFO
+//
+// Provides a GUID and a data structure that can be used with
+// EFI_FILE_PROTOCOL.SetInfo() and EFI_FILE_PROTOCOL.GetInfo()
+// to set the system volume's volume label
+//
+
+//
+// The FileName field of the EFI_FILE_INFO data structure is variable length.
+// Whenever code needs to know the size of the EFI_FILE_INFO data structure, it needs to
+// be the size of the data structure without the FileName field.  The following macro
+// computes this size correctly no matter how big the FileName array is declared.
+// This is required to make the EFI_FILE_INFO data structure ANSI compilant.
+//
+
+#define SIZE_OF_EFI_FILE_INFO EFI_FIELD_OFFSET(EFI_FILE_INFO,FileName)
+
+#define EFI_FILE_SYSTEM_INFO_ID \
+	{0x09576e93, 0x6d3f, 0x11d2, 0x8e39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b}
+
+typedef struct {
+	UINT64 					Size;
+	BOOLEAN 				ReadOnly;
+	UINT64 					VolumeSize;
+	UINT64 					FreeSpace;
+	UINT32 					BlockSize;
+	CHAR16 					VolumeLabel[];
+} EFI_FILE_SYSTEM_INFO;
+
+//
+// EFI_FILE_SYSTEM_VOLUME_LABEL
+//
+// Provides a GUID and a data strucutre that can be used with
+// EFI_FILE_PROTOCOL.SetInfo() and EFI_FILE_PROTOCOL.GetInfo()
+// to get or set information about system's volume label.
+//
+
+//
+// The VolumeLabel field of the EFI_FILE_SYSTEM_INFO data structure is variable length.
+// Whenever code needs to know the size of the EFI_FILE_SYSTEM_INFO data structure, it needs
+// to be the size of the data structure without the VolumeLable field.  The following macro
+// computes this size correctly no matter how big the VolumeLable array is declared.
+// This is required to make the EFI_FILE_SYSTEM_INFO data structure ANSI compilant.
+//
+
+#define SIZE_OF_EFI_FILE_SYSTEM_INFO EFI_FIELD_OFFSET(EFI_FILE_SYSTEM_INFO,VolumeLabel)
+
+#define EFI_FILE_SYSTEM_VOLUME_LABEL_ID \
+	{0xDB47D7D3, 0xFE81, 0x11d3, 0x9A35, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D}
+
+typedef struct {
+	CHAR16 			VolumeLabel[1];
+} EFI_FILE_SYSTEM_VOLUME_LABEL;
+
+#define SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO EFI_FIELD_OFFSET(EFI_FILE_SYSTEM_VOLUME_LABEL,VolumeLabel)

@@ -31,6 +31,7 @@
 
 #include <loader.h>
 #include <screen.h>
+#include <disk.h>
 
 extern void loader_main(void);
 
@@ -63,6 +64,9 @@ efi_system_table_t *efi_system_table;
 
     // Initialise memory map
     efi_memory_init();
+
+    // Initialize disk
+    disk_init();
 
     // Initialize screen
     screenInit();

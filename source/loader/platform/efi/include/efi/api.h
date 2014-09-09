@@ -79,9 +79,13 @@ typedef efi_uint64_t efi_virtual_address_t;
 
 // Basic integer types in Macros
 #define BOOLEAN efi_boolean_t
-#define UINT8   efi_uint8_t
-#define UINT32  efi_uint32_t
+#define INTN    efi_intn_t
 #define UINTN   efi_uintn_t
+#define INT8    efi_int8_t
+#define UINT8   efi_uint8_t
+#define INT16   efi_int16_t
+#define UINT16  efi_uint16_t
+#define UINT32  efi_uint32_t
 #define UINT64  efi_uint64_t
 #define CHAR8   efi_char8_t
 #define CHAR16  efi_char16_t
@@ -102,8 +106,9 @@ typedef efi_uint64_t efi_virtual_address_t;
     #define OPTIONAL
 #endif
 
-
+//
 // EFI GUID structure
+//
 typedef struct efi_guid {
 	efi_uint32_t data1;
 	efi_uint16_t data2;
@@ -119,6 +124,30 @@ typedef struct efi_guid {
 } __aligned(8) efi_guid_t;
 
 #define EFI_GUID efi_guid_t
+
+//
+// EFI Time Structure
+//
+typedef struct {
+  UINT16      Year;       // 1998 - 20XX
+  UINT8       Month;      // 1 - 12
+  UINT8       Day;        // 1 - 31
+  UINT8       Hour;       // 0 - 23
+  UINT8       Minute;     // 0 - 59
+  UINT8       Second;     // 0 - 59
+  UINT8       Pad1;
+  UINT32      Nanosecond; // 0 - 999,999,999
+  INT16       TimeZone;   // -1440 to 1440 or 2047
+  UINT8       Daylight;
+  UINT8       Pad2;
+} EFI_TIME;
+
+// Bit definitions for EFI_TIME.Daylight
+#define EFI_TIME_ADJUST_DAYLIGHT    0x01
+#define EFI_TIME_IN_DAYLIGHT        0x02
+
+// Value definition for EFI_TIME.TimeZone
+#define EFI_UNSPECIFIED_TIMEZONE    0x07FF
 
 //
 // EFI status codes.
