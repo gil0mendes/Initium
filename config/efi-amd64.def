@@ -28,5 +28,6 @@ config = {
   'config': {
     'EFI_ARCH': 'amd64',
     'EFI_ARCH_AMD64': True,
+    'DEBUG_LEVEL': 2
   },
 }

@@ -27,7 +27,8 @@ config = {
 	'includes': ['arch/ia32', 'platform/bios'],
 	'config' : {
 		'FS_ISO9660': True,
-		'UI': True
+		'UI': True,
+		'DEBUG_LEVEL': 2
 	}
 }
 
