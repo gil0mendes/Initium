@@ -29,8 +29,9 @@
 
 #include <arch/io.h>
 
-#include <bios/bios.h>
 #include <bios/vbe.h>
+#include <bios/bios.h>
+#include <bios/multiboot.h>
 
 #include <disk.h>
 #include <loader.h>
@@ -66,6 +67,9 @@ void platform_init(void)
     // Screen initialization
     screenInit();
     #endif
+
+    // Parse information from Multiboot
+    multiboot_init();
 
     // Call loader main function
     loader_main();

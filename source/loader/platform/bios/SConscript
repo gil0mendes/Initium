@@ -31,6 +31,7 @@ sources = FeatureSources(config, [
   'screen.c',
   'console.c',
   'platform.c',
+  'multiboot.c',
 ])
 
 # Set the linker script path.
