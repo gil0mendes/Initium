@@ -1,5 +1,5 @@
 # Documentation
-This folder contains all documentation about the LAOS and files who are used
+This folder contains all documentation about the Initium and files who are used
 like reference to develop some functionalities.
 
 # Table of Contents

@@ -43,7 +43,7 @@
 	#define likely(x)			__builtin_expect(!!(x), 1)
 	#define unlikely(x)			__builtin_expect(!!(x), 0)
 #else
-	#error "LAOS does not currently support compilers other than GCC"
+	#error "Initium does not currently support compilers other than GCC"
 #endif
 
 #define STRINGIFY(val)		#val

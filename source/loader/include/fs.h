@@ -127,7 +127,7 @@ typedef struct file_handle {
 	bool directory;						// Whether the entry is a directory
 	void *data;								// Implementation-specific data pointer
 	int count;								// Reference count
-	#if CONFIG_LAOS_FS_ZLIB
+	#if CONFIG_INITIUM_FS_ZLIB
 	void *compressed;					// If the file is compressed, pointer to decompress data
 	#endif
 } file_handle_t;

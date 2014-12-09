@@ -35,7 +35,7 @@
 #include <fs.h>
 #include <memory.h>
 
-#if CONFIG_LAOS_FS_LIB
+#if CONFIG_INITIUM_FS_LIB
 #include <fs/decompress.h>
 #endif
 
@@ -188,7 +188,7 @@ file_handle_t *file_open(const char *path, file_handle_t *from) {
 		}
 	}
 
-	#if CONFIG_LAOS_FS_ZLIB
+	#if CONFIG_INITIUM_FS_ZLIB
 	// If the file is compressed, initialize decompression state. This will
 	// set handle->compressed to non-NULL if the file is compressed
 	if(!handle->directory)
@@ -232,7 +232,7 @@ bool file_read(file_handle_t *handle, void *buf, size_t count, offset_t offset) 
 	if(!count)
 		return true;
 
-	#if CONFIG_LAOS_FS_ZLIB
+	#if CONFIG_INITIUM_FS_ZLIB
 	if(handle->compressed)
 		return decompress_read(handle, buf, count, offset);
 	#endif
@@ -249,7 +249,7 @@ bool file_read(file_handle_t *handle, void *buf, size_t count, offset_t offset) 
 offset_t file_size(file_handle_t *handle) {
 	assert(!handle->directory);
 
-	#if CONFIG_LAOS_FS_ZLIB
+	#if CONFIG_INITIUM_FS_ZLIB
 	if(handle->compressed)
 		return decompress_size(handle);
 	#endif

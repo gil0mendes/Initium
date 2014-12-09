@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes (gil0mendes)
+# Copyright (c) 2014 Gil Mendes
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,7 @@ opts.Save('.options.cache', env)
 configs = SConscript('config/SConscript')
 
 # Generate help text.
-helptext  = 'To build LAOS, a target system configuration must be specified on the command\n'
+helptext  = 'To build Initium, a target system configuration must be specified on the command\n'
 helptext += 'line with the CONFIG option. The following configurations are available:\n'
 helptext += '\n'
 for name in sorted(configs.iterkeys()):
@@ -89,7 +89,7 @@ helptext += 'The following build options can be set on the command line. These w
 helptext += 'for later invocations of SCons, so you do not need to specify them every time:\n'
 helptext += opts.GenerateHelpText(env)
 helptext += '\n'
-helptext += 'For information on how to build LAOS, please refer to documentation/readme.txt.\n'
+helptext += 'For information on how to build Initium, please refer to docs/README.md.\n'
 Help(helptext)
 
 # Make the output nice.

@@ -23,11 +23,5 @@
  */
 
 /**
- * @file
- * @brief		<Description>
+ * <Description>
  */
-
-#ifndef
-#define
-
-#endif // 

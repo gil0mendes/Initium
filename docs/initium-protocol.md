@@ -1,4 +1,4 @@
-LAOS Boot Protocol
+Initium Boot Protocol
 ==================
 
 License
@@ -11,7 +11,7 @@ This document is distributed under the terms of the [Creative Commons Attributio
 Introduction
 ------------
 
-The purpose of this document is o specify the LAOS Boot Protocol, a method
+The purpose of this document is o specify the Initium Boot Protocol, a method
 for loading an operating systm kernel and providing information to it.
 
 The following sections describe the format of the information provided to the
@@ -21,11 +21,11 @@ loader provides to the kernel, and the machine state upon entering the kernel.
 Basic Definitions
 -----------------
 
-This specification uses C syntax to define the LAOS structures. Structures are
+This specification uses C syntax to define the Initium structures. Structures are
 assumed to be implicitly padded by the compiler to archive manual aligment
 for each field. However, in some cases padding has been explicitly added to
 structures to ensure that 64-bit fields are aligned to an 8 bytes bondary
-regardless of architecture (e.g. on 32-bit x86, 64-bit fields need only be 
+regardless of architecture (e.g. on 32-bit x86, 64-bit fields need only be
 aligned to 4 bytes). Only the standard C fixed-width integer types are used, to
 addictional type aliases are defined:
 
@@ -33,13 +33,13 @@ addictional type aliases are defined:
 	typedef uint64_t laos_vaddr_t;
 
 These types are used to store physical and virtual address, respectively.
-They are fixed to 64 bits in order to keep the format of all structures the 
+They are fixed to 64 bits in order to keep the format of all structures the
 same across architectures.
 
 Kernel Image
 ------------
 
-A LAOS kernel is an ELF32 or ELF64 image annotaded with ELF note sections to
+A Initium kernel is an ELF32 or ELF64 image annotaded with ELF note sections to
 specify to the boot loader how it wishes to be loaded, options that can be
 edited by the user to control kernel behavior, among otehr things. These
 sections are referred to as "image tags". All integer values contained within
@@ -54,21 +54,21 @@ ELF notes have the following format:
 	Padded to a 4 byte bondary.
 * _Dec_: Data contained in the note. Padded to a 4 byte boundary.
 
-For a LAOS image tag, the Name field is set to `"LAOS\0"`, the Type field is
-set to the identifier of the image tag type, and the Desc field contains the 
+For a Initium image tag, the Name field is set to `"INITIUM\0"`, the Type field is
+set to the identifier of the image tag type, and the Desc field contains the
 tag data.
 
-The LAOS header file indluded with the LAOS boot loader defines macros for 
+The Initium header file included with the Initium boot loader defines macros for
 creating all image tag types that expand to an inline ASM code chunk that
 correctly defines the note section.
 
 The following image tag types are defined (given as "Name (type ID)"):
 
-### `LAOS_ITAG_IMAGE`(`0`)
+### `INITIUM_ITAG_IMAGE`(`0`)
 
 This image tag is the only tag that is required to be present in a kernel image.
-All other tags are optional. It is used to identify the image as a LAOS kernel.
-There must only be one `LAOS_ITAG_IMAGE` tag a kernel image.
+All other tags are optional. It is used to identify the image as a Initium kernel.
+There must only be one `INITIUM_ITAG_IMAGE` tag a kernel image.
 
 	Typedef struct laos_itag_image
 	{
@@ -78,21 +78,21 @@ There must only be one `LAOS_ITAG_IMAGE` tag a kernel image.
 
 Fields:
 
-* `version`: Number defining the LAOS protocol version that the kernel is 
+* `version`: Number defining the Initium protocol version that the kernel is
 	using. The version number can be used by a boot loader to determine whether
 	additions in later version of this specification are present. The current
 	version number is 1.
-* `flags`: Flags controlling whether certain optional features should be 
+* `flags`: Flags controlling whether certain optional features should be
 	enabled. The following flags are currently defined:
-	- `LAOS_IMAGE_SECTIONS` (bit 0): Load additional ELF sections and pass
-		section header table to the kernel (see `LAOS_TAG_SECTIONS`).
-	- `LAOS_IMAGE_LOG` (bit 1): Enable the kernel log facility (see
-		`LAOS_TAG_LOG`).
+	- `INITIUM_IMAGE_SECTIONS` (bit 0): Load additional ELF sections and pass
+		section header table to the kernel (see `INITIUM_TAG_SECTIONS`).
+	- `INITIUM_IMAGE_LOG` (bit 1): Enable the kernel log facility (see
+		`INITIUM_TAG_LOG`).
 
-### `LAOS_ITAG_LOAD` (`1`)
+### `INITIUM_ITAG_LOAD` (`1`)
 
 This tag can be used for more control over the physical and virtual memory
-layout set up by boot loader. there must be at most one `LAOS_ITAG_LOAD`
+layout set up by boot loader. there must be at most one `INITIUM_ITAG_LOAD`
 tag in a kernel image.
 
 	typedef struct load_itag_load
@@ -111,7 +111,7 @@ Fields:
 	defined:
 	- `LOAD_LOAD_FIXED` (bit 0): When this bit is set, the loader will load
 		each segment in the ELF image at the exact physical address specified by
-		the `p_paddr` field in the program headers. The `alignment` and 
+		the `p_paddr` field in the program headers. The `alignment` and
 		`min_alignment` fields will be ignoed. When unset, the kernel image will
 		be loaded at physical address allocated by the boot loader.
 * `aligment`: Requested aligment of the kernel image in physical memory. If
@@ -132,7 +132,7 @@ Fields:
 
 If this tag is not present in the kernel image, all fields will default to 0.
 
-### `LAOS_ITAG_OPTION` (`2`)
+### `INITIUM_ITAG_OPTION` (`2`)
 
 Multiple option tags can be included in a kernel image. Each describes an
 option for the kernel that can be configured by the user via the boot loader.
@@ -147,17 +147,17 @@ display a configuration menu.
 		uint32_t	default_len;
 	} laos_itag_option_t;
 
-This structure is followed by 3 variable length fields: `name`, `desc` and 
+This structure is followed by 3 variable length fields: `name`, `desc` and
 `default`.
 
 Fields:
 
 * `type`: Type of the option. What is in the `default` field depends on the
    option type. The following option types are defined:
-   - `LAOS_OPTION_BOOLEAN` (0): Boolean, 1 byte, 0 or 1.
-   - `LAOS_OPTION_STRING` (1): String, variable length, null-terminated string
+   - `INITIUM_OPTION_BOOLEAN` (0): Boolean, 1 byte, 0 or 1.
+   - `INITIUM_OPTION_STRING` (1): String, variable length, null-terminated string
      (length includes null terminator).
-   - `LAOS_OPTION_INTEGER` (2): Integer, 8 bytes, 64-bit integer.
+   - `INITIUM_OPTION_INTEGER` (2): Integer, 8 bytes, 64-bit integer.
  * `name_len`: Length of the `name` field, including null terminator.
  * `desc_len`: Length of the `desc` field, including null terminator.
  * `default_len`: Length of the `default` field. Dependent on `type`, see above.
@@ -168,12 +168,12 @@ Fields:
    menus in the boot loader.
  * `default`: Default value of the option. Dependent on `type`, see above.
 
-### `LAOS_ITAG_MAPPING` (`3`)
+### `INITIUM_ITAG_MAPPING` (`3`)
 
 This tag specifies a range of physical memory to map in to the kernel virtual
 address space.
 
-    typedef struct laos_itag_mapping 
+    typedef struct laos_itag_mapping
 	{
      	laos_vaddr_t virt;
     	laos_paddr_t phys;
@@ -194,13 +194,13 @@ Fields:
 For more information on the procedure used to build the virtual address space
 for the kernel, see the _Kernel Environment_ section.
 
-### `LAOS_ITAG_VIDEO` (`4`)
+### `INITIUM_ITAG_VIDEO` (`4`)
 
 This tag is used to specify to the boot loader what video types are supported
 and what display mode it should attempt to set. There must be at most one
-`LAOS_ITAG_VIDEO` tag in a kernel image.
+`INITIUM_ITAG_VIDEO` tag in a kernel image.
 
-    typedef struct laos_itag_video 
+    typedef struct laos_itag_video
 	{
     	uint32_t types;
     	uint32_t width;
@@ -212,9 +212,9 @@ Fields:
 
  * `types`: Bitfield of supported video types. The following video types are
    currently defined:
-    - `LAOS_VIDEO_VGA` (bit 0): VGA text mode.
-    - `LAOS_VIDEO_LFB` (bit 1): Linear framebuffer.
- * `width`/`height`/`bpp`: Preferred mode for `LAOS_VIDEO_LFB`. If this mode
+    - `INITIUM_VIDEO_VGA` (bit 0): VGA text mode.
+    - `INITIUM_VIDEO_LFB` (bit 1): Linear framebuffer.
+ * `width`/`height`/`bpp`: Preferred mode for `INITIUM_VIDEO_LFB`. If this mode
    is available it will be set, otherwise one as close as possible will be set.
    If all fields are 0, a mode will be chosen automatically.
 
@@ -232,7 +232,7 @@ The kernel entry point takes 2 arguments:
     void kmain(uint32_t magic, laos_tag_t *tags);
 
 The first argument is the magic value, `0xB007CAFE`, which can be used by the
-kernel to ensure that it has been loaded by a LAOS boot loader. The second
+kernel to ensure that it has been loaded by a Initium boot loader. The second
 argument is a pointer to the first tag in the information tag list, described
 in the _Kernel Information_ section.
 
@@ -242,26 +242,26 @@ an architecture-dependent method to be able to manipulate the virtual address
 space (see below). The following procedure is used to build the address space:
 
  * Map the kernel image.
- * Map ranges specified by `LAOS_ITAG_MAPPING` tags.
+ * Map ranges specified by `INITIUM_ITAG_MAPPING` tags.
  * Allocate space for other mappings (e.g. tag list, framebuffer, log buffer)
    as well as the stack. Address space for these mappings is allocated within
-   the address range specified by the `LAOS_ITAG_LOAD` tag. They are all
+   the address range specified by the `INITIUM_ITAG_LOAD` tag. They are all
    allocated contiguously, however padding is permitted between mappings only
    as necessary to satisfy any alignment requirements.
 
 A map of the virtual address space is provided in the tag list, see
-`LAOS_TAG_VMEM`. Note that the address space set up by the boot loader is
+`INITIUM_TAG_VMEM`. Note that the address space set up by the boot loader is
 intended to only be temporary. The kernel should build its own address space
-using the information provided by LAOS as soon as possible. The physical
+using the information provided by Initium as soon as possible. The physical
 memory used by the page tables created by boot loader is marked as
-`LAOS_MEMORY_PAGETABLES` in the memory map, allowing it to be identified so
+`INITIUM_MEMORY_PAGETABLES` in the memory map, allowing it to be identified so
 that it can be made free for use once the kernel has switched to its own page
 tables.
 
 On all architectures, the kernel will be entered with a valid stack set up,
 mapped in the virtual address space. Details of the stack mapping are contained
-in the `LAOS_TAG_CORE` information tag. The physical memory used by the stack
-is marked in the memory map as `LAOS_MEMORY_STACK`; if the kernel switches away
+in the `INITIUM_TAG_CORE` information tag. The physical memory used by the stack
+is marked in the memory map as `INITIUM_MEMORY_STACK`; if the kernel switches away
 from this stack as part of its initialization it should be sure to free the
 physical memory used by it.
 
@@ -282,7 +282,7 @@ state upon entry to the kernel is as follows:
  * EBP is 0.
  * ESP points to a valid stack mapped in the virtual address space set up by
    the boot loader.
-    - LAOS magic value at offset 4.
+    - Initium magic value at offset 4.
     - Tag list pointer at offset 8.
 
 Other machine state is not defined. In particular, the state of GDTR and IDTR
@@ -301,12 +301,12 @@ on any mappings.
 To allow the kernel to manipulate the virtual address space, the page directory
 is recursively mapped. A 4MB region of address space is allocated, and the page
 directory entry for that range is set to point to itself. The format of the
-`LAOS_TAG_PAGETABLES` tag for x86 is as follows:
+`INITIUM_TAG_PAGETABLES` tag for x86 is as follows:
 
-    typedef struct laos_tag_pagetables 
+    typedef struct laos_tag_pagetables
 	{
     	laos_tag_t 		header;
-    
+
     	laos_paddr_t 	page_dir;
     	laos_vaddr_t 	mapping;
     } laos_tag_pagetables_t;
@@ -321,7 +321,7 @@ Fields:
 The arguments to the kernel entry point are passed as per the AMD64 ABI. The
 machine state upon entry to the kernel is as follows:
 
- * RDI contains the LAOS magic value.
+ * RDI contains the Initium magic value.
  * RSI contains the tag list pointer.
  * In 64-bit long mode, paging enabled, A20 line is enabled.
  * CS is set to a flat 64-bit read/execute code segment. The exact value is
@@ -346,14 +346,14 @@ To allow the kernel to manipulate the virtual address space, the PML4 is
 recursively mapped. A 512GB region of the virtual address space is allocated,
 and the PML4 entry for that range is set to point to itself. Since this is such
 a large region, it is _not_ allocated from the available range stated in the
-`LAOS_ITAG_LOAD` tag. Instead, the first available PML4 entry searching back
+`INITIUM_ITAG_LOAD` tag. Instead, the first available PML4 entry searching back
 from the end of the virtual address space is chosen. The format of the
-`LAOS_TAG_PAGETABLES` tag for x86_64 is as follows:
+`INITIUM_TAG_PAGETABLES` tag for x86_64 is as follows:
 
-    typedef struct laos_tag_pagetables 
+    typedef struct laos_tag_pagetables
 	{
     	laos_tag_t   header;
-    
+
     	laos_paddr_t pml4;
     	laos_vaddr_t mapping;
     } laos_tag_pagetables_t;
@@ -368,7 +368,7 @@ Fields:
 The arguments to the kernel are passed as per the ARM Procedure Call Standard.
 The machine state upon entry to the kernel is as follows:
 
- * R0 contains the LAOS magic value.
+ * R0 contains the Initium magic value.
  * R1 contains the tag list pointer.
  * Both IRQs and FIQs are disabled.
  * MMU is enabled (TTBR0 = address of first level table, TTBCR.N = 0).
@@ -388,13 +388,13 @@ structures as the first and second level tables have different formats.
 Instead, a 1MB region of the virtual address space is allocated, and the last
 page within it is mapped to the second level table that covers that region.
 The kernel can then set up temporary mappings within this region by modifying
-the page table. The format of the `LAOS_TAG_PAGETABLES` tag for ARM is as
+the page table. The format of the `INITIUM_TAG_PAGETABLES` tag for ARM is as
 follows:
 
-    typedef struct laos_tag_pagetables 
+    typedef struct laos_tag_pagetables
 	{
     	laos_tag_t   header;
-    
+
     	laos_paddr_t l1;
     	laos_vaddr_t mapping;
     } laos_tag_pagetables_t;
@@ -414,14 +414,14 @@ of "information tags". The tag list is a contiguous list of structures, each
 with an identical header identifying the type and size of that tag. The start
 of the tag list is aligned to the page size, and the start of each tag is
 aligned on an 8 byte boundary after the end of the previous tag. The tag list
-is terminated with an `LAOS_TAG_NONE` tag. The tag list is mapped in a virtual
+is terminated with an `INITIUM_TAG_NONE` tag. The tag list is mapped in a virtual
 memory range, and the physical memory containing it is marked in the memory map
-as `LAOS_MEMORY_RECLAIMABLE`. Multiple tags of the same type are guaranteed to
+as `INITIUM_MEMORY_RECLAIMABLE`. Multiple tags of the same type are guaranteed to
 be grouped together in the tag list.
 
 The header of each tag is in the following format:
 
-    typedef struct laos_tag 
+    typedef struct laos_tag
 	{
     	uint32_t type;
     	uint32_t size;
@@ -436,20 +436,20 @@ Fields:
 The following sections define all of the tag types that can appear in the tag
 list (given as "Name (type ID)").
 
-### `LAOS_TAG_NONE` (`0`)
+### `INITIUM_TAG_NONE` (`0`)
 
 This tag signals the end of the tag list. It contains no extra data other than
 the header.
 
-### `LAOS_TAG_CORE` (`1`)
+### `INITIUM_TAG_CORE` (`1`)
 
 This tag is always present in the tag list, and it is always the first tag in
 the list.
 
-    typedef struct laos_tag_core 
+    typedef struct laos_tag_core
 	{
     	laos_tag_t   header;
-    
+
     	laos_paddr_t tags_phys;
     	uint32_t      tags_size;
     	uint32_t      _pad;
@@ -467,22 +467,22 @@ Fields:
  * `tags_size`: Total size of the tag data in bytes, rounded up to an 8 byte
    boundary.
  * `kernel_phys`: The physical load address of the kernel image. This field is
-   only valid when the `LAOS_ITAG_LOAD` tag does not have `LAOS_LOAD_FIXED`
+   only valid when the `INITIUM_ITAG_LOAD` tag does not have `INITIUM_LOAD_FIXED`
    set.
  * `stack_base`: The virtual address of the base of the boot stack.
  * `stack_phys`: The physical address of the base of the boot stack.
  * `stack_size`: The size of the boot stack in bytes.
 
-### `LAOS_TAG_OPTION` (`2`)
+### `INITIUM_TAG_OPTION` (`2`)
 
 This tag gives details of the value of a kernel option. For each option defined
-by a `LAOS_ITAG_OPTION` image tag, a `LAOS_TAG_OPTION` will be present to
+by a `INITIUM_ITAG_OPTION` image tag, a `INITIUM_TAG_OPTION` will be present to
 give the option value.
 
-    typedef struct laos_tag_option 
+    typedef struct laos_tag_option
 	{
     	laos_tag_t header;
-    
+
     	uint8_t     type;
     	uint32_t    name_size;
     	uint32_t    value_size;
@@ -492,21 +492,21 @@ This structure is followed by 2 variable length fields, `name` and `value`.
 
 Fields:
 
- * `type`: Type of the option (see `LAOS_ITAG_OPTION`).
+ * `type`: Type of the option (see `INITIUM_ITAG_OPTION`).
  * `name_size`: Length of the name string, including null terminator.
  * `value_size`: Size of the option value, in bytes.
  * `name`: Name of the option. The start of this field is the end of the tag
    structure, aligned up to an 8 byte boundary.
- * `value`: Value of the option, dependent on the type (see `LAOS_ITAG_OPTION`).
+ * `value`: Value of the option, dependent on the type (see `INITIUM_ITAG_OPTION`).
    The start of this field is the end of the name string, aligned up to an 8
    byte boundary.
 
-### `LAOS_TAG_MEMORY` (`3`)
+### `INITIUM_TAG_MEMORY` (`3`)
 
-The set of `LAOS_TAG_MEMORY` tags in the tag list describe the physical memory
+The set of `INITIUM_TAG_MEMORY` tags in the tag list describe the physical memory
 available for use by the kernel. This memory map is derived from a platform-
 specific memory map and also details which ranges of memory contain the kernel,
-modules, LAOS data, etc. All ranges are page-aligned, and no ranges will
+modules, Initium data, etc. All ranges are page-aligned, and no ranges will
 overlap. The minimum set of ranges possible are given, i.e. adjacent ranges of
 the same type are coalesced into a single range. Note that this memory map does
 _not_ describe platform-specific memory regions such as memory used for ACPI
@@ -515,10 +515,10 @@ additional information may be included in the tag list about such regions. See
 the _Platform Specifics_ section for more information. All memory tags are
 sorted in the tag list by lowest start address first.
 
-    typedef struct laos_tag_memory 
+    typedef struct laos_tag_memory
 	{
     	laos_tag_t   header;
-    
+
     	laos_paddr_t start;
     	laos_paddr_t size;
     	uint8_t       type;
@@ -529,29 +529,29 @@ Fields:
  * `start`: Start address of the range. Aligned to the page size.
  * `size`: Size of the range. Multiple of the page size.
  * `type`: Type of the range. The following types are currently defined:
-    - `LAOS_MEMORY_FREE` (0): Free memory available for the kernel to use.
-    - `LAOS_MEMORY_ALLOCATED` (1): Allocated memory not available for use by
+    - `INITIUM_MEMORY_FREE` (0): Free memory available for the kernel to use.
+    - `INITIUM_MEMORY_ALLOCATED` (1): Allocated memory not available for use by
       the kernel. Such ranges contain the kernel image and the log buffer (if
       any).
-    - `LAOS_MEMORY_RECLAIMABLE` (2): Memory that currently contains LAOS data
+    - `INITIUM_MEMORY_RECLAIMABLE` (2): Memory that currently contains Initium data
       (e.g. the tag list) but can be freed after kernel initialization is
       complete.
-    - `LAOS_MEMORY_PAGETABLES` (3): Memory containing the page tables set up
+    - `INITIUM_MEMORY_PAGETABLES` (3): Memory containing the page tables set up
       by the boot loader.
-    - `LAOS_MEMORY_STACK` (4): Memory containing the stack set up by the boot
+    - `INITIUM_MEMORY_STACK` (4): Memory containing the stack set up by the boot
       loader.
-    - `LAOS_MEMORY_MODULES` (5): Memory containing module data.
+    - `INITIUM_MEMORY_MODULES` (5): Memory containing module data.
 
-### `LAOS_TAG_VMEM` (`4`)
+### `INITIUM_TAG_VMEM` (`4`)
 
-The set of `LAOS_TAG_VMEM` tags describe all virtual memory mappings that
+The set of `INITIUM_TAG_VMEM` tags describe all virtual memory mappings that
 exist in the kernel virtual address space. All virtual memory tags are sorted
 in the tag list by lowest start address first.
 
-    typedef struct laos_tag_vmem 
+    typedef struct laos_tag_vmem
 	{
     	laos_tag_t   header;
-    
+
     	laos_vaddr_t start;
     	laos_vaddr_t size;
     	laos_paddr_t phys;
@@ -565,15 +565,15 @@ Fields:
    to `0xFFFFFFFFFFFFFFFF`, ignore this value (virtual range is a special
    mapping, such as a recursive page directory mapping).
 
-### `LAOS_TAG_PAGETABLES` (`5`)
+### `INITIUM_TAG_PAGETABLES` (`5`)
 
 This tag contains information required to allow the kernel to manipulate virtual
 address mappings. The content of this tag is architecture-specific. For more
 information see the _Kernel Environment_ section.
 
-### `LAOS_TAG_MODULE` (`6`)
+### `INITIUM_TAG_MODULE` (`6`)
 
-LAOS allows "modules" to be loaded and passed to the kernel. As far as LAOS
+Initium allows "modules" to be loaded and passed to the kernel. As far as Initium
 and the boot loader is aware, a module is simply a regular file that is loaded
 into memory and passed to the kernel. Interpretation of the loaded data is up
 to the kernel. Possible uses are loading drivers necessary for the kernel to
@@ -581,10 +581,10 @@ be able to access the boot filesystem, or loading a file system image to run
 the OS from. Each instance of this tag describes one of the modules that has
 been loaded.
 
-    typedef struct laos_tag_module 
+    typedef struct laos_tag_module
 	{
     	laos_tag_t   header;
-    
+
     	laos_paddr_t addr;
     	uint32_t      size;
     	uint32_t      name_size;
@@ -596,32 +596,32 @@ Fields:
 
  * `addr`: Physical address at which the module data is located, aligned to the
    page size. The data is not mapped into the virtual address space. The memory
-   containing module data is marked as `LAOS_MEMORY_MODULES`.
+   containing module data is marked as `INITIUM_MEMORY_MODULES`.
  * `size`: Size of the module data, in bytes.
  * `name_size`: Length of the name string, including null terminator.
  * `name`: Name of the module. This is the base name of the file that the module
    was loaded from.
 
-### `LAOS_TAG_VIDEO` (`7`)
+### `INITIUM_TAG_VIDEO` (`7`)
 
 This tag describes the current video mode. This tag may not always be present,
-whether it is is platform dependent. For more details, see `LAOS_ITAG_VIDEO`
+whether it is is platform dependent. For more details, see `INITIUM_ITAG_VIDEO`
 and the _Platform Specifics_ section.
 
-    typedef struct laos_colour 
+    typedef struct laos_colour
 	{
     	uint8_t red;
     	uint8_t green;
     	uint8_t blue;
     } laos_colour_t;
-    
-    typedef struct laos_tag_video 
+
+    typedef struct laos_tag_video
 	{
     	laos_tag_t header;
-    
+
     	uint32_t     type;
     	uint32_t    _pad;
-    
+
     	union {
     		struct {
     			uint8_t        cols;
@@ -633,7 +633,7 @@ and the _Platform Specifics_ section.
     			laos_vaddr_t  mem_virt;
     			uint32_t       mem_size;
     		} vga;
-    
+
     		struct {
     			uint32_t       flags;
     			uint32_t       width;
@@ -659,11 +659,11 @@ and the _Platform Specifics_ section.
 Fields:
 
  * `type`: One of the available video mode type bits defined in the
-   `LAOS_ITAG_VIDEO` section will be set in this field to indicate the type
+   `INITIUM_ITAG_VIDEO` section will be set in this field to indicate the type
    of the video mode that has been set. The remainder of the structure
    content is dependent on the video mode type.
 
-Fields (`LAOS_VIDEO_VGA`):
+Fields (`INITIUM_VIDEO_VGA`):
 
  * `cols`: Number of columns on the text display (in characters).
  * `lines`: Number of lines on the text display (in characters).
@@ -675,14 +675,14 @@ Fields (`LAOS_VIDEO_VGA`):
    the mapping will be sufficient to access the entire screen (i.e. at least
    `cols * rows * 2`).
 
-Fields (`LAOS_VIDEO_LFB`);
+Fields (`INITIUM_VIDEO_LFB`);
 
  * `flags`: Flags indicating properties of the framebuffer. The lower 8 bits
    contain the colour The following flags
    are currently defined:
-    - `LAOS_LFB_RGB` (bit 0): The framebuffer is in direct RGB colour format.
-    - `LAOS_LFB_INDEXED` (bit 1): The framebuffer is in indexed colour format.
-   The `LAOS_LFB_RGB` and `LAOS_LFB_INDEXED` flags are mutually exclusive.
+    - `INITIUM_LFB_RGB` (bit 0): The framebuffer is in direct RGB colour format.
+    - `INITIUM_LFB_INDEXED` (bit 1): The framebuffer is in indexed colour format.
+   The `INITIUM_LFB_RGB` and `INITIUM_LFB_INDEXED` flags are mutually exclusive.
  * `width`: Width of the video mode, in pixels.
  * `height`: Height of the video mode, in pixels.
  * `bpp`: Bits per pixel.
@@ -692,17 +692,17 @@ Fields (`LAOS_VIDEO_LFB`);
  * `fb_size`: Size of the virtual mapping (multiple of the page size). The size
    of the mapping will be sufficient to access the entire screen (i.e. at least
    `pitch * height`).
- * `red_size`/`green_size`/`blue_size`: For `LAOS_LFB_RGB` modes, these fields
+ * `red_size`/`green_size`/`blue_size`: For `INITIUM_LFB_RGB` modes, these fields
    give the size, in bits, of the red, green and blue components of each pixel.
- * `red_pos`/`green_pos`/`blue_pos`: For `LAOS_LFB_RGB` modes, these fields
+ * `red_pos`/`green_pos`/`blue_pos`: For `INITIUM_LFB_RGB` modes, these fields
    give the bit position within each pixel of the least significant bits of the
    red, green and blue components.
- * `palette_size`: For `LAOS_LFB_INDEXED`, the number of colours in the given
+ * `palette_size`: For `INITIUM_LFB_INDEXED`, the number of colours in the given
    palette.
- * `palette`: For `LAOS_LFB_INDEXED`, a variable length colour palette that
+ * `palette`: For `INITIUM_LFB_INDEXED`, a variable length colour palette that
    has been set up by the boot loader.
 
-### `LAOS_TAG_BOOTDEV` (`8`)
+### `INITIUM_TAG_BOOTDEV` (`8`)
 
 This tag describes the device that the system was booted from.
 
@@ -719,12 +719,12 @@ stored in the `laos_mac_addr_t` type, formatted according to the information
 provided in the tag. IP addresses are stored in the `laos_ip_addr_t` union,
 in network byte order.
 
-    typedef struct laos_tag_bootdev 
+    typedef struct laos_tag_bootdev
 	{
     	laos_tag_t header;
-    
+
     	uint32_t type;
-    
+
     	union {
     		struct {
     			uint32_t         flags;
@@ -733,7 +733,7 @@ in network byte order.
     			uint8_t          partition;
     			uint8_t          sub_partition;
     		} disk;
-    
+
     		struct {
     			uint32_t         flags;
     			laos_ip_addr_t  server_ip;
@@ -751,14 +751,14 @@ Fields:
 
  * `type`: Specifies the type of the boot device. The following device types are
    currently defined:
-    - `LAOS_BOOTDEV_NONE` (0): No boot device. This is the case when booted
+    - `INITIUM_BOOTDEV_NONE` (0): No boot device. This is the case when booted
       from a boot image.
-    - `LAOS_BOOTDEV_DISK` (1): Booted from a disk device.
-    - `LAOS_BOOTDEV_NET` (2): Booted from the network.
-   
+    - `INITIUM_BOOTDEV_DISK` (1): Booted from a disk device.
+    - `INITIUM_BOOTDEV_NET` (2): Booted from the network.
+
    The remainder of the structure is dependent on the device type.
 
-Fields (`LAOS_BOOTDEV_DISK`):
+Fields (`INITIUM_BOOTDEV_DISK`):
 
  * `flags`: Behaviour flags. No flags are currently defined.
  * `uuid`: If not zero-length, the UUID of the boot filesystem. The UUID is
@@ -774,10 +774,10 @@ Fields (`LAOS_BOOTDEV_DISK`):
  * `sub_partition`: Sub-partition number within the partition, e.g. for BSD
    disklabels. If not booted from a sub-partition, will be set to `0xFF`.
 
-Fields (`LAOS_BOOTDEV_NET`):
+Fields (`INITIUM_BOOTDEV_NET`):
 
  * `flags`: Behaviour flags. The following flags are currently defined:
-    - `LAOS_NET_IPV6` (bit 0): The given IP addresses are IPv6 addresses,
+    - `INITIUM_NET_IPV6` (bit 0): The given IP addresses are IPv6 addresses,
       rather than IPv4 addresses.
  * `server_ip`: IP address of the server that was booted from.
  * `server_port`: UDP port number of the TFTP server.
@@ -789,7 +789,7 @@ Fields (`LAOS_BOOTDEV_NET`):
    section of RFC 1700.
  * `hw_addr_len`: Length of the client MAC address.
 
-### `LAOS_TAG_LOG` (`9`)
+### `INITIUM_TAG_LOG` (`9`)
 
 This tag is part of an optional feature that enables the boot loader to display
 a log from the kernel in the event of a crash. As long as the memory that
@@ -798,19 +798,19 @@ recovered by the boot loader. Whether this is supported is platform-dependent
 (currently PC only). It is a rather rudimentary system, however it is useful to
 assist in debugging, particularly on real hardware if no other mechanism is
 available to obtain output from a kernel before a crash. A kernel indicates
-that it wishes to use this feature by setting the `LAOS_IMAGE_LOG` flag in the
-`LAOS_ITAG_IMAGE` tag. If the boot loader supports this feature, this tag type
+that it wishes to use this feature by setting the `INITIUM_IMAGE_LOG` flag in the
+`INITIUM_ITAG_IMAGE` tag. If the boot loader supports this feature, this tag type
 will be included in the tag list.
 
-    typedef struct laos_tag_log 
+    typedef struct laos_tag_log
 	{
     	laos_tag_t   header;
-    
+
     	laos_vaddr_t log_virt;
     	laos_paddr_t log_phys;
     	uint32_t      log_size;
     	uint32_t      _pad;
-    
+
     	laos_paddr_t prev_phys;
     	uint32_t      prev_size;
     } laos_tag_log_t;
@@ -825,19 +825,19 @@ Fields:
    log buffer was available.
 
 The main log buffer will be contained in physical memory marked as
-`LAOS_MEMORY_ALLOCATED`, while the previous log buffer, if any, will be
-contained in physical memory marked as `LAOS_MEMORY_RECLAIMABLE`.
+`INITIUM_MEMORY_ALLOCATED`, while the previous log buffer, if any, will be
+contained in physical memory marked as `INITIUM_MEMORY_RECLAIMABLE`.
 
 The log buffer is a circular buffer. It includes a header at the start, any
 remaining space contains the log itself. The header has the following format:
 
-    typedef struct laos_log 
+    typedef struct laos_log
 	{
     	uint32_t magic;
-    
+
     	uint32_t start;
     	uint32_t length;
-    
+
     	uint32_t info[3];
     	uint8_t  buffer[0];
     } laos_log_t;
@@ -861,10 +861,10 @@ buffer. An algorithm for writing to the buffer is shown below:
 
     log_size = tag->log_size - sizeof(laos_log_t);
     log->buffer[(log->start + log->length) % log_size] = ch;
-    if(log->length < log_size) 
+    if(log->length < log_size)
 	{
     	log->length++;
-    } else 
+    } else
 	{
     	log->start = (log->start + 1) % log_size;
     }
@@ -874,27 +874,27 @@ written back to memory. Therefore, should you wish to ensure that a set of data
 written to the log can be seen by the boot loader, invalidate the CPU cache
 after writing.
 
-### `LAOS_TAG_SECTIONS` (`10`)
+### `INITIUM_TAG_SECTIONS` (`10`)
 
-If the `LAOS_IMAGE_SECTIONS` flag is specified in the `LAOS_ITAG_IMAGE` image
+If the `INITIUM_IMAGE_SECTIONS` flag is specified in the `INITIUM_ITAG_IMAGE` image
 tag, additional loadable sections not normally loaded (`SHT_PROGBITS`,
 `SHT_NOBITS`, `SHT_SYMTAB` and `SHT_STRTAB` sections without the `SHF_ALLOC`
 flag set, e.g. the symbol table and debug information) will be loaded, and this
 tag will be passed containing the section header table. The additional sections
-will be loaded in physical memory marked as `LAOS_MEMORY_ALLOCATED`, and each
+will be loaded in physical memory marked as `INITIUM_MEMORY_ALLOCATED`, and each
 will have its header modified to contain the allocated physical address in the
 `sh_addr` field.
 
-    typedef struct laos_tag_sections 
+    typedef struct laos_tag_sections
 	{
     	laos_tag_t header;
-    
+
     	uint32_t    num;
     	uint32_t    entsize;
     	uint32_t    shstrndx;
-    
+
     	uint32_t    _pad;
-    
+
     	uint8_t     sections[0];
     } laos_tag_sections_t;
 
@@ -910,7 +910,7 @@ Platform Specifics
 ### PC
 
 If a video mode image tag is not included, VGA text mode will be used. If both
-`LAOS_VIDEO_LFB` and `LAOS_VIDEO_VGA` are set, the boot loader will attempt
+`INITIUM_VIDEO_LFB` and `INITIUM_VIDEO_VGA` are set, the boot loader will attempt
 to set a framebuffer mode and fall back on VGA. It is recommended that a
 kernel supports VGA text mode rather than exclusively using an LFB mode, as it
 may not always be possible to set a LFB mode.
@@ -918,18 +918,18 @@ may not always be possible to set a LFB mode.
 There are some information tags that are specific to the PC platform. These are
 detailed below.
 
-#### `LAOS_TAG_E820` (`11`)
+#### `INITIUM_TAG_E820` (`11`)
 
-The PC BIOS provides more memory information than is included in the LAOS
+The PC BIOS provides more memory information than is included in the Initium
 physical memory map. Some of this information is required to support ACPI,
-therefore LAOS will provide an unmodified copy of the BIOS E820 memory map
+therefore Initium will provide an unmodified copy of the BIOS E820 memory map
 to the kernel. The tag list will contain an E820 tag for each address range
 descriptor returned by INT 15h function E820h. All E820 tags will be placed in
 the tag list in the order in which they were returned by the BIOS. Each tag's
 data will contain the tag header and then the data returned by the BIOS. The
 format of each descriptor as of ACPI 5.0 is as follows:
 
-    typedef struct laos_tag_e820 
+    typedef struct laos_tag_e820
 	{
     	laos_tag_t header;
 
@@ -947,7 +947,7 @@ Filesystem UUIDs
 ----------------
 
 Some filesystems, such as ext2/3/4, have their own UUID. For these, the UUID
-field of the `LAOS_TAG_BOOTDEV` tag contains a string representation of the
+field of the `INITIUM_TAG_BOOTDEV` tag contains a string representation of the
 filesystem's UUID. There are others that do not, however for some it is
 possible to give a reasonably unique identifier based on other information.
 This section describes what a boot loader should give as a UUID for certain
@@ -960,4 +960,3 @@ the libblkid library on Linux. If the filesystem has a modification date set,
 that is used, else the creation date is used, and formatted into the following:
 
     yyyy-mm-dd-hh-mm-ss-cc
-

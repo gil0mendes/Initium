@@ -65,7 +65,7 @@ void load_preboot(void) {
 }
 
 /**
- * Main function for the LAOS bootloader
+ * Main function for the Initium bootloader
  */
 void loader_main(void) {
 	// we must have a filesystem to boot from
