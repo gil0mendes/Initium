@@ -31,6 +31,7 @@
 
 #include <console.h>
 #include <loader.h>
+#include <memory.h>
 
 // Serial port parameters (match the defaults given in the EFI spec)
 #define SERIAL_BAUD_RATE	115200
@@ -198,6 +199,7 @@ void efi_console_init() {
     /* Just use the first handle. */
     ret = efi_open_protocol(handles[0], &serial_io_guid,
            EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)&serial_io);
+    free(handles);
     if(ret != EFI_SUCCESS)
            return;
 
