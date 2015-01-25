@@ -61,8 +61,8 @@ INTERFACE_DECL(_EFI_DISK_IO_PROTOCOL);
 // @retval EFI_INVALID_PARAMETER 	The read request contains device addresses
 //		that are not valid for the device.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_DISK_READ) (
+efi_status_t
+(__efiapi *EFI_DISK_READ) (
 	IN struct _EFI_DISK_IO_PROTOCOL      	*This,
 	IN UINT32                   					MediaId,
 	IN UINT64                   					Offset,
@@ -90,8 +90,8 @@ EFI_STATUS
 // @retval EFI_INVALID_PARAMETER 	The write request contains device addresses
 //		that are not valid for the device.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_DISK_WRITE) (
+efi_status_t
+(__efiapi *EFI_DISK_WRITE) (
 	IN struct _EFI_DISK_IO_PROTOCOL      	*This,
 	IN UINT32                   					MediaId,
 	IN UINT64                   					Offset,

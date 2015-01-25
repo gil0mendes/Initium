@@ -34,6 +34,6 @@
 
 #include <elf.h>
 
-extern EFI_STATUS efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn);
+extern efi_status_t efi_arch_relocate(ptr_t load_base, elf_dyn_t *dyn);
 
 #endif /* __EFI_ARCH_EFI_H */

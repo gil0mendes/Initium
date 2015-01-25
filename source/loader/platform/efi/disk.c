@@ -55,7 +55,7 @@ get_disk_count(void) {
 void
 platform_disk_detect(void) {
 	// For handles
-	EFI_STATUS 			status;
+	efi_status_t 			status;
 	UINTN						handleCount = 0;
 	UINTN						handleIndex;
 	EFI_HANDLE 			*handles;

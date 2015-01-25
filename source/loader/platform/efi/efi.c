@@ -49,7 +49,7 @@ static efi_device_path_to_text_protocol_t *device_path_to_text;
  * @param _buffer           Where to store pointer to allocated memory.
  * @return                  EFI status code
  */
-EFI_STATUS efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer) 
+efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer) 
 {
     return efi_call(efi_system_table->boot_services->allocate_pool, pool_type, size, _buffer);
 }
@@ -60,7 +60,7 @@ EFI_STATUS efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void
  * @param buffer            Pointer to memory to free.
  * @return                  EFI status code
  */
-EFI_STATUS efi_free_pool(void *buffer)
+efi_status_t efi_free_pool(void *buffer)
 {
     return efi_call(efi_system_table->boot_services->free_pool, buffer);
 }
@@ -87,7 +87,7 @@ efi_locate_handle(
 {
        EFI_HANDLE *handles = NULL;
        efi_uintn_t size = 0;
-       EFI_STATUS ret;
+       efi_status_t ret;
 
        // Call a first time to get the needed buffer size
        ret = efi_call(efi_system_table->boot_services->locate_handle,
@@ -118,7 +118,7 @@ efi_locate_handle(
 // @param _interface   Where to store pointer to opened interface.
 //
 // @return             EFI status code.
-EFI_STATUS
+efi_status_t
 efi_open_protocol(
     EFI_HANDLE handle, efi_guid_t *protocol, efi_uint32_t attributes,
     void **interface)
@@ -131,7 +131,7 @@ efi_open_protocol(
  * Open the device path protocol for a handle.
  *
  * @param handle            Handle to open for.
- * @return                  Pointer to device path protocol on success, 
+ * @return                  Pointer to device path protocol on success,
  *                          NULL on failure.
  */
 efi_device_path_protocol_t *
@@ -156,7 +156,7 @@ efi_get_device_path(EFI_HANDLE handle)
  * @param data          Data to pass to helper function
  */
 void
-efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, char ch), void *data) 
+efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, char ch), void *data)
 {
     static efi_char16_t unknown[] = {'U', 'n', 'k', 'n', 'o', 'w', 'n'};
 
@@ -182,7 +182,7 @@ efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, c
     str = (device_path_to_text) ? efi_call(device_path_to_text->convert_device_path_to_text, path, false, false) : NULL;
 
     if (!str) {
-        str = unknown;    
+        str = unknown;
     }
 
     for (size_t i = 0; str[i]; i++) {

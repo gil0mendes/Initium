@@ -49,7 +49,7 @@ extern efi_status_t efi_free_pool(void *buffer);
 extern efi_status_t efi_locate_handle(efi_locate_search_type_t search_type,
        efi_guid_t *protocol, void *search_key, efi_handle_t **_handles,
        efi_uintn_t *_num_handles);
-extern EFI_STATUS efi_open_protocol(EFI_HANDLE handle, efi_guid_t *protocol,
+extern efi_status_t efi_open_protocol(EFI_HANDLE handle, efi_guid_t *protocol,
         efi_uint32_t attributes, void **_interface);
 
 extern efi_device_path_protocol_t *efi_get_device_path(efi_handle_t handle);

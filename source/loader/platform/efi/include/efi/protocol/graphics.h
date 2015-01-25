@@ -143,8 +143,8 @@ typedef enum {
   @retval EFI_DEVICE_ERROR      A hardware error occured writting to the video buffer.
 **/
 typedef
-EFI_STATUS
-(EFIAPI *efi_graphics_output_protocol_blt) (
+efi_status_t
+(__efiapi *efi_graphics_output_protocol_blt) (
 	efi_graphics_output_protocol_t			*this,
 	efi_graphics_output_blt_pixel_t			*bltBuffer,
 	efi_graphics_output_blt_operation_t		bltOperation,
@@ -168,8 +168,8 @@ EFI_STATUS
   @retval EFI_UNSUPPORTED   ModeNumber is not supported by this device.
 **/
 typedef
-EFI_STATUS
-(EFIAPI *efi_graphics_output_protocol_set_mode) (
+efi_status_t
+(__efiapi *efi_graphics_output_protocol_set_mode) (
 	efi_graphics_output_protocol_t	*this,
 	efi_uint32_t					modeNumber
 );
@@ -189,8 +189,8 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER One of the input args was NULL.
 **/
 typedef
-EFI_STATUS
-(EFIAPI *efi_graphics_output_protocol_query_mode) (
+efi_status_t
+(__efiapi *efi_graphics_output_protocol_query_mode) (
 	efi_graphics_output_protocol_t 			*this,
 	efi_uint32_t 							ModeNumber,
 	efi_uintn_t 							*SizeOfInfo,

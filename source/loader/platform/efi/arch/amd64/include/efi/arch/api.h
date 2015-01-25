@@ -37,7 +37,7 @@
 #endif
 
 //
-// EFIAPI           - prototype calling convention for EFI function pointers
+// __efiapi           - prototype calling convention for EFI function pointers
 // BOOTSERVICE      - prototype for implementation of a boot service interface
 // RUNTIMESERVICE   - prototype for implementation of a runtime service interface
 // RUNTIMEFUNCTION  - prototype for implementation of a runtime function that is not a service
@@ -51,7 +51,7 @@
  * attribute, however support for it in clang does not work right, so for now
  * we use the normal calling convention and convert in a wrapper function.
  */
-#define EFIAPI
+#define __efiapi
 
 #define BOOTSERVICE
 #define RUNTIMESERVICE

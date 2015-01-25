@@ -49,7 +49,7 @@ efi_system_table_t *efi_system_table;
  *
  * @return   EFI Status code
  */
- EFI_STATUS platform_init(EFI_HANDLE image, efi_system_table_t *systab) {
+ efi_status_t platform_init(EFI_HANDLE image, efi_system_table_t *systab) {
     // Save image handler
     efi_image_handle = image;
 

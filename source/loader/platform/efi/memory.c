@@ -204,7 +204,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
     efi_memory_descriptor_t *memory_map;
     efi_uintn_t num_entries, map_key, i;
     efi_physical_address_t start;
-    EFI_STATUS ret;
+    efi_status_t ret;
 
     // If align not defined use page size
     if(!align) {
@@ -296,7 +296,7 @@ void
 efi_memory_init(void) {
     efi_memory_descriptor_t *memory_map;
     efi_uintn_t num_entries, map_key, i;
-    EFI_STATUS ret;
+    efi_status_t ret;
 
     // For informational purposes, we print out a list of all the usable
     // memory we see in the memory map. Don't print out everything, the

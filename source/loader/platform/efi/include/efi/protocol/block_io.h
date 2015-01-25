@@ -56,8 +56,8 @@ INTERFACE_DECL(_EFI_BLOCK_IO_PROTOCOL);
 // @retval EFI_DEVICE_ERROR 	The block device is not functioning correctly and
 //		could not be reset.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_BLOCK_RESET) (
+efi_status_t
+(__efiapi *EFI_BLOCK_RESET) (
 	IN struct _EFI_BLOCK_IO_PROTOCOL 		*This,
 	IN BOOLEAN 													ExtendedVerification
 	);
@@ -85,8 +85,8 @@ EFI_STATUS
 // @retval EFI_INVALID_PARAMETER The read request contains LBAs that are not
 // 		valid, or the buffer is not on proper alignment.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_BLOCK_READ) (
+efi_status_t
+(__efiapi *EFI_BLOCK_READ) (
 	IN struct _EFI_BLOCK_IO_PROTOCOL     	*This,
 	IN UINT32                   					MediaId,
 	IN EFI_LBA                  					LBA,
@@ -115,8 +115,8 @@ EFI_STATUS
 // @retval EFI_INVALID_PARAMETER 	The write request contains LBAs that are not
 // 		valid, or the buffer is not on proper alignment.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_BLOCK_WRITE) (
+efi_status_t
+(__efiapi *EFI_BLOCK_WRITE) (
 	IN struct _EFI_BLOCK_IO_PROTOCOL     	*This,
 	IN UINT32                   					MediaId,
 	IN EFI_LBA                  					LBA,
@@ -135,8 +135,8 @@ EFI_STATUS
 //		write data.
 // @retval EFI_NO_MEDIA 			There is no media in the device.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_BLOCK_FLUSH) (
+efi_status_t
+(__efiapi *EFI_BLOCK_FLUSH) (
 	IN struct _EFI_BLOCK_IO_PROTOCOL     *This
 	);
 

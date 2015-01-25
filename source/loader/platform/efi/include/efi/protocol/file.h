@@ -57,8 +57,8 @@ INTERFACE_DECL(_EFI_FILE_PROTOCOL);
 // 		are no longer valid. To access the files on the new medium, the volume
 // 		must be reopened with OpenVolume().
 typedef
-EFI_STATUS
-(EFIAPI *EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME) (
+efi_status_t
+(__efiapi *EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME) (
 	IN struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
 	OUT struct _EFI_FILE_PROTOCOL **Root
 	);
@@ -99,7 +99,7 @@ typedef struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
 // Token type definition
 typedef struct {
 	EFI_EVENT 		Event;
-	EFI_STATUS		Status;
+	efi_status_t		Status;
 	UINTN					BufferSize;
 	VOID					*Buffer;
 } EFI_FILE_IO_TOKEN;
@@ -135,8 +135,8 @@ typedef struct {
 //		the file.
 // @retval EFI_VOLUME_FULL 			The volume is full.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_OPEN) (
+efi_status_t
+(__efiapi *EFI_FILE_OPEN) (
 	IN struct _EFI_FILE_PROTOCOL  *This,
 	OUT struct _EFI_FILE_PROTOCOL **NewHandle,
 	IN CHAR16                   	*FileName,
@@ -152,8 +152,8 @@ EFI_STATUS
 //
 // @retval EFI_SUCCESS The file was closed.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_CLOSE) (
+efi_status_t
+(__efiapi *EFI_FILE_CLOSE) (
     IN struct _EFI_FILE_PROTOCOL  *This
     );
 
@@ -168,8 +168,8 @@ EFI_STATUS
 // @param EFI_WARN_DELETE_FAILURE 	The handle was closed, but the file was
 //		not deleted.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_DELETE) (
+efi_status_t
+(__efiapi *EFI_FILE_DELETE) (
     IN struct _EFI_FILE_PROTOCOL  *This
     );
 
@@ -194,8 +194,8 @@ EFI_STATUS
 //		current directory entry. BufferSize has been updated with the size
 //		needed to complete the request.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_READ) (
+efi_status_t
+(__efiapi *EFI_FILE_READ) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     IN OUT UINTN                	*BufferSize,
     OUT VOID                    	*Buffer
@@ -220,8 +220,8 @@ EFI_STATUS
 // @retval EFI_ACCESS_DENIED 			The file was opened read only.
 // @retval EFI_VOLUME_FULL 				The volume is full.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_WRITE) (
+efi_status_t
+(__efiapi *EFI_FILE_WRITE) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     IN OUT UINTN                	*BufferSize,
     IN VOID                     	*Buffer
@@ -262,8 +262,8 @@ EFI_STATUS
 //		file due to lack of resources.
 // @retval EFI_VOLUME_FULL 				The volume is full.
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_OPEN_EX) (
+efi_status_t
+(__efiapi *EFI_FILE_OPEN_EX) (
 	IN struct _EFI_FILE_PROTOCOL			*This,
 	OUT struct _EFI_FILE_PROTOCOL			**NewHandle,
 	IN CHAR16 												*FileName,
@@ -275,8 +275,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_READ_EX) (
+efi_status_t
+(__efiapi *EFI_FILE_READ_EX) (
 	IN struct _EFI_FILE_PROTOCOL 	*This,
 	IN OUT EFI_FILE_IO_TOKEN 	  	*Token
 	);
@@ -284,8 +284,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_WRITE_EX) (
+efi_status_t
+(__efiapi *EFI_FILE_WRITE_EX) (
 	IN struct _EFI_FILE_PROTOCOL 			*This,
 	IN OUT EFI_FILE_IO_TOKEN 	*Token
 	);
@@ -293,8 +293,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_FLUSH_EX) (
+efi_status_t
+(__efiapi *EFI_FILE_FLUSH_EX) (
 	IN struct _EFI_FILE_PROTOCOL 			*This,
 	IN OUT EFI_FILE_IO_TOKEN 	*Token
 	);
@@ -305,8 +305,8 @@ EFI_STATUS
 // @param This
 // @param Position
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_SET_POSITION) (
+efi_status_t
+(__efiapi *EFI_FILE_SET_POSITION) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     IN UINT64                   	Position
     );
@@ -314,8 +314,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_GET_POSITION) (
+efi_status_t
+(__efiapi *EFI_FILE_GET_POSITION) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     OUT UINT64                  	*Position
     );
@@ -323,8 +323,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_GET_INFO) (
+efi_status_t
+(__efiapi *EFI_FILE_GET_INFO) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     IN EFI_GUID                 	*InformationType,
     IN OUT UINTN                	*BufferSize,
@@ -334,8 +334,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_SET_INFO) (
+efi_status_t
+(__efiapi *EFI_FILE_SET_INFO) (
     IN struct _EFI_FILE_PROTOCOL  *This,
     IN EFI_GUID                 	*InformationType,
     IN UINTN                    	BufferSize,
@@ -345,8 +345,8 @@ EFI_STATUS
 // ============================================================================
 //
 typedef
-EFI_STATUS
-(EFIAPI *EFI_FILE_FLUSH) (
+efi_status_t
+(__efiapi *EFI_FILE_FLUSH) (
     IN struct _EFI_FILE_PROTOCOL  *This
     );
 
