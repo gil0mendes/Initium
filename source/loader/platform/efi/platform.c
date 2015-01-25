@@ -59,6 +59,10 @@ efi_system_table_t *efi_system_table;
     // Initialize architecture code
     arch_init();
 
+    // Firmware is required to set a 5 minute watchdog timer before
+    // running an image. Disable it.
+    efi_call(efi_system_table->boot_services->set_watchdog_timer, 0, 0, 0, NULL);
+
     // Initialise console
     efi_console_init();
 
