@@ -37,26 +37,6 @@
 #endif
 
 //
-// To export & import functions in the EFI emulator environment
-//
-
-#ifdef EFI_NT_EMULATOR
-    #define EXPORTAPI           __declspec( dllexport )
-#else
-    #define EXPORTAPI
-#endif
-
-#if defined(GNU_EFI_USE_MS_ABI)
-    #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
-        #define HAVE_USE_MS_ABI 1
-    #else
-        #error Compiler is too old for GNU_EFI_USE_MS_ABI
-    #endif
-#else
-  #define HAVE_USE_MS_ABI 1
-#endif
-
-//
 // EFIAPI           - prototype calling convention for EFI function pointers
 // BOOTSERVICE      - prototype for implementation of a boot service interface
 // RUNTIMESERVICE   - prototype for implementation of a runtime service interface
@@ -85,8 +65,7 @@
 
 #define MEMORY_FENCE()
 
-/**
- * Mostly borrowed from here:
+/* Mostly borrowed from here:
  *
  * http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
  */
@@ -118,17 +97,17 @@
  * EFI call wrapper.
  *
  * We wrap EFI calls both to convert between calling conventions and to restore
- * the firmware's GDT/IDT before calling, adn restore ours afterward. This is a
+ * the firmware's GDT/IDT before calling, and restore ours afterward. This is a
  * horrible bundle of preprocessor abuse that forwards EFI calls to the right
  * wrapper for the number of arguments, while keeping type safety.
  */
-#define efi_call(func, args...) \
-       __extension__ \
-       ({ \
-               typeof(func) __wrapper = (typeof(func)) __efi_vcall(__VA_NARG(__VA_NARG__)); \
-               __efi_call_func = (void *)func; \
-               __wrapper(__VA_ARGS__); \
-       })
+#define efi_call(func, ...) \
+    __extension__ \
+    ({ \
+        typeof(func) __wrapper = (typeof(func)) __efi_vcall(__VA_NARG(__VA_ARGS__)); \
+        __efi_call_func = (void *)func; \
+        __wrapper(__VA_ARGS__); \
+    })
 
 extern void *__efi_call_func;
 

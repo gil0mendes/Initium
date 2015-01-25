@@ -180,9 +180,10 @@ clearScreen(pixel_t *color) {
 	fill_color.Blue 		= color->b;
 	fill_color.Reserved 	= 1;
 
+	/* TODO: Fix this on future
 	efi_call(graphics_output->blt, graphics_output,
 		(efi_graphics_output_blt_pixel_t *)&fill_color,
-		EfiBltVideoFill, 0, 0, 0, 0, screen_width, screen_height, 0);
+		EfiBltVideoFill, 0, 0, 0, 0, screen_width, screen_height, 0);*/
 }
 
 // ============================================================================
@@ -205,7 +206,8 @@ drawImage(image_t *image, uint32_t posX, uint32_t posY) {
 	}
 
 	// Call EFI function
+	/* TODO: Fix this on future
 	efi_call(graphics_output->blt, graphics_output,
 		(efi_graphics_output_blt_pixel_t *)image->pixelData, EfiBltBufferToVideo,
-		0, 0, posX, posY, image->width, image->height, 0);
+		0, 0, posX, posY, image->width, image->height, 0);*/
 }
