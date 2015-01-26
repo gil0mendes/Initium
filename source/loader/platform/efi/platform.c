@@ -36,7 +36,7 @@
 extern void loader_main(void);
 
 // Handle to the loader image
-EFI_HANDLE efi_image_handle;
+efi_handle_t efi_image_handle;
 
 // Pointer to the EFI system table
 efi_system_table_t *efi_system_table;
@@ -49,7 +49,7 @@ efi_system_table_t *efi_system_table;
  *
  * @return   EFI Status code
  */
- efi_status_t platform_init(EFI_HANDLE image, efi_system_table_t *systab) {
+ efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab) {
     // Save image handler
     efi_image_handle = image;
 
@@ -65,12 +65,13 @@ efi_system_table_t *efi_system_table;
 
     // Initialise console
     efi_console_init();
+    dprintf("efi: load base %p\n", __start);
 
     // Initialise memory map
     efi_memory_init();
 
     // Initialize disk
-    disk_init();
+    efi_disk_init();
 
     // Initialize screen
     screenInit();

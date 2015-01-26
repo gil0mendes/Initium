@@ -132,7 +132,7 @@ setScreenSize(uint32_t width_ts, uint32_t height_ts) {
 void
 screenInit(void) {
 	// For handles
-	EFI_HANDLE *handles;
+	efi_handle_t *handles;
 	efi_uintn_t num_handles;
 	efi_status_t status = EFI_SUCCESS;
 

@@ -70,7 +70,7 @@ device_t *device_lookup(const char *str) {
 		name[len] = 0;
 	}
 
-	LIST_FOREACH(&device_list, iter) {
+	list_foreach(&device_list, iter) {
 		device = list_entry(iter, device_t, header);
 
 		if(name) {

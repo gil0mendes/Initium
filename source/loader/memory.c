@@ -80,7 +80,7 @@ void *malloc(size_t size) {
 		list_append(&heap_chunks, &chunk->header);
 	} else {
 		/* Search for a free chunk. */
-		LIST_FOREACH(&heap_chunks, iter) {
+		list_foreach(&heap_chunks, iter) {
 			chunk = list_entry(iter, heap_chunk_t, header);
 			if(!chunk->allocated && chunk->size >= total) {
 				break;
@@ -168,7 +168,7 @@ void free(void *addr) {
 void memory_dump(list_t *memory_map) {
        memory_range_t *range;
 
-       LIST_FOREACH(memory_map, iter) {
+       list_foreach(memory_map, iter) {
                range = list_entry(iter, memory_range_t, header);
 
                dprintf(" 0x%016" PRIxPHYS "-0x%016" PRIxPHYS ": ",
@@ -256,7 +256,7 @@ static void memory_range_insert(phys_ptr_t start, phys_size_t size, uint8_t type
        range_end = start + size - 1;
 
        /* Try to find where to insert the region in the list. */
-       LIST_FOREACH(&memory_ranges, iter) {
+       list_foreach(&memory_ranges, iter) {
                other = list_entry(iter, memory_range_t, header);
                if(start <= other->start) {
                        list_add_before(&other->header, &range->header);
@@ -289,7 +289,7 @@ static void memory_range_insert(phys_ptr_t start, phys_size_t size, uint8_t type
        }
 
        /* Swallow up any following ranges that the new range overlaps. */
-       LIST_FOREACH_SAFE(&range->header, iter) {
+       list_foreach_safe(&range->header, iter) {
                if(iter == &memory_ranges)
                        break;
 
@@ -399,7 +399,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
 
        /* Find a free range that is large enough to hold the new range. */
        if(flags & MEMORY_ALLOC_HIGH) {
-               LIST_FOREACH_REVERSE(&memory_ranges, iter) {
+               list_foreach_REVERSE(&memory_ranges, iter) {
                        range = list_entry(iter, memory_range_t, header);
 
                        found = is_suitable_range(range, size, align, min_addr,
@@ -408,7 +408,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
                                break;
                }
        } else {
-               LIST_FOREACH(&memory_ranges, iter) {
+               list_foreach(&memory_ranges, iter) {
                        range = list_entry(iter, memory_range_t, header);
 
                        found = is_suitable_range(range, size, align, min_addr,
@@ -460,7 +460,7 @@ void memory_protect(phys_ptr_t start, phys_size_t size) {
        start = round_down(start, PAGE_SIZE);
        end = round_up(start + size, PAGE_SIZE) - 1;
 
-       LIST_FOREACH_SAFE(&memory_ranges, iter) {
+       list_foreach_safe(&memory_ranges, iter) {
                range = list_entry(iter, memory_range_t, header);
                if(range->type != MEMORY_TYPE_FREE)
                        continue;
@@ -504,7 +504,7 @@ void memory_finalize(list_t *memory_map) {
        memory_range_t *range;
 
        /* Reclaim all internal memory ranges. */
-       LIST_FOREACH(&memory_ranges, iter) {
+       list_foreach(&memory_ranges, iter) {
                range = list_entry(iter, memory_range_t, header);
 
                if(range->type == MEMORY_TYPE_INTERNAL) {

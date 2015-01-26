@@ -37,7 +37,7 @@ extern UINTN volumesCount;
 
 typedef struct {
    EFI_DEVICE_PATH     *DevicePath;
-   EFI_HANDLE          DeviceHandle;
+   efi_handle_t          DeviceHandle;
    EFI_FILE            *RootDir;
    //CHAR16              *VolName;
    //EG_IMAGE            *VolIconImage;

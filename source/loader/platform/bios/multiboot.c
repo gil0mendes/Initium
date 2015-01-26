@@ -104,7 +104,7 @@ multiboot_iterate(file_handle_t *handle, dir_iterate_cb_t cb, void *arg)
     file_handle_t *child;
     bool ret;
 
-    LIST_FOREACH(&multiboot_files, iter) {
+    list_foreach(&multiboot_files, iter) {
         file = list_entry(iter, multiboot_file_t, header);
 
         child = file_handle_create(handle->mount, false, file);

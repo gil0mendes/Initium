@@ -252,5 +252,5 @@ disk_t
 //
 void
 disk_init() {
-	platform_disk_detect();
+	//platform_disk_detect();
 }

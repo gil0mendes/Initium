@@ -30,10 +30,10 @@ from util import FeatureSources
 sources = FeatureSources(config, [
   'efi.c',
   'disk.c',
-  'platform.c',
-  'console.c',
   'memory.c',
   'screen.c',
+  'console.c',
+  'platform.c',
 ])
 
 # Add architecture-specific headers.

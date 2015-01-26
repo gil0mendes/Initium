@@ -255,7 +255,7 @@ static command_list_t *command_list_copy(command_list_t *source) {
 
 	list_init(dest);
 
-	LIST_FOREACH(source, iter) {
+	list_foreach(source, iter) {
 		entry = list_entry(iter, command_list_entry_t, header);
 
 		copy = malloc(sizeof(command_list_entry_t));
@@ -273,7 +273,7 @@ static command_list_t *command_list_copy(command_list_t *source) {
 static void command_list_destroy(command_list_t *list) {
 	command_list_entry_t *command;
 
-	LIST_FOREACH_SAFE(list, iter) {
+	list_foreach_safe(list, iter) {
 		command = list_entry(iter, command_list_entry_t, header);
 
 		list_remove(&command->header);
@@ -562,7 +562,7 @@ bool command_list_exec(command_list_t *list, environ_t **envp) {
 	if(envp)
 		*envp = env;
 
-	LIST_FOREACH(list, iter) {
+	list_foreach(list, iter) {
 		entry = list_entry(iter, command_list_entry_t, header);
 		if(!command_exec(entry)) {
 			current_environ = prev;
@@ -613,7 +613,7 @@ environ_t *environ_create(environ_t *parent) {
 value_t *environ_lookup(environ_t *env, const char *name) {
 	environ_entry_t *entry;
 
-	LIST_FOREACH(&env->entries, iter) {
+	list_foreach(&env->entries, iter) {
 		entry = list_entry(iter, environ_entry_t, header);
 		if(strcmp(entry->name, name) == 0)
 			return &entry->value;
@@ -631,7 +631,7 @@ value_t *environ_insert(environ_t *env, const char *name, value_t *value) {
 	environ_entry_t *entry;
 
 	/* Look for an existing entry with the same name. */
-	LIST_FOREACH(&env->entries, iter) {
+	list_foreach(&env->entries, iter) {
 		entry = list_entry(iter, environ_entry_t, header);
 		if(strcmp(entry->name, name) == 0) {
 			value_destroy(&entry->value);
@@ -657,7 +657,7 @@ void environ_remove(environ_t *env, const char *name) {
 	environ_entry_t *entry;
 
 	/* Look for an existing entry with the same name. */
-	LIST_FOREACH(&env->entries, iter) {
+	list_foreach(&env->entries, iter) {
 		entry = list_entry(iter, environ_entry_t, header);
 		if(strcmp(entry->name, name) == 0) {
 			list_remove(&entry->header);
@@ -674,7 +674,7 @@ void environ_remove(environ_t *env, const char *name) {
 void environ_destroy(environ_t *env) {
 	environ_entry_t *entry;
 
-	LIST_FOREACH_SAFE(&env->entries, iter) {
+	list_foreach_safe(&env->entries, iter) {
 		entry = list_entry(iter, environ_entry_t, header);
 
 		list_remove(&entry->header);
@@ -720,7 +720,7 @@ void config_init(void) {
 			boot_error("Specified configuration file does not exist");
 	} else {
 		/* Try the various paths. */
-		for(i = 0; i < ARRAY_SIZE(config_file_paths); i++) {
+		for(i = 0; i < array_size(config_file_paths); i++) {
 			if(config_load(config_file_paths[i]))
 				return;
 		}

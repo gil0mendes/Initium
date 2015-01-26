@@ -134,7 +134,7 @@ static uint16_t efi_console_getc(void) {
                }
 
                if(key.scan_code) {
-                       if(key.scan_code >= ARRAY_SIZE(efi_scan_codes)) {
+                       if(key.scan_code >= array_size(efi_scan_codes)) {
                                continue;
                        } else if(!efi_scan_codes[key.scan_code]) {
                                continue;
@@ -178,7 +178,7 @@ static console_out_ops_t efi_serial_out_ops = {
  * Initialize the EFI console
  */
 void efi_console_init() {
-    EFI_HANDLE *handles;
+    efi_handle_t *handles;
     efi_uintn_t num_handles;
     efi_status_t ret;
     console_out = efi_system_table->con_out;

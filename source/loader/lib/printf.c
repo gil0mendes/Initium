@@ -49,12 +49,12 @@
 /** Internal printf() state. */
 typedef struct printf_state {
 	printf_helper_t helper;		/**< Helper function. */
-	void *data;			/**< Argument to helper. */
-	int total;			/**< Current output total. */
-	unsigned flags;			/**< Flags for the current item. */
-	long width;			/**< Width of current item. */
-	long precision;			/**< Precision of current item. */
-	int base;			/**< Base of current item. */
+	void *data;					/**< Argument to helper. */
+	int total;					/**< Current output total. */
+	unsigned flags;				/**< Flags for the current item. */
+	long width;					/**< Width of current item. */
+	long precision;				/**< Precision of current item. */
+	int base;					/**< Base of current item. */
 } printf_state_t;
 
 /** Digits to use for printing numbers. */
@@ -184,7 +184,7 @@ static void print_pointer(printf_state_t *state, const char **fmt, void *ptr) {
         case 'E':
 #ifdef CONFIG_PLATFORM_EFI
             ++(*fmt);
-            efi_print_device_path((efi_device_path_protocol_t *)ptr, (void *)print_char, state);
+            efi_print_device_path((efi_device_path_t *)ptr, (void *)print_char, state);
 #endif
         default:
 	        state->base = 16;

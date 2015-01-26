@@ -83,7 +83,7 @@ vbe_mode_t *vbe_mode_find(uint16_t width, uint16_t height, uint8_t depth) {
     vbe_mode_t *mode, *ret = NULL;
 
     // Iterate all modes
-    LIST_FOREACH(&vbe_modes, iter) {
+    list_foreach(&vbe_modes, iter) {
         mode = list_entry(iter, vbe_mode_t, header);
 
         // Check if the mode match with the required resolution

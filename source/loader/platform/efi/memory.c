@@ -65,7 +65,7 @@
  * @param _memory_map   Where to store pointer to memory map.
  * @param _num_entries  Where to store number of entries in memory map.
  * @param _map_key      Where to store the key for the current memory map.
- * 
+ *
  * @return              EFI status code.
  */
 static efi_status_t efi_get_memory_map(
@@ -290,10 +290,10 @@ memory_finalize(list_t *memory_map) {
     internal_error("memory_finalize: TODO");
 }
 
-// ============================================================================
-// Initialize the EFI memory allocator
-void
-efi_memory_init(void) {
+/**
+ * Initialize the EFI memory allocator
+ */
+void efi_memory_init(void) {
     efi_memory_descriptor_t *memory_map;
     efi_uintn_t num_entries, map_key, i;
     efi_status_t ret;
@@ -319,9 +319,10 @@ efi_memory_init(void) {
         }
 
         // Print entry range (only for informational pursoses)
-        dprintf(" 0x%016" PRIxPHYS "-0x%016" PRIxPHYS "\n",
+        dprintf(" 0x%016" PRIxPHYS "-0x%016" PRIxPHYS " (%" PRIu64 " KiB)\n",
                 memory_map[i].physical_start,
-                memory_map[i].physical_start + (memory_map[i].num_pages * EFI_PAGE_SIZE));
+                memory_map[i].physical_start + (memory_map[i].num_pages * EFI_PAGE_SIZE),
+                (memory_map[i].num_pages * EFI_PAGE_SIZE / 1024));
     }
 
     // Free memory map pointer

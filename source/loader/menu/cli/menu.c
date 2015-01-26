@@ -105,7 +105,7 @@ static menu_entry_t
 	uint64_t i = 0;
 
 	if ((value = environ_lookup(root_environ, "default"))) {
-		LIST_FOREACH(&menu_entries, iter) {
+		list_foreach(&menu_entries, iter) {
 			entry = list_entry(iter, menu_entry_t, link);
 
 			if (value->type == VALUE_TYPE_INTEGER) {
@@ -224,14 +224,14 @@ menu_entry_render(ui_entry_t *_entry) {
 // Menu entry UI entry type.
 static ui_entry_type_t menu_entry_type = {
 	.actions = menu_entry_actions,
-	.action_count = ARRAY_SIZE(menu_entry_actions),
+	.action_count = array_size(menu_entry_actions),
 	.render = menu_entry_render,
 };
 
 // Configurable menu entry UI entry type
 static ui_entry_type_t configurable_menu_entry_type = {
 	.actions = configurable_menu_entry_actions,
-	.action_count = ARRAY_SIZE(configurable_menu_entry_actions),
+	.action_count = array_size(configurable_menu_entry_actions),
 	.render = menu_entry_render,
 };
 
@@ -280,7 +280,7 @@ environ_t
 		// Construct the menu
 		window = uiListCreate("Boot Menu", false);
 
-		LIST_FOREACH(&menu_entries, iter) {
+		list_foreach(&menu_entries, iter) {
 			entry = list_entry(iter, menu_entry_t, link);
 
 			// If the entry's loader returns a configuration window,

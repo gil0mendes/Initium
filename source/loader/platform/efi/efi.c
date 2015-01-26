@@ -49,7 +49,7 @@ static efi_device_path_to_text_protocol_t *device_path_to_text;
  * @param _buffer           Where to store pointer to allocated memory.
  * @return                  EFI status code
  */
-efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer) 
+efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer)
 {
     return efi_call(efi_system_table->boot_services->allocate_pool, pool_type, size, _buffer);
 }
@@ -85,7 +85,7 @@ efi_locate_handle(
     efi_locate_search_type_t search_type, efi_guid_t *protocol,
     void *search_key, efi_handle_t **_handles, efi_uintn_t *_num_handles)
 {
-       EFI_HANDLE *handles = NULL;
+       efi_handle_t *handles = NULL;
        efi_uintn_t size = 0;
        efi_status_t ret;
 
@@ -102,7 +102,7 @@ efi_locate_handle(
        }
 
        *_handles = handles;
-       *_num_handles = size / sizeof(EFI_HANDLE);
+       *_num_handles = size / sizeof(efi_handle_t);
        return ret;
 }
 
@@ -120,7 +120,7 @@ efi_locate_handle(
 // @return             EFI status code.
 efi_status_t
 efi_open_protocol(
-    EFI_HANDLE handle, efi_guid_t *protocol, efi_uint32_t attributes,
+    efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
     void **interface)
 {
        return efi_call(efi_system_table->boot_services->open_protocol, handle,
@@ -134,18 +134,21 @@ efi_open_protocol(
  * @return                  Pointer to device path protocol on success,
  *                          NULL on failure.
  */
-efi_device_path_protocol_t *
-efi_get_device_path(EFI_HANDLE handle)
+efi_device_path_t *efi_get_device_path(efi_handle_t handle)
 {
-    void *interface;
+    efi_device_path_t *path;
     efi_status_t ret;
 
-    ret = efi_open_protocol(handle, &device_path_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, &interface);
+    ret = efi_open_protocol(handle, &device_path_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)&path);
     if (ret != EFI_SUCCESS) {
         return NULL;
     }
 
-    return interface;
+    if (path->type == EFI_DEVICE_PATH_TYPE_END) {
+        return NULL;
+    }
+
+    return path;
 }
 
 /**
@@ -156,7 +159,7 @@ efi_get_device_path(EFI_HANDLE handle)
  * @param data          Data to pass to helper function
  */
 void
-efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, char ch), void *data)
+efi_print_device_path(efi_device_path_t *path, void (*cb)(void *data, char ch), void *data)
 {
     static efi_char16_t unknown[] = {'U', 'n', 'k', 'n', 'o', 'w', 'n'};
 
@@ -179,7 +182,7 @@ efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, c
     }
 
     // Get the device path string
-    str = (device_path_to_text) ? efi_call(device_path_to_text->convert_device_path_to_text, path, false, false) : NULL;
+    str = (path && device_path_to_text) ? efi_call(device_path_to_text->convert_device_path_to_text, path, false, false) : NULL;
 
     if (!str) {
         str = unknown;
@@ -195,4 +198,25 @@ efi_print_device_path(efi_device_path_protocol_t *path, void (*cb)(void *data, c
     if (str != unknown) {
         efi_free_pool(str);
     }
+}
+
+/**
+ * Determine if a device path is a child of another.
+ *
+ * @param  parent Parent device path
+ * @param  child  Child device path
+ * @return        Whether child is a child of parent
+ */
+bool efi_is_child_device_node(efi_device_path_t *parent, efi_device_path_t *child)
+{
+    while (parent) {
+        if (memcmp(child, parent, min(parent->length, child->length)) != 0) {
+            return false;
+        }
+
+        parent = efi_next_device_node(parent);
+        child = efi_next_device_node(child);
+    }
+
+    return child != NULL;
 }
