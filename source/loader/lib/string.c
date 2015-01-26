@@ -121,8 +121,7 @@ void *memmove(void *dest, const void *src, size_t count) {
  *                  p1 is found, respectively, to be less than, to match,
  *                  or to be freater than p2
  */
-int
-memcmp(const void *p1, const void *p2, size_t count)
+int memcmp(const void *p1, const void *p2, size_t count)
 {
     const unsigned char *s1 = (const unsigned char *)p1;
     const unsigned char *s2 = (const unsigned char *)p2;
@@ -408,7 +407,8 @@ char *strcat(char *__restrict dest, const char *__restrict src) {
  * Allocates a buffer big enough to hold the given string and copies the
  * string to it. The pointer returned should be freed with free();
  *
- * @param src 	Pointer to the source buffer
+ * @param src 		Pointer to the source buffer
+ *
  * @return			Pointer to the allocated buffer containing the string
  */
 char *strdup(const char *src) {
@@ -416,7 +416,38 @@ char *strdup(const char *src) {
 	char *dup;
 
 	dup = malloc(len);
-	memcpy(dup, src, len);
+	if (dup) {
+		memcpy(dup, src, len);
+	}
+
+	return dup;
+}
+
+/**
+ * Duplicate a string with a length limit.
+ *
+ * Allocates a buffer wither as big as the string or the maximum length
+ * given, and then copies at most the number of bytes specified of the string
+ * to it. If the string is longer than the limit, a null byte will be added
+ * to the end of the duplicate. The memory returned should be freed with
+ * free()
+ *
+ * @param  src 		Pointer to the source buffer
+ * @param  n   		Maximum number of bytes to copy
+ *
+ * @return     		Pointer to the allocated buffer containing the string.
+ */
+char *strndup(const char *src, size_t n) {
+	size_t len;
+	char *dup;
+
+	len = strlen(src, n);
+	dup = malloc(len + 1);
+
+	if (dup) {
+		mamcpy(dup, src, len);
+		dup[len] = '\0';
+	}
 
 	return dup;
 }
