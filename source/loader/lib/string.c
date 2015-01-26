@@ -582,8 +582,8 @@ static void vsnprintf_helper(char ch, void *_data, int *total) {
  * @param fmt		The format string to use.
  * @param args		Arguments for the format string.
  *
- * @return		The number of characters generated, excluding the
- *			trailing NULL.
+ * @return			The number of characters generated, excluding the
+ *               	trailing NULL.
  */
 int vsnprintf(char *buf, size_t size, const char *fmt, va_list args) {
 	struct vsnprintf_data data;
@@ -593,12 +593,12 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args) {
 	data.size = size - 1;
 	data.off = 0;
 
-	ret = do_printf(vsnprintf_helper, &data, fmt, args);
+	ret = do_vprintf(vsnprintf_helper, &data, fmt, args);
 
 	if(data.off < data.size) {
 		data.buf[data.off] = 0;
 	} else {
-		data.buf[data.size-1] = 0;
+		data.buf[data.size - 1] = 0;
 	}
 
 	return ret;
