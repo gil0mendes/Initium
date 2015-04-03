@@ -53,8 +53,8 @@ void platform_init(void)
     // Detect memory
     bios_memory_init();
 
-    // Initialize disk
-    disk_init();
+    // Initialize disks
+    bios_disk_init();
 
     #ifdef CONFIG_GUI_MODE
     // Initialize VBE video mode
@@ -67,9 +67,6 @@ void platform_init(void)
     // Screen initialization
     screenInit();
     #endif
-
-    // Parse information from Multiboot
-    multiboot_init();
 
     // Call loader main function
     loader_main();

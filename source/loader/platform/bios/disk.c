@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,215 +24,199 @@
 
 /**
 * @file
-* @brief 							BIOS disk device functions
+* @brief               BIOS disk device support.
 */
 
-#include <lib/list.h>
 #include <lib/string.h>
 #include <lib/utility.h>
 
 #include <bios/bios.h>
 #include <bios/disk.h>
+#include <bios/multiboot.h>
 
 #include <disk.h>
-#include <assert.h>
 #include <loader.h>
 #include <memory.h>
 
-// Maximum number of blocks per transfer
-#define BLOCKS_PER_TRANSFER(disk) ((BIOS_MEM_SIZE / disk->block_size) - 1)
+/** BIOS disk device structure. */
+typedef struct bios_disk {
+    disk_device_t disk;                 /**< Disk device header. */
+    uint8_t id;                         /**< BIOS device ID. */
+} bios_disk_t;
 
-extern uint8_t 	boot_device_id;
-extern uint64_t	boot_part_offset;
+/** Maximum number of blocks per transfer. */
+#define blocks_per_transfer(disk) ((BIOS_MEM_SIZE / disk->disk.block_size) - 1)
 
-// ============================================================================
-// Check if a partition is the boot partition.
-//
-// @param disk		Disk the partition resides on.
-// @param id			ID of partition.
-// @param lba			Block that the partition starts at.
-// @return				Whether partition is a boot partition.
-//
-static bool bios_disk_is_boot_partition(disk_t *disk, uint8_t id, uint64_t lba) {
-	if (lba == boot_part_offset) {
-		return true;
-	}
+/** Read blocks from a BIOS disk device.
+ * @param _disk         Disk device being read from.
+ * @param buf           Buffer to read into.
+ * @param count         Number of blocks to read.
+ * @param lba           Block number to start reading from.
+ * @return              Status code describing the result of the operation. */
+static status_t bios_disk_read_blocks(disk_device_t *_disk, void *buf, size_t count, uint64_t lba) {
+    bios_disk_t *disk = (bios_disk_t *)_disk;
+    size_t transfers;
 
-	return false;
+    /* Split large transfers up as we have limited space to transfer to. */
+    transfers = round_up(count, blocks_per_transfer(disk)) / blocks_per_transfer(disk);
+
+    for (size_t i = 0; i < transfers; i++) {
+        disk_address_packet_t *dap = (disk_address_packet_t *)BIOS_MEM_BASE;
+        void *dest = (void *)(BIOS_MEM_BASE + disk->disk.block_size);
+        size_t num = min(count, blocks_per_transfer(disk));
+        bios_regs_t regs;
+
+        /* Fill in a disk address packet for the transfer. */
+        dap->size = sizeof(*dap);
+        dap->reserved1 = 0;
+        dap->block_count = num;
+        dap->buffer_offset = (ptr_t)dest;
+        dap->buffer_segment = 0;
+        dap->start_lba = lba + (i * blocks_per_transfer(disk));
+
+        /* Perform the transfer. */
+        bios_regs_init(&regs);
+        regs.eax = INT13_EXT_READ;
+        regs.edx = disk->id;
+        regs.esi = BIOS_MEM_BASE;
+        bios_call(0x13, &regs);
+        if (regs.eflags & X86_FLAGS_CF) {
+            dprintf("bios: read from %s failed with status 0x%x\n", disk->disk.device.name, regs.ax >> 8);
+            return STATUS_DEVICE_ERROR;
+        }
+
+        /* Copy the transferred blocks to the buffer. */
+        memcpy(buf, dest, disk->disk.block_size * num);
+
+        buf += disk->disk.block_size * num;
+        count -= num;
+    }
+
+    return STATUS_SUCCESS;
 }
 
-// ============================================================================
-// Read blocks from a BIOS disk device.
-//
-// @param disk		Disk to read from.
-// @param buf			Buffer to read into.
-// @param lba			Starting block number.
-// @param count		Number of blocks to read.
-// @return				Whether the read succeeded.
-//
-static bool bios_disk_read(disk_t *disk, void *buf, uint64_t lba, size_t count) {
-	disk_address_packet_t *dap = (disk_address_packet_t *)BIOS_MEM_BASE;
-	void *dest = (void *)(BIOS_MEM_BASE + disk->block_size);
-	size_t i, num, transfers;
-	bios_regs_t regs;
-
-	// Have to split large transfers up as we have limited space to
-	// transfer to.
-	transfers = round_up(count, BLOCKS_PER_TRANSFER(disk)) / BLOCKS_PER_TRANSFER(disk);
-	for(i = 0; i < transfers; i++, buf += disk->block_size * num, count -= num) {
-		num = min(count, BLOCKS_PER_TRANSFER(disk));
-
-		// Fill in a disk address packet for the transfer
-		dap->size = sizeof(disk_address_packet_t);
-		dap->reserved1 = 0;
-		dap->block_count = num;
-		dap->buffer_offset = (ptr_t)dest;
-		dap->buffer_segment = 0;
-		dap->start_lba = lba + (i * BLOCKS_PER_TRANSFER(disk));
-
-		// Perform the transfer
-		bios_regs_init(&regs);
-		regs.eax = INT13_EXT_READ;
-		regs.edx = disk->id;
-		regs.esi = BIOS_MEM_BASE;
-		bios_call(0x13, &regs);
-		if(regs.eflags & X86_FLAGS_CF) {
-			return false;
-		}
-
-		// Copy the transferred blocks to the buffer
-		memcpy(buf, dest, disk->block_size * num);
-	}
-
-	return true;
-}
-
-// Operations for a BIOS disk device
+/** Operations for a BIOS disk device. */
 static disk_ops_t bios_disk_ops = {
-	.is_boot_partition = bios_disk_is_boot_partition,
-	.read = bios_disk_read,
+    .read_blocks = bios_disk_read_blocks,
 };
 
-// ============================================================================
-// Get the number of disks in the system.
-//
-// @return		Number of BIOS hard disks.
-//
-static uint8_t get_disk_count(void) {
-	bios_regs_t regs;
-
-	// Use the Get Drive Parameters call
-	bios_regs_init(&regs);
-	regs.eax = INT13_GET_DRIVE_PARAMETERS;
-	regs.edx = 0x80;
-	bios_call(0x13, &regs);
-
-	return (regs.eflags & X86_FLAGS_CF) ? 0 : (regs.edx & 0xFF);
-}
-
-// ============================================================================
-// Check if booted from CD.
-//
-// @return		Whether booted from CD.
-//
-static bool booted_from_cd(void) {
-	specification_packet_t *packet = (specification_packet_t *)BIOS_MEM_BASE;
-	bios_regs_t regs;
-
-	// Use the bootable CD-ROM status function
-	bios_regs_init(&regs);
-	regs.eax = INT13_CDROM_GET_STATUS;
-	regs.edx = boot_device_id;
-	regs.esi = BIOS_MEM_BASE;
-	bios_call(0x13, &regs);
-
-	return (!(regs.eflags & X86_FLAGS_CF) && packet->drive_number == boot_device_id);
-}
-
-// ============================================================================
-// Add the disk with the specified ID.
-//
-// @param id		ID of the device.
-//
+/** Add the disk with the specified ID.
+ * @param id            ID of the device. */
 static void add_disk(uint8_t id) {
-	drive_parameters_t *params = (drive_parameters_t *)BIOS_MEM_BASE;
-	bios_regs_t regs;
-	disk_t *disk;
-	char name[6];
+    drive_parameters_t *params = (drive_parameters_t *)BIOS_MEM_BASE;
+    bios_regs_t regs;
+    bios_disk_t *disk;
 
-	// Create a data structure for the device
-	disk = malloc(sizeof(disk_t));
+    /* Create a data structure for the device. */
+    disk = malloc(sizeof(bios_disk_t));
+    disk->disk.ops = &bios_disk_ops;
+    disk->id = id;
 
-	// Probe for information on the device. A big "F*CK YOU" to Intel and
-	// AMI is required here. When booted from a CD, the INT 13 Extensions
-	// Installation Check/Get Drive Parameters functions return an error
-	// on Intel/AMI BIOSes, yet the Extended Read function still works.
-	// Work around this by forcing use of extensions when booted from CD
-	if(id == boot_device_id && booted_from_cd()) {
-		disk_add(disk, "cd0", id, 2048, ~0LL, &bios_disk_ops, true);
-		dprintf("disk: added boot CD cd0 (id: 0x%x)\n", id);
-	} else {
-		bios_regs_init(&regs);
-		regs.eax = INT13_EXT_INSTALL_CHECK;
-		regs.ebx = 0x55AA;
-		regs.edx = id;
-		bios_call(0x13, &regs);
+    /* If this is the boot device, check if it is a CD drive. */
+    if (id == bios_boot_device) {
+        specification_packet_t *packet = (specification_packet_t *)BIOS_MEM_BASE;
 
-		if(regs.eflags & X86_FLAGS_CF || (regs.ebx & 0xFFFF) != 0xAA55 || !(regs.ecx & (1<<0))) {
-			dprintf("disk: device 0x%x does not support extensions, ignoring\n", id);
-			return;
-		}
+        /* Use the bootable CD-ROM status function. */
+        bios_regs_init(&regs);
+        regs.eax = INT13_CDROM_GET_STATUS;
+        regs.edx = id;
+        regs.esi = (ptr_t)packet;
+        bios_call(0x13, &regs);
 
-		// Get drive parameters. According to RBIL, some Phoenix BIOSes
-		// fail to correctly handle the function if the flags word is
-		// not 0. Clear the entire structure to be on the safe side
-		memset(params, 0, sizeof(drive_parameters_t));
-		params->size = sizeof(drive_parameters_t);
-		bios_regs_init(&regs);
-		regs.eax = INT13_EXT_GET_DRIVE_PARAMETERS;
-		regs.edx = id;
-		regs.esi = BIOS_MEM_BASE;
-		bios_call(0x13, &regs);
+        if (!(regs.eflags & X86_FLAGS_CF) && packet->drive_number == id) {
+            /* Should be no emulation. */
+            if (packet->media_type & 0xf) {
+                dprintf("bios: boot CD should be no emulation\n");
+                return;
+            }
 
-		if(regs.eflags & X86_FLAGS_CF || !params->sector_count || !params->sector_size) {
-			dprintf("disk: failed to obtain device parameters for device 0x%x\n", id);
-			return;
-		}
+            /* Add the drive. We do not bother checking whether extensions are
+             * supported here, as some BIOSes (Intel/AMI) return error from the
+             * installation check call for CDs even though they are supported.
+             * Additionally, there appears to be no way to get the size of a
+             * CD - get drive parameters returns -1 for sector count on a CD. */
+            disk->disk.type = DISK_TYPE_CDROM;
+            disk->disk.block_size = 2048;
+            disk->disk.blocks = ~0ULL;
+            disk_device_register(&disk->disk);
 
-		// Register the disk with the disk manager
-		sprintf(name, "hd%u", id - 0x80);
-		disk_add(disk, name, id, params->sector_size, params->sector_count,
-			&bios_disk_ops, id == boot_device_id);
-		dprintf("disk: added device %s (id: 0x%x, sector_size: %u, sector_count: %zu)\n",
-			name, id, params->sector_size, params->sector_count);
-	}
+            dprintf(" %-6s -> 0x%x (block_size: %zu)\n", disk->disk.device.name, disk->id, disk->disk.block_size);
+            return;
+        }
+    }
+
+    /* Check for INT13 extensions support. */
+    bios_regs_init(&regs);
+    regs.eax = INT13_EXT_INSTALL_CHECK;
+    regs.ebx = 0x55AA;
+    regs.edx = id;
+    bios_call(0x13, &regs);
+    if (regs.eflags & X86_FLAGS_CF || (regs.ebx & 0xFFFF) != 0xAA55 || !(regs.ecx & (1<<0))) {
+        dprintf("bios: device 0x%x does not support extensions, ignoring\n", id);
+        return;
+    }
+
+    /* Get drive parameters. According to RBIL, some Phoenix BIOSes fail to
+     * correctly handle the function if the flags word is not 0. Clear the
+     * entire structure to be on the safe side. */
+    memset(params, 0, sizeof(drive_parameters_t));
+    params->size = sizeof(drive_parameters_t);
+    bios_regs_init(&regs);
+    regs.eax = INT13_EXT_GET_DRIVE_PARAMETERS;
+    regs.edx = id;
+    regs.esi = (ptr_t)params;
+    bios_call(0x13, &regs);
+    if (regs.eflags & X86_FLAGS_CF || !params->sector_count || !params->sector_size) {
+        dprintf("bios: failed to obtain drive parameters for device 0x%x\n", id);
+        return;
+    }
+
+    /* Add the drive. */
+    disk->disk.type = DISK_TYPE_HD;
+    disk->disk.block_size = params->sector_size;
+    disk->disk.blocks = params->sector_count;
+    disk_device_register(&disk->disk);
+
+    dprintf(" %-6s -> 0x%x (block_size: %zu, blocks: %" PRId64 ")\n",
+        disk->disk.device.name, disk->id, disk->disk.block_size,
+        disk->disk.blocks);
 }
 
-// ============================================================================
-// Detect all disks in the system.
-//
-void platform_disk_detect(void) {
-	uint8_t count, id;
+/** Detect and register all disk devices. */
+void bios_disk_init(void) {
+    bios_regs_t regs;
+    uint8_t count;
+    bool separate_boot;
 
-	dprintf("disk: boot device ID is 0x%x, partition offset is 0x%" PRIx64 "\n",
-		boot_device_id, boot_part_offset);
+    /* If booted from Multiboot, retrieve boot device ID from there. */
+    if (multiboot_magic == MULTIBOOT_LOADER_MAGIC) {
+        bios_boot_device = (multiboot_info.boot_device & 0xFF000000) >> 24;
 
-	// Probe all hard disks
-	count = get_disk_count();
-	for(id = 0x80; id < count + 0x80; id++) {
-		// If this is the boot device, ignore it - it will be added
-		// after the loop is completed. This is done because this loop
-		// only probes hard disks, so in order to support CD's, etc,
-		// we have to add the boot disk separately
-		if(id == boot_device_id) {
-			continue;
-		}
+        dprintf("bios: boot device ID is 0x%x, partition ID is 0x%x\n",
+            bios_boot_device,
+            (multiboot_info.boot_device & 0x00FF0000) >> 16);
+    } else {
+        dprintf("bios: boot device ID is 0x%x, partition offset is 0x%" PRIx64 "\n",
+            bios_boot_device, bios_boot_partition);
+    }
 
-		add_disk(id);
-	}
+    /* Use the Get Drive Parameters call to get the number of drives. */
+    bios_regs_init(&regs);
+    regs.eax = INT13_GET_DRIVE_PARAMETERS;
+    regs.edx = 0x80;
+    bios_call(0x13, &regs);
+    count = (regs.eflags & X86_FLAGS_CF) ? 0 : (regs.edx & 0xFF);
 
-	// TODO: If not booted from PXE, add the boot device
-	//if(!pxe_detect()) {
-	add_disk(boot_device_id);
-	//}
+    /* Boot device may not be included in this count if it is a CD drive. */
+    separate_boot = bios_boot_device < 0x80 || bios_boot_device >= count + 0x80;
+
+    dprintf("bios: detected %u disks:\n", (separate_boot) ? count + 1 : count);
+
+    /* Probe all drives. */
+    for (uint8_t id = 0x80; id < count + 0x80; id++)
+        add_disk(id);
+
+    /* Add the boot device if it is separate. */
+    if (separate_boot)
+        add_disk(bios_boot_device);
 }

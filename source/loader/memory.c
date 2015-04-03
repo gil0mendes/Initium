@@ -399,7 +399,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
 
        /* Find a free range that is large enough to hold the new range. */
        if(flags & MEMORY_ALLOC_HIGH) {
-               list_foreach_REVERSE(&memory_ranges, iter) {
+               list_foreach_reverse(&memory_ranges, iter) {
                        range = list_entry(iter, memory_range_t, header);
 
                        found = is_suitable_range(range, size, align, min_addr,
