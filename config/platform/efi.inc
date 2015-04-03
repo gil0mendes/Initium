@@ -26,7 +26,7 @@ include = {
   'config': {
     'PLATFORM': 'efi',
     'PLATFORM_EFI': True,
-    'TARGET_HAVE_DISK': True,
+    'TARGET_HAS_DISK': True,
     'GUI_MODE': True,
   },
 }

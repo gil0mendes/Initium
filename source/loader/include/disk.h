@@ -32,6 +32,8 @@
 
 #include <device.h>
 
+#ifdef CONFIG_TARGET_HAS_DISK
+
 struct disk_device;
 
 /** Types of disk devices (primarily used for naming purposes). */
@@ -69,4 +71,5 @@ typedef struct disk_device {
 
 extern void disk_device_register(disk_device_t *disk);
 
+#endif /* CONFIG_TARGET_HAS_DISK */
 #endif /* __DISK_H */
