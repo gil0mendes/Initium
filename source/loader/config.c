@@ -592,7 +592,7 @@ environ_t *environ_create(environ_t *parent) {
 
 	list_init(&env->entries);
 	env->parent = parent;
-	env->device = boot_device;
+	//env->device = boot_device;
 	env->loader = NULL;
 	env->data = NULL;
 	return env;

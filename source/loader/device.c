@@ -29,99 +29,59 @@
 
 #include <lib/string.h>
 
-#include <config.h>
 #include <device.h>
-#include <fs.h>
+#include <loader.h>
 #include <memory.h>
 
-// Boot device
-device_t *boot_device = NULL;
+/** List of all registered devices. */
+static LIST_DECLARE(device_list);
 
-// List of all devices
-LIST_DECLARE(device_list);
+/** Read from a device.
+ * @param device        Device to read from.
+ * @param buf           Buffer to read into.
+ * @param count         Number of bytes to read.
+ * @param offset        Offset in the device to read from.
+ * @return              Status code describing the result of the read. */
+status_t device_read(device_t *device, void *buf, size_t count, offset_t offset) {
+    if (!device->ops || !device->ops->read)
+        return STATUS_NOT_SUPPORTED;
 
-/**
- * Look up a device according to a string.
- *
- * Looks up a device according to the given string. If the string is in the
- * form "(<name>)", then the device will be looked up by its name. Otherwise,
- * the string will be taken as a UUID, and the device containing a filesystem
- * with that UUID will be returned.
- *
- * @param str		String for lookup.
- *
- * @return		Pointer to device structure if found, NULL if not.
- */
-device_t *device_lookup(const char *str) {
-	char *name = NULL;
-	device_t *device;
-	size_t len;
-
-	if(str[0] == '(') {
-		len = strlen(str);
-
-		if(len < 3 || str[len - 1] != ')') {
-			return NULL;
-		}
-
-		len -= 2;
-		name = malloc(len);
-		memcpy(name, str + 1, len);
-		name[len] = 0;
-	}
-
-	list_foreach(&device_list, iter) {
-		device = list_entry(iter, device_t, header);
-
-		if(name) {
-			if(strcmp(device->name, name) == 0)
-				return device;
-		} else if(device->fs && device->fs->uuid) {
-			if(strcmp(device->fs->uuid, str) == 0)
-				return device;
-		}
-	}
-
-	return NULL;
+    return device->ops->read(device, buf, count, offset);
 }
 
 /**
- * Register a device.
+ * Look up a device.
  *
- * Registers a new device. Does not set the FS pointer, so this should be set
- * manually after the function returns. If this is the boot device, the caller
- * should set it as the current device itself.
+ * Looks up a device. If given a string in the format "uuid:<uuid>", the device
+ * will be looked up by filesystem UUID. If given a string in the format
+ * "label:<label>", will be looked up by filesystem label. Otherwise, will be
+ * looked up by the device name.
  *
- * @param device	Device structure for the device.
- * @param name		Name of the device (string will be duplicated).
- * @param type		Type of the device.
+ * @param name          String to look up.
+ *
+ * @return              Matching device, or NULL if no matches found.
  */
-void device_add(device_t *device, const char *name, device_type_t type) {
-	list_init(&device->header);
-	device->name = strdup(name);
-	device->type = type;
-	device->fs = NULL;
+device_t *device_lookup(const char *name) {
+    list_foreach(&device_list, iter) {
+        device_t *device = list_entry(iter, device_t, header);
 
-	list_append(&device_list, &device->header);
+        // TODO: UUID/labels
+        if (strcmp(device->name, name) == 0)
+            return device;
+    }
+
+    return NULL;
 }
 
-/**
- * Set the current device.
- *
- * @param args		Argument list.
- * @return				Whether successful.
- */
-static bool config_cmd_device(value_list_t *args) {
-	if(args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
-		dprintf("device: invalid arguments\n");
-		return false;
-	}
+/** Register a device.
+ * @param device        Device to register (details should be filled in).
+ * @param name          Name to give the device (string will be duplicated). */
+void device_register(device_t *device, const char *name) {
+    if (device_lookup(name))
+        internal_error("Device named '%s' already exists", name);
 
-	// Look up the device. If the device is not found, we leave the pointer
-	// set as NULL. It will be handled later when the user tries to boot
-	current_environ->device = device_lookup(args->values[0].string);
+    device->name = strdup(name);
 
-	return true;
+    list_init(&device->header);
+    list_append(&device_list, &device->header);
 }
-
-BUILTIN_COMMAND("device", config_cmd_device);

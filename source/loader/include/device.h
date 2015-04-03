@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -23,39 +23,50 @@
 */
 
 /**
-* @file
-* @brief 				Device management
-*/
+ * @file
+ * @brief               Device management.
+ */
 
 #ifndef __DEVICE_H
 #define __DEVICE_H
 
 #include <lib/list.h>
 
-struct mount;
+#include <status.h>
 
-// Type of a device
+struct device;
+
+/** Types of devices. */
 typedef enum device_type {
-	DEVICE_TYPE_IMAGE,		// Boot image
-	DEVICE_TYPE_NET,			// Network boot server
-	DEVICE_TYPE_DISK,			// Disk device
+    DEVICE_TYPE_DISK,                   /**< Local disk. */
+    DEVICE_TYPE_NET,                    /**< Network device. */
+    DEVICE_TYPE_IMAGE,                  /**< Boot image. */
 } device_type_t;
 
-// Structure containing details of a device
-typedef struct device {
-	list_t header;			// Link to device list
+/** Device operations structure. */
+typedef struct device_ops {
+    /** Read from a device.
+     * @param device        Device to read from.
+     * @param buf           Buffer to read into.
+     * @param count         Number of bytes to read.
+     * @param offset        Offset in the device to read from.
+     * @return              Status code describing the result of the read. */
+    status_t (*read)(struct device *device, void *buf, size_t count, offset_t offset);
+} device_ops_t;
 
-	char *name;					// Name of the device
-	device_type_t type;	// Type of the device
-	struct mount *fs;		// Filesystem that resides on the device
+/** Base device structure (embedded by device type structures). */
+typedef struct device {
+    list_t header;                      /**< Link to devices list. */
+
+    device_type_t type;                 /**< Type of the device. */
+    const device_ops_t *ops;            /**< Operations for the device (can be NULL). */
+
+    char *name;                         /**< Name of the device. */
 } device_t;
 
-extern device_t *boot_device;
+extern status_t device_read(device_t *device, void *buf, size_t count, offset_t offset);
 
-// Macro expanding to the current device
-#define current_device		((current_environ) ? current_environ->device : boot_device)
+extern device_t *device_lookup(const char *name);
+extern void device_register(device_t *device, const char *name);
 
-extern device_t *device_lookup(const char *str);
-extern void device_add(device_t *device, const char *name, device_type_t type);
-
-#endif // __DEVICE_H
+#endif /* __DEVICE_H */

@@ -441,11 +441,11 @@ char *strndup(const char *src, size_t n) {
 	size_t len;
 	char *dup;
 
-	len = strlen(src, n);
+	len = strnlen(src, n);
 	dup = malloc(len + 1);
 
 	if (dup) {
-		mamcpy(dup, src, len);
+		memcpy(dup, src, len);
 		dup[len] = '\0';
 	}
 

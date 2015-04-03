@@ -36,12 +36,12 @@ sources = FeatureSources(config, [
 
   'fs.c',
   'disk.c',
+  'device.c',
   'error.c',
   'config.c',
   'console.c',
   'memory.c',
   'loader.c',
-  'device.c',
 ])
 
 # Set the include search paths.

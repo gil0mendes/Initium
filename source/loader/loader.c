@@ -69,9 +69,9 @@ void load_preboot(void) {
  */
 void loader_main(void) {
 	// we must have a filesystem to boot from
-	if(!boot_device || !boot_device->fs) {
+	/*if(!boot_device || !boot_device->fs) {
 		boot_error("Could not find boot fylesystem");
-	}
+	}*/
 
 	// Load the configuration file
 	config_init();

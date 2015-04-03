@@ -116,7 +116,7 @@ typedef struct mount {
 	fs_type_t *type;						// Type structure for the filesystem
 	struct file_handle *root;		// Handle to root of FS (not needed if open() implemented)
 	void *data;									// Implementation-specific data pointer
-	disk_t *disk;								// Disk that the filesystem resides on
+	//disk_t *disk;								// Disk that the filesystem resides on
 	char *label;								// Label of the filesystem
 	char *uuid;									// UUID of the filesystem
 } mount_t;
@@ -134,7 +134,7 @@ typedef struct file_handle {
 
 extern file_handle_t *file_handle_create(mount_t *mount, bool directory, void *data);
 
-extern mount_t *fs_probe(disk_t *disk);
+//extern mount_t *fs_probe(disk_t *disk);
 
 extern file_handle_t *file_open(const char *path, file_handle_t *from);
 extern void file_close(file_handle_t *handle);

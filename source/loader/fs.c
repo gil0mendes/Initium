@@ -65,7 +65,7 @@ file_handle_t *file_handle_create(mount_t *mount, bool directory, void *data) {
  * @param disk		Disk to probe.
  * @return				Pointer to mount if detected, NULL if not.
 */
-mount_t *fs_probe(disk_t *disk) {
+/*mount_t *fs_probe(disk_t *disk) {
 	mount_t *mount;
 
 	mount = malloc(sizeof(mount_t));
@@ -81,7 +81,7 @@ mount_t *fs_probe(disk_t *disk) {
 
 	free(mount);
 	return NULL;
-}
+}*/
 
 // Structure containing data for file_open().
 typedef struct file_open_data {
@@ -125,16 +125,16 @@ file_handle_t *file_open(const char *path, file_handle_t *from) {
 	char *dup, *orig, *tok;
 	file_open_data_t data;
 	file_handle_t *handle;
-	mount_t *mount;
+	mount_t *mount = NULL;
 
 	if(from) {
 		assert(from->directory);
 		mount = from->mount;
 		handle = (path[0] == '/') ? mount->root : from;
 	} else {
-		if(!current_device || !(mount = current_device->fs)) {
+		/*if(!current_device || !(mount = current_device->fs)) {
 			return NULL;
-		}
+		}*/
 
 		handle = mount->root;
 	}

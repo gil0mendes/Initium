@@ -24,77 +24,49 @@
 
 /**
  * @file
- * @brief 					Disk device layer
+ * @brief               Disk device management.
  */
 
 #ifndef __DISK_H
 #define __DISK_H
 
 #include <device.h>
-#include <loader.h>
 
-struct disk;
+struct disk_device;
 
-/** Partition map iteration callback function type.
- * @param disk		Disk containing the partition.
- * @param id		ID of the partition.
- * @param lba		Start LBA.
- * @param blocks	Size in blocks. */
-typedef void (*partition_map_iterate_cb_t)(struct disk *disk, uint8_t id, uint64_t lba,
-	uint64_t blocks);
+/** Types of disk devices (primarily used for naming purposes). */
+typedef enum disk_type {
+    DISK_TYPE_HD,                       /**< Hard drive/other. */
+    DISK_TYPE_CDROM,                    /**< CDROM. */
+    DISK_TYPE_FLOPPY,                   /**< Floppy drive. */
+} disk_type_t;
 
-/** Partition map operations. */
-typedef struct partition_map_ops {
-	/** Iterate over the partitions on the device.
-	 * @param disk		Disk to iterate over.
-	 * @param cb		Callback function.
-	 * @return		Whether the device contained a partition map of
-	 *			this type. */
-	bool (*iterate)(struct disk *disk, partition_map_iterate_cb_t cb);
-} partition_map_ops_t;
-
-// Define a builtin partition map type
-#define BUILTIN_PARTITION_MAP(name) 	\
-	static partition_map_ops_t name; \
-	DEFINE_BUILTIN(BUILTIN_TYPE_PARTITION_MAP, name); \
-	static partition_map_ops_t name
-
-// Operations for a disk device
+/** Structure containing operations for a disk. */
 typedef struct disk_ops {
-	/** Check if a partition is the boot partition.
-	 * @param disk		Disk the partition is on.
-	 * @param id		ID of partition.
-	 * @param lba		Block that the partition starts at.
-	 * @return		Whether partition is a boot partition. */
-	bool (*is_boot_partition)(struct disk *disk, uint8_t id, uint64_t lba);
-
-	/** Read blocks from the disk.
-	 * @param disk		Disk being read from.
-	 * @param buf		Buffer to read into.
-	 * @param lba		Block number to start reading from.
-	 * @param count		Number of blocks to read.
-	 * @return		Whether reading succeeded. */
-	bool (*read)(struct disk *disk, void *buf, uint64_t lba, size_t count);
+    /**
+     * Read blocks from a disk.
+	 *
+     * @param disk          Disk device being read from.
+     * @param buf           Buffer to read into.
+     * @param count         Number of blocks to read.
+     * @param lba           Block number to start reading from.
+     *
+     * @return              Status code describing the result of the operation.
+     */
+    status_t (*read_blocks)(struct disk_device *disk, void *buf, size_t count, uint64_t lba);
 } disk_ops_t;
 
-// Structure representing a disk device
-typedef struct disk {
-	device_t device;		 /**< Device header. */
+/** Structure representing a disk device. */
+typedef struct disk_device {
+    device_t device;                    /**< Device header. */
 
-	uint8_t id;			     /**< Identifier of the disk. */
-	size_t block_size;	 /**< Size of one block on the disk. */
-	uint64_t blocks;		 /**< Number of blocks on the disk. */
-	disk_ops_t *ops;		 /**< Pointer to operations structure. */
-	struct disk *parent; /**< Parent device. */
-} disk_t;
+    disk_type_t type;                   /**< Type of the disk. */
+    const disk_ops_t *ops;              /**< Disk operations structure. */
+    size_t block_size;                  /**< Size of a block on the disk. */
+    uint64_t blocks;                    /**< Total number of blocks on the disk. */
+    uint8_t id;                         /**< ID of the disk. */
+} disk_device_t;
 
-extern bool disk_read(disk_t *disk, void *buf, size_t count, offset_t offset);
-extern void disk_add(disk_t *disk, const char *name, uint8_t id, size_t block_size,
-	uint64_t blocks, disk_ops_t *ops, bool boot);
-extern disk_t *disk_parent(disk_t *disk);
+extern void disk_device_register(disk_device_t *disk);
 
-extern void platform_disk_detect(void);
-
-extern void disk_init(void);
-
-#endif // __DISK_H
+#endif /* __DISK_H */
