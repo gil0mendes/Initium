@@ -22,6 +22,11 @@
  * SOFTWARE.
  */
 
+/**
+ * @file
+ * @brief               AMD64 EFI startup code.
+ */
+
 #include <arch/page.h>
 
 #include <x86/asm.h>
@@ -30,61 +35,89 @@
 .section .text, "ax", @progbits
 
 /** EFI entry point.
- *
- * @param %rcx		Handle to the loader image.
- * @param %rdx		Pointer to EFI system table.
- */
+ * @param %rcx          Handle to the loader image.
+ * @param %rdx          Pointer to EFI system table. */
 FUNCTION_START(loader_entry)
-    /* We are entered with interrupts enabled. We don't want them. */
-    cli
+    /* Preserve RBP/RDI/RSI as required by the MS calling convention to avoid
+     * clobbering them, so that we can return to the firmware. */
+    push    %rbp
+    push    %rdi
+    push    %rsi
 
-    // Clear the stack frame pointer/EFLAGS
-    xorl   %ebp, %ebp
-    push   $0
+    /* Clear the stack frame pointer/RFLAGS. */
+    xorq    %rbp, %rbp
+    push    $0
     popf
 
     /* EFI uses the Microsoft x86_64 ABI. Arguments are passed in RCX/RDX. */
-    pushq	%rcx
-    pushq	%rdx
+    push    %rcx
+    push    %rdx
 
     /* Relocate the loader. */
-    leaq	__start(%rip), %rdi
-    leaq	_DYNAMIC(%rip), %rsi
-    call	efi_arch_relocate
-    /** Disable realocate because an error
-      testq	%rax, %rax
-      jz	1f
-      addq	$16, %rsp
-      ret**/
-    1:
+    leaq    __start(%rip), %rdi
+    leaq    _DYNAMIC(%rip), %rsi
+    call    efi_arch_relocate
+    /* Relocate generate an error. But I don't why, for now */
+    /*
+    testq   %rax, %rax
+    jz      1f
+    addq    $16, %rsp
+    pop     %rsi
+    pop     %rdi
+    pop     %rbp
+    ret */
+1:
     /* Zero the BSS section. */
-    leaq	__bss_start(%rip), %rdi
-    leaq	__bss_end(%rip), %rcx
-    subq	%rdi, %rcx
-    xorb	%al, %al
+    leaq    __bss_start(%rip), %rdi
+    leaq    __bss_end(%rip), %rcx
+    subq    %rdi, %rcx
+    xorb    %al, %al
     rep stosb
 
-    /* Save the EFI GDT and IDT pointers which we must restore before
-     * calling any EFI functions. */
-    leaq	efi_gdtp(%rip), %rax
-sgdt	(%rax)
-    leaq	efi_idtp(%rip), %rax
-sidt	(%rax)
-    leaq	efi_cs(%rip), %rax
-movw	%cs, (%rax)
+    /* We are entered with interrupts enabled. We don't want them. */
+    cli
+
+    /* Save the EFI GDT and IDT pointers which we must restore before calling
+     * any EFI functions. */
+    leaq    efi_gdtp(%rip), %rax
+    sgdt    (%rax)
+    leaq    efi_idtp(%rip), %rax
+    sidt    (%rax)
+    leaq    efi_cs(%rip), %rax
+    movw    %cs, (%rax)
 
     /* Load the GDT. */
-    leaq	loader_gdtp(%rip), %rax
-lgdt	(%rax)
-    push	$SEGMENT_CS
-    leaq	2f(%rip), %rax
-    push	%rax
+    leaq    loader_gdtp(%rip), %rax
+    lgdt    (%rax)
+    push    $SEGMENT_CS
+    leaq    2f(%rip), %rax
+    push    %rax
     lretq
-    2:
+2:
     /* Call the main function. */
-    popq	%rsi
-    popq	%rdi
-    call	platform_init
+    popq    %rsi
+    popq    %rdi
+    call    platform_init
+
+    /* Switch back to the EFI GDT/IDT. */
+    leaq    efi_gdtp(%rip), %rax
+    lgdt    (%rax)
+    leaq    efi_cs(%rip), %rax
+    movzxw  (%rax), %rax
+    push    %rax
+    leaq    3f(%rip), %rax
+    push    %rax
+    lretq
+3:  leaq    efi_idtp(%rip), %rax
+    lidt    (%rax)
+
+    /* Re-enable interrupts. */
+    sti
+
+    /* Restore registers, and return. */
+    pop     %rsi
+    pop     %rdi
+    pop     %rbp
     ret
 FUNCTION_END(loader_entry)
 
@@ -97,6 +130,7 @@ FUNCTION_END(loader_entry)
  *  - RSP + 8 (after the return address) is 16-byte aligned. The same applies
  *    for SysV.
  */
+
 FUNCTION_START(__efi_call0)
     push    %rbp
     movq    %rsp, %rbp
@@ -193,24 +227,23 @@ FUNCTION_END(__efi_call7)
 /** EFI call wrapper. */
 PRIVATE_FUNCTION_START(__efi_call)
     /* Switch to the EFI GDT/IDT. */
-    leaq	efi_gdtp(%rip), %rax
-    lgdt	(%rax)
-    leaq	efi_cs(%rip), %rax
-    movzxw	(%rax), %rax
-    push	%rax
-    leaq	1f(%rip), %rax
-    push	%rax
+    leaq    efi_gdtp(%rip), %rax
+    lgdt    (%rax)
+    leaq    efi_cs(%rip), %rax
+    movzxw  (%rax), %rax
+    push    %rax
+    leaq    1f(%rip), %rax
+    push    %rax
     lretq
-
-1:	leaq	efi_idtp(%rip), %rax
-    lidt	(%rax)
+1:  leaq    efi_idtp(%rip), %rax
+    lidt    (%rax)
 
     /* Get the function address to call. */
-    leaq  __efi_call_func(%rip), %rax
-    movq  (%rax), %rax
+    leaq    __efi_call_func(%rip), %rax
+    movq    (%rax), %rax
 
-    /* Enable interrupts. It's possible there's some EFI implementations
-     * that break if you call them with interrupts off... */
+    /* Enable interrupts. It's possible there's some EFI implementations that
+     * break if you call them with interrupts off... */
     sti
 
     /* Call the function. */
@@ -221,51 +254,50 @@ PRIVATE_FUNCTION_START(__efi_call)
 
     /* Load our GDT/IDT. */
     leaq    loader_gdtp(%rip), %rdx
-    lgdt	(%rdx)
-    push	$SEGMENT_CS
+    lgdt    (%rdx)
+    push    $SEGMENT_CS
     leaq    2f(%rip), %rdx
     push    %rdx
     lretq
-
-2:	leaq    loader_idtp(%rip), %rdx
+2:  leaq    loader_idtp(%rip), %rdx
     lidt    (%rdx)
 
-    /* Restore old stack pointer and return */
+    /* Restore old stack pointer and return. */
     movq    %rbp, %rsp
     pop     %rbp
     ret
 FUNCTION_END(__efi_call)
 
-    .section .data, "aw", @progbits
+.section .data, "aw", @progbits
 
-    /** EFI function call address. */
+/** EFI function call address. */
 SYMBOL(__efi_call_func)
-    .quad	0
+    .quad   0
 
-    /** Saved EFI code segment. */
-    efi_cs:
-    .word	0
+/** Saved EFI code segment. */
+efi_cs:
+    .word   0
 
-    /** Saved EFI GDT pointer. */
-    efi_gdtp:
-    .word	0
-    .quad	0
+/** Saved EFI GDT pointer. */
+efi_gdtp:
+    .word   0
+    .quad   0
 
-    /** Saved EFI IDT pointer. */
-    efi_idtp:
-    .word	0
-    .quad	0
+/** Saved EFI IDT pointer. */
+efi_idtp:
+    .word   0
+    .quad   0
 
-    __dummy:
-    .long	0
+__dummy:
+    .long   0
 
-    /**
-     * Dummy PE relocation so that the EFI loader recognizes us as relocatable.
-     */
+/**
+ * Dummy PE relocation so that the EFI loader recognizes us as relocatable.
+ */
 
-    .section .reloc, "aw", @progbits
+.section .reloc, "aw", @progbits
 
-    __dummy_reloc:
-    .long	__dummy - __dummy_reloc
-    .long	10
-    .word	0
+__dummy_reloc:
+    .long   __dummy - __dummy_reloc
+    .long   10
+    .word   0
