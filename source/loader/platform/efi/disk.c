@@ -141,7 +141,7 @@ void efi_disk_init(void) {
         disk->media_id = media->media_id;
         disk->disk.ops = &efi_disk_ops;
         disk->disk.block_size = media->block_size;
-        disk->disk.blocks = media->last_block + 1;
+        disk->disk.blocks = (media->media_present) ? media->last_block + 1 : 0;
 
         if (media->logical_partition) {
             list_append(&child_devices, &disk->disk.device.header);
@@ -193,16 +193,17 @@ void efi_disk_init(void) {
         free(child);
     }
 
-    dprintf("efi: found %zu raw block devices (%zu total):\n", num_raw_devices, num_handles);
-
     /* Finally add the raw devices. */
     list_foreach_safe(&raw_devices, iter) {
         efi_disk_t *disk = list_entry(iter, efi_disk_t, disk.device.header);
 
         list_remove(&disk->disk.device.header);
         disk_device_register(&disk->disk);
-        dprintf(" %-7s -> %pE (block_size: %zu, blocks: %" PRId64 ")\n",
+
+        dprintf("efi: disk %-7s at %pE (block_size: %zu, blocks: %" PRId64 ")\n",
             disk->disk.device.name, disk->path, disk->disk.block_size,
             disk->disk.blocks);
+
+        disk_device_probe(&disk->disk);
     }
 }

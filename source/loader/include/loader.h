@@ -57,16 +57,15 @@ typedef struct loader_type {
 	#endif
 } loader_type_t;
 
-// Builtin object definition structure
+/** Builtin object definition structure. */
 typedef struct builtin {
-	// Type of the builtin
+	/** Type of the builtin */
 	enum {
+		BUILTIN_TYPE_PARTITION,
 		BUILTIN_TYPE_COMMAND,
-		BUILTIN_TYPE_FS,
-		BUILTIN_TYPE_PARTITION_MAP,
 	} type;
 
-	// Pointer to object
+	/** Pointer to object */
 	void *object;
 } builtin_t;
 
@@ -84,12 +83,12 @@ extern builtin_t __builtins_start[], __builtins_end[];
 	}
 
 // Iterate over builtin objects
-#define BUILTIN_ITERATE(btype, otype, vname) \
-	int __iter_##vname = 0; \
-	for(otype *vname = (otype *)__builtins_start[0].object; \
-	    __iter_##vname < (__builtins_end - __builtins_start); \
-	    vname = (otype *)__builtins_start[++__iter_##vname].object) \
-		if(__builtins_start[__iter_##vname].type == btype)
+#define builtin_foreach(builtin_type, object_type, var) \
+	int __iter_##var = 0; \
+	for (object_type *var = (object_type *)__builtins_start[0].object; \
+	    __iter_##var < (__builtins_end - __builtins_start); \
+	    var = (object_type *)__builtins_start[++__iter_##var].object) \
+		if(__builtins_start[__iter_##var].type == builtin_type)
 
 /**
  * Offset to apply to a physical address to get a virtual address.

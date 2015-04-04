@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -66,10 +66,11 @@ SECTIONS {
 		*(.data)
 		*(.data.*)
 
-    // builtins section
-    __builtins_start = .;
-    *(.builtins)
-    __builtins_end = .;
+
+        /* builtins section */
+        __builtins_start = .;
+        *(.builtins)
+        __builtins_end = .;
 	}
 
 	. = ALIGN(PAGE_SIZE);
@@ -80,7 +81,7 @@ SECTIONS {
     *(.rela.init.text .rela.text .rela.text.*)
     *(.rela.rodata .rela.rodata.*)
     *(.rela.got)
-    *(.rela.init.data .rela.data .rela.data.*)
+    *(.rela.init.data .rela.data .rela.data.* .rela.builtins)
     *(.rela.bss .rela.bss.*)
   }
 

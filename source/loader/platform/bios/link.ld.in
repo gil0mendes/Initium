@@ -55,11 +55,11 @@ SECTIONS {
 		*(.data)
 		*(.data.*)
 
-    __builtins_start = .;
-		*(.builtins)
-		__builtins_end = .;
-    
-		__data_end = .;
+        __builtins_start = .;
+	    *(.builtins)
+        __builtins_end = .;
+
+        __data_end = .;
 	}
 
 	.bss ALIGN(32) : {

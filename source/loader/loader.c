@@ -74,7 +74,7 @@ void loader_main(void) {
 	}*/
 
 	// Load the configuration file
-	config_init();
+	//config_init();
 
 	#ifdef CONFIG_GUI_MODE
 		// Setup screen
