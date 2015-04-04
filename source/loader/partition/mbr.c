@@ -29,18 +29,14 @@
 
 #include "mbr.h"
 
-/**
- * Read in an MBR and convert endianness.
- *
- * @param  disk Disk to read from.
- * @param  mbr  MBR to read into.
- * @param  lba  LBA to read from.
- * @return      Whether read successfully.
- */
+/** Read in an MBR and convert endianness.
+ * @param disk          Disk to read from.
+ * @param mbr           MBR to read into.
+ * @param lba           LBA to read from.
+ * @return              Whether read successfully. */
 static bool read_mbr(disk_device_t *disk, mbr_t *mbr, uint32_t lba) {
-    if (device_read(&disk->device, mbr, sizeof(*mbr), (uint64_t)lba * disk->block_size) != STATUS_SUCCESS) {
+    if (device_read(&disk->device, mbr, sizeof(*mbr), (uint64_t)lba * disk->block_size) != STATUS_SUCCESS)
         return false;
-    }
 
     for (size_t i = 0; i < array_size(mbr->partitions); i++) {
         mbr->partitions[i].start_lba = le32_to_cpu(mbr->partitions[i].start_lba);
@@ -136,8 +132,16 @@ static bool mbr_partition_iterate(disk_device_t *disk, partition_iterate_cb_t cb
     bool seen_extended;
 
     /* Read in the MBR, which is in the first block on the device. */
-    mbr = malloc(sizeof(mbr_t));
+    mbr = malloc(sizeof(*mbr));
     if (!read_mbr(disk, mbr, 0) || mbr->signature != MBR_SIGNATURE) {
+        free(mbr);
+        return false;
+    }
+
+    /* Check if this is a GPT partition table (technically we should not get
+     * here if this is a GPT disk as the GPT code should be reached first). This
+     * is just a safeguard. */
+    if (mbr->partitions[0].type == MBR_PARTITION_TYPE_GPT) {
         free(mbr);
         return false;
     }

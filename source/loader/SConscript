@@ -33,6 +33,8 @@ sources = FeatureSources(config, [
   'lib/qsort.c',
 
   ('TARGET_HAS_DISK', 'partition/mbr.c'),
+  ('TARGET_HAS_DISK', 'partition/gpt.c'),
+  
   #('FS_ISO9660', 'fs/iso9660.c'),
 
   'fs.c',
