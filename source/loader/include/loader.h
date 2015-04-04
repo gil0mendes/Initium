@@ -62,6 +62,7 @@ typedef struct builtin {
 	/** Type of the builtin */
 	enum {
 		BUILTIN_TYPE_PARTITION,
+		BUILTIN_TYPE_FS,
 		BUILTIN_TYPE_COMMAND,
 	} type;
 

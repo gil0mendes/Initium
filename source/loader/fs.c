@@ -23,249 +23,251 @@
 */
 
 /**
-* @file
-* @brief                 Filesystem functions
-*/
+ * @file
+ * @brief               Filesystem support.
+ */
 
 #include <lib/string.h>
-#include <lib/utility.h>
 
 #include <assert.h>
-#include <config.h>
+#include <device.h>
 #include <fs.h>
 #include <memory.h>
 
-#if CONFIG_INITIUM_FS_LIB
-#include <fs/decompress.h>
-#endif
-
 /**
- * Create a file handle.
+ * Allocate a new FS handle structure.
  *
- * @param mount 			Mount the entry resides on
- * @param directory 	Whether the entry is a directory
- * @param data				Implementation-specific data pointer
- * @return 						Pointer to handle structure
+ * Allocates a new FS handle structure. Filesystem implementations are expected
+ * to embed the fs_handle_t structure at the beginning of a structure containing
+ * any private data required by them. This function allocates a structure of
+ * the specified size, and initialises the generic header (aside from the
+ * directory flag, which must be initialized by the FS).
+ *
+ * @param size          Size of the structure.
+ * @param mount         Mount that the handle belongs to.
+ *
+ * @return              Pointer to allocated structure.
  */
-file_handle_t *file_handle_create(mount_t *mount, bool directory, void *data) {
-	file_handle_t *handle = malloc(sizeof(file_handle_t));
-	handle->mount = mount;
-	handle->directory = directory;
-	handle->data = data;
-	handle->count = 1;
-	#if CONFIG_KBOOT_FS_ZLIB
-	handle->compressed = NULL;
-	#endif
-	return handle;
+void *fs_handle_alloc(size_t size, fs_mount_t *mount) {
+    fs_handle_t *handle;
+
+    assert(size >= sizeof(fs_handle_t));
+
+    handle = malloc(size);
+    handle->mount = mount;
+    handle->count = 1;
+    return handle;
 }
 
-/**
- * Probe a disk for filesystems.
- *
- * @param disk		Disk to probe.
- * @return				Pointer to mount if detected, NULL if not.
-*/
-/*mount_t *fs_probe(disk_t *disk) {
-	mount_t *mount;
+/** Increase the reference count of a FS handle.
+ * @param handle        Handle to increase count of. */
+void fs_handle_retain(fs_handle_t *handle) {
+    handle->count++;
+}
 
-	mount = malloc(sizeof(mount_t));
+/** Decrease the reference count of a FS handle and free it if it reaches 0.
+ * @param handle        Handle to decrease count of. */
+void fs_handle_release(fs_handle_t *handle) {
+    assert(handle->count);
 
-	BUILTIN_ITERATE(BUILTIN_TYPE_FS, fs_type_t, type) {
-		memset(mount, 0, sizeof(mount_t));
-		mount->disk = disk;
-		mount->type = type;
-		if(mount->type->mount(mount)) {
-			return mount;
-		}
-	}
+    if (--handle->count == 0) {
+        if (handle->mount->ops->close)
+            handle->mount->ops->close(handle);
 
-	free(mount);
-	return NULL;
-}*/
+        free(handle);
+    }
+}
 
-// Structure containing data for file_open().
-typedef struct file_open_data {
-	const char *name;					// Name of entry being searched for
-	file_handle_t *handle;		// Handle to found entry
-} file_open_data_t;
+/** Probe a device for filesystems.
+ * @param device        Device to probe.
+ * @return              Pointer to mount if found, NULL if not. */
+fs_mount_t *fs_probe(device_t *device) {
+    builtin_foreach(BUILTIN_TYPE_FS, fs_ops_t, ops) {
+        fs_mount_t *mount;
+        status_t ret;
 
-/**
- * Directory iteration callback for file_open().
- *
- * @param name		Name of entry.
- * @param handle	Handle to entry.
- * @param _data		Pointer to data structure.
- * @return				Whether to continue iteration. */
-static bool file_open_cb(const char *name, file_handle_t *handle, void *_data) {
-	file_open_data_t *data = _data;
+        ret = ops->mount(device, &mount);
+        switch (ret) {
+        case STATUS_SUCCESS:
+            mount->ops = ops;
+            mount->device = device;
+            return mount;
+        case STATUS_UNKNOWN_FS:
+        case STATUS_END_OF_FILE:
+            /* End of file usually means no media. */
+            break;
+        default:
+            dprintf("fs: error %d while probing device %s\n", ret, device->name);
+            return NULL;
+        }
+    }
 
-	if(strcmp(name, data->name) == 0) {
-		handle->count++;
-		data->handle = handle;
-		return false;
-	} else {
-		return true;
-	}
+    return NULL;
+}
+
+/** Structure containing data for fs_open(). */
+typedef struct fs_open_data {
+    const char *name;                   /**< Name of entry being searched for. */
+    fs_handle_t *handle;                /**< Handle to found entry. */
+} fs_open_data_t;
+
+/** Directory iteration callback for fs_open().
+ * @param name          Name of entry.
+ * @param handle        Handle to entry.
+ * @param _data         Pointer to data structure.
+ * @return              Whether to continue iteration. */
+static bool fs_open_cb(const char *name, fs_handle_t *handle, void *_data) {
+    fs_open_data_t *data = _data;
+
+    if (strcmp(name, data->name) == 0) {
+        fs_handle_retain(handle);
+        data->handle = handle;
+        return false;
+    } else {
+        return true;
+    }
 }
 
 /**
  * Open a handle to a file/directory.
  *
- * Looks up a path and returns a handle to it. If a source node is given, the
- * path will be looked up relative to that directory, on the device of that
- * directory. Otherwise, relative paths will not be allowed and the lookup will
- * take place on the current device.
+ * Looks up a path and returns a handle to it. If a source handle is given and
+ * the path is a relative path, the path will be looked up relative to that
+ * directory. If no source is given then relative paths will not be allowed.
  *
- * @param path		Path to entry to open.
- * @param from		If not NULL, a directory to look up relative to.
+ * An absolute path either begins with a '/' character, or a device specifier
+ * in the form "(<device name>)" followed by a '/'. If no device specifier is
+ * included, the lookup will take place from the root of the current device.
  *
- * @return		Pointer to handle on success, NULL on failure.
+ * @param path          Path to entry to open.
+ * @param from          If not NULL, a directory to look up relative to.
+ *
+ * @return              Pointer to handle on success, NULL on failure.
  */
-file_handle_t *file_open(const char *path, file_handle_t *from) {
-	char *dup, *orig, *tok;
-	file_open_data_t data;
-	file_handle_t *handle;
-	mount_t *mount = NULL;
+status_t fs_open(const char *path, fs_handle_t *from, fs_handle_t **_handle) {
+    char *orig __cleanup_free;
+    char *dup, *tok;
+    fs_mount_t *mount;
+    fs_handle_t *handle;
+    status_t ret;
 
-	if(from) {
-		assert(from->directory);
-		mount = from->mount;
-		handle = (path[0] == '/') ? mount->root : from;
-	} else {
-		/*if(!current_device || !(mount = current_device->fs)) {
-			return NULL;
-		}*/
+    /* Duplicate the path string so we can modify it. */
+    dup = orig = strdup(path);
 
-		handle = mount->root;
-	}
+    if (dup[0] == '(') {
+        device_t *device;
 
-	// Use the provided open() implementation if any
-	if(mount->type->open) {
-		handle = mount->type->open(mount, path, from);
-	} else {
-		assert(mount->type->iterate);
+        dup++;
+        tok = strsep(&dup, ")");
+        if (!tok || !tok[0] || dup[0] != '/')
+            return STATUS_INVALID_ARG;
 
-		// Strip leading / characters from the path
-		while(*path == '/')
-			path++;
+        device = device_lookup(tok);
+        if (!device || !device->mount)
+            return STATUS_NOT_FOUND;
 
-		assert(handle);
-		handle->count++;
+        mount = device->mount;
+    } else if (from) {
+        mount = from->mount;
+    } else {
+        // FIXME: current device from environment
+        if (!boot_device || !boot_device->mount)
+            return STATUS_NOT_FOUND;
 
-		// Loop through each element of the path string. The string must be
-		// duplicated so that it can be modified.
-		dup = orig = strdup(path);
-		while(true) {
-			tok = strsep(&dup, "/");
-			if(tok == NULL) {
-				// The last token was the last element of the path
-				// string, return the node we're currently on.
-				free(orig);
-				break;
-			} else if(!handle->directory) {
-				// The previous node was not a directory: this means
-				// the path string is trying to treat a non-directory
-				// as a directory. Reject this
-				file_close(handle);
-				free(orig);
-				return NULL;
-			} else if(!tok[0]) {
-				// Zero-length path component, do nothing
-				continue;
-			}
+        mount = boot_device->mount;
+    }
 
-			// Search the directory for the entry
-			data.name = tok;
-			data.handle = NULL;
-			if(!mount->type->iterate(handle, file_open_cb, &data) || !data.handle) {
-				file_close(handle);
-				free(orig);
-				return NULL;
-			}
+    if (dup[0] == '/') {
+        from = mount->root;
 
-			file_close(handle);
-			handle = data.handle;
-		}
-	}
+        /* Strip leading / characters from the path. */
+        while (*dup == '/')
+            dup++;
+    } else if (!from) {
+        return STATUS_INVALID_ARG;
+    }
 
-	#if CONFIG_INITIUM_FS_ZLIB
-	// If the file is compressed, initialize decompression state. This will
-	// set handle->compressed to non-NULL if the file is compressed
-	if(!handle->directory)
-		decompress_open(handle);
-	#endif
+    if (mount->ops->open) {
+        /* Use the provided open() implementation. */
+        ret = mount->ops->open(mount, dup, from, &handle);
+        if (ret != STATUS_SUCCESS)
+            return ret;
+    } else {
+        assert(mount->ops->iterate);
 
-	return handle;
+        handle = from;
+        fs_handle_retain(handle);
+
+        /* Loop through each element of the path string. */
+        while (true) {
+            fs_open_data_t data;
+
+            tok = strsep(&dup, "/");
+            if (!tok) {
+                /* The last token was the last element of the path string,
+                 * return the handle we're currently on. */
+                break;
+            } else if (!handle->directory) {
+                /* The previous node was not a directory: this means the path
+                 * string is trying to treat a non-directory as a directory.
+                 * Reject this. */
+                fs_handle_release(handle);
+                return STATUS_NOT_DIR;
+            } else if (!tok[0]) {
+                /* Zero-length path component, do nothing. */
+                continue;
+            }
+
+            /* Search the directory for the entry. */
+            data.name = tok;
+            data.handle = NULL;
+            ret = mount->ops->iterate(handle, fs_open_cb, &data);
+            fs_handle_release(handle);
+            if (ret != STATUS_SUCCESS) {
+                return ret;
+            } else if (!data.handle) {
+                return STATUS_NOT_FOUND;
+            }
+
+            handle = data.handle;
+        }
+    }
+
+    *_handle = handle;
+    return STATUS_SUCCESS;
 }
 
-/**
- * Close a handle.
- *
- * @param handle	Handle to close.
- */
-void file_close(file_handle_t *handle) {
-	if(--handle->count == 0) {
-		#if CONFIG_KBOOT_FS_ZLIB
-		if(handle->compressed)
-			decompress_close(handle);
-		#endif
+/** Read from a file.
+ * @param handle        Handle to the file.
+ * @param buf           Buffer to read into.
+ * @param count         Number of bytes to read.
+ * @param offset        Offset into the file.
+ * @return              Status code describing the result of the operation. */
+status_t file_read(fs_handle_t *handle, void *buf, size_t count, offset_t offset) {
+    if (handle->directory)
+        return STATUS_NOT_FILE;
 
-		if(handle->mount->type->close)
-			handle->mount->type->close(handle);
+    if (!count)
+        return STATUS_SUCCESS;
 
-		free(handle);
-	}
+    return handle->mount->ops->read(handle, buf, count, offset);
 }
 
-/**
- * Read from a file.
- *
- * @param handle	Handle to file to read from.
- * @param buf			Buffer to read into.
- * @param count		Number of bytes to read.
- * @param offset	Offset in the file to read from.
- * @return				Whether the read was successful.
- */
-bool file_read(file_handle_t *handle, void *buf, size_t count, offset_t offset) {
-	assert(!handle->directory);
-
-	if(!count)
-		return true;
-
-	#if CONFIG_INITIUM_FS_ZLIB
-	if(handle->compressed)
-		return decompress_read(handle, buf, count, offset);
-	#endif
-
-	return handle->mount->type->read(handle, buf, count, offset);
+/** Get the size of a file.
+ * @param handle        Handle to the file.
+ * @return              Size of the file. */
+offset_t file_size(fs_handle_t *handle) {
+    return (!handle->directory) ? handle->mount->ops->size(handle) : 0;
 }
 
-/**
- * Get the size of a file.
- *
- * @param handle	Handle to the file.
- * @return		Size of the file.
- */
-offset_t file_size(file_handle_t *handle) {
-	assert(!handle->directory);
+/** Iterate over entries in a directory.
+ * @param handle        Handle to directory.
+ * @param cb            Callback to call on each entry.
+ * @param arg           Data to pass to callback.
+ * @return              Status code describing the result of the operation. */
+status_t dir_iterate(fs_handle_t *handle, dir_iterate_cb_t cb, void *arg) {
+    if (!handle->directory)
+        return STATUS_NOT_DIR;
 
-	#if CONFIG_INITIUM_FS_ZLIB
-	if(handle->compressed)
-		return decompress_size(handle);
-	#endif
-
-	return handle->mount->type->size(handle);
-}
-
-/**
- * Iterate over entries in a directory.
- *
- * @param handle	Handle to directory.
- * @param cb			Callback to call on each entry.
- * @param arg			Data to pass to callback.
- * @return				Whether read successfully.
-*/
-bool dir_iterate(file_handle_t *handle, dir_iterate_cb_t cb, void *arg) {
-	assert(handle->directory);
-	return handle->mount->type->iterate(handle, cb, arg);
+    return handle->mount->ops->iterate(handle, cb, arg);
 }
