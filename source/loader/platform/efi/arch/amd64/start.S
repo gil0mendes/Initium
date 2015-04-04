@@ -57,15 +57,13 @@ FUNCTION_START(loader_entry)
     leaq    __start(%rip), %rdi
     leaq    _DYNAMIC(%rip), %rsi
     call    efi_arch_relocate
-    /* Relocate generate an error. But I don't why, for now */
-    /*
     testq   %rax, %rax
     jz      1f
     addq    $16, %rsp
     pop     %rsi
     pop     %rdi
     pop     %rbp
-    ret */
+    ret
 1:
     /* Zero the BSS section. */
     leaq    __bss_start(%rip), %rdi
