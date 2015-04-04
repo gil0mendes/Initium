@@ -81,7 +81,7 @@ void loader_main(void) {
 		setupScreen();
 	#else
 		// Show menu
-		current_environ = menuDisplay();
+		//current_environ = menuDisplay();
 	#endif
 
 	while(true);

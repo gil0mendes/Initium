@@ -26,8 +26,8 @@ Import('config', 'defaults', 'env')
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-	'menu.c',
-	'ui.c'
+	#'menu.c',
+	#'ui.c'
 ])
 
 Return('sources')
