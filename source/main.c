@@ -35,6 +35,9 @@
 
 /** Main function of the loader. */
 void loader_main(void) {
+    // initialize config
+    config_init();
+
     // initialize memory
     memory_init();
 
@@ -42,7 +45,7 @@ void loader_main(void) {
     device_init();
 
     // load the configuration file
-    config_init();
+    config_load();
 
     // jump to the shell
     shell_main();
