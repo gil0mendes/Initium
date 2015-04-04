@@ -33,7 +33,6 @@
 #include <efi/arch/efi.h>
 
 #include <efi/api.h>
-#include <efi/protocol/graphics.h>
 
 #include <status.h>
 

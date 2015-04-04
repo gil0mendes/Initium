@@ -87,9 +87,6 @@ efi_system_table_t *efi_system_table;
     // Initialise memory map
     efi_memory_init();
 
-    // Initialize screen
-    screenInit();
-
     // Call loader main function
     loader_main();
 
