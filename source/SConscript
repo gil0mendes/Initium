@@ -47,6 +47,7 @@ sources = FeatureSources(config, [
     'main.c',
     'memory.c',
     'shell.c',
+    ('TARGET_HAS_VIDEO', 'video.c'),
 ])
 
 # Set the include search paths.

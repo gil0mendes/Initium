@@ -23,12 +23,10 @@ Import('config', 'defaults', 'env')
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-  'vbe.c',
   'bios.S',
   'disk.c',
   'start.S',
   'memory.c',
-  'screen.c',
   'console.c',
   'platform.c',
   #'multiboot.c',
