@@ -56,7 +56,7 @@ efi_system_table_t *efi_system_table;
  *
  * @return   EFI Status code
  */
- efi_status_t platform_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
+ efi_status_t efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
     efi_status_t ret;
 
     // Save image handler
@@ -86,9 +86,6 @@ efi_system_table_t *efi_system_table;
 
     // Initialise memory map
     efi_memory_init();
-
-    // Initialize devices
-    device_init();
 
     // Initialize screen
     screenInit();

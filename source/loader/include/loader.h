@@ -148,6 +148,6 @@ extern void backtrace(int (*print)(const char *fmt, ...));
 extern void loader_register_preboot_hook(preboot_hook_t hook);
 extern void loader_preboot(void);
 
-extern void loader_main(void) __noreturn;
+extern void loader_main(void);
 
 #endif /* __LOADER_H */

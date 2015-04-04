@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,65 +24,17 @@
 
 /**
  * @file
- * @brief 			Loader entry point
+ * @brief               Loader main function.
  */
 
-#include <fs.h>
-#include <menu.h>
-#include <config.h>
+#include <device.h>
 #include <loader.h>
-#include <screen.h>
-#include <assert.h>
 #include <memory.h>
-#include <console.h>
 
-// Maximum number of pre-boot hooks
-#define PREBOOT_HOOKS_MAX 8
-
-// Array of pre-boot hooks
-static preboot_hook_t preboot_hooks[PREBOOT_HOOKS_MAX];
-static size_t preboot_hooks_count = 0;
-
-/**
- * Add a pre-boot hook
- *
- * @param hook 		Hook to add
- */
-void loader_register_preboot_hook(preboot_hook_t hook) {
-	assert(preboot_hooks_count < PREBOOT_HOOKS_MAX);
-	preboot_hooks[preboot_hooks_count++] = hook;
-}
-
-/**
- * Perform pre-boot tasks
- */
-void load_preboot(void) {
-	size_t i;
-
-	for (i = 0; i < preboot_hooks_count; i++) {
-		preboot_hooks[i]();
-	}
-}
-
-/**
- * Main function for the Initium bootloader
- */
+/** Main function of the loader. */
 void loader_main(void) {
-	// we must have a filesystem to boot from
-	/*if(!boot_device || !boot_device->fs) {
-		boot_error("Could not find boot fylesystem");
-	}*/
+    memory_init();
+    device_init();
 
-	// Load the configuration file
-	//config_init();
-
-	#ifdef CONFIG_GUI_MODE
-		// Setup screen
-		setupScreen();
-	#else
-		// Show menu
-		//current_environ = menuDisplay();
-	#endif
-
-	while(true);
+    internal_error("TODO");
 }

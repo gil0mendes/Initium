@@ -43,31 +43,13 @@ extern void loader_main(void);
 /**
  * Main function of the BIOS loader
  */
-void platform_init(void)
+void bios_init(void)
 {
     // Initialize architecture code
     arch_init();
 
     // Initialize the console
     bios_console_init();
-
-    // Initialize memory
-    memory_init();
-
-    // Initialize devices
-    device_init();
-
-    #ifdef CONFIG_GUI_MODE
-    // Initialize VBE video mode
-    vbe_init();
-
-    // Initialize with a default mode
-    // TODO: Add a config option to specify a mode
-    vbe_mode_set(default_vbe_mode);
-
-    // Screen initialization
-    screenInit();
-    #endif
 
     // Call loader main function
     loader_main();
@@ -78,25 +60,4 @@ void platform_init(void)
  */
 void target_device_probe(void) {
     bios_disk_init();
-}
-
-/**
- * Reboot the system.
- */
-void platform_reboot(void)
-{
-    uint8_t val;
-
-    // Try the keyboard controller
-    do {
-        val = in8(0x64);
-
-        if (val & (1<<0)) {
-            in8(0x60);
-        }
-    } while(val & (1<<1));
-
-    out8(0x64, 0xfe);
-
-    // @TODO If this not work try a triple fault
 }

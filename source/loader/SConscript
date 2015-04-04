@@ -45,7 +45,7 @@ sources = FeatureSources(config, [
     #'config.c',
     'console.c',
     'memory.c',
-    'loader.c',
+    'main.c',
 ])
 
 # Set the include search paths.
