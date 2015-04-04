@@ -29,7 +29,7 @@ from util import FeatureSources
 
 sources = FeatureSources(config, [
     ('TARGET_HAS_DISK', 'fs/ext2.c'),
-    #('FS_ISO9660', 'fs/iso9660.c'),
+    ('TARGET_HAS_DISK', 'fs/iso9660.c'),
 
     'lib/printf.c',
     'lib/string.c',
