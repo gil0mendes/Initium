@@ -24,11 +24,12 @@
 
 /**
  * @file
- * @brief 				Device management
+ * @brief               Device management.
  */
 
 #include <lib/string.h>
 
+#include <config.h>
 #include <device.h>
 #include <fs.h>
 #include <loader.h>
@@ -50,9 +51,8 @@ status_t device_read(device_t *device, void *buf, size_t count, offset_t offset)
     if (!device->ops || !device->ops->read)
         return STATUS_NOT_SUPPORTED;
 
-    if (!count) {
+    if (!count)
         return STATUS_SUCCESS;
-    }
 
     return device->ops->read(device, buf, count, offset);
 }
@@ -80,25 +80,21 @@ device_t *device_lookup(const char *name) {
         name += 6;
     }
 
-    if (!name[0]) {
+    if (!name[0])
         return NULL;
-    }
 
     list_foreach(&device_list, iter) {
         device_t *device = list_entry(iter, device_t, header);
 
         if (uuid || label) {
-            if (!device->mount) {
+            if (!device->mount)
                 continue;
-            }
 
-            if (strcmp((uuid) ? device->mount->uuid : device->mount->label, name) == 0) {
+            if (strcmp((uuid) ? device->mount->uuid : device->mount->label, name) == 0)
                 return device;
-            }
         } else {
-            if (strcmp(device->name, name) == 0) {
+            if (strcmp(device->name, name) == 0)
                 return device;
-            }
         }
     }
 
@@ -117,43 +113,121 @@ void device_register(device_t *device, const char *name) {
     list_init(&device->header);
     list_append(&device_list, &device->header);
 
-    /* Probe for filesystems, */
+    /* Probe for filesystems. */
     device->mount = fs_probe(device);
 }
 
-/**
- * Initialize the device manager.s
- */
+/** Print a list of devices.
+ * @param console       Console to write to.
+ * @param indent        Indentation level. */
+static void print_device_list(console_t *console, size_t indent) {
+    list_foreach(&device_list, iter) {
+        device_t *device = list_entry(iter, device_t, header);
+        size_t child = 0;
+        char buf[128];
+
+        /* Figure out how much to indent the string (so we get a tree-like view
+         * with child devices indented). */
+        for (size_t i = 0; device->name[i]; i++) {
+            if (device->name[i] == ',')
+                child++;
+        }
+
+        snprintf(buf, sizeof(buf), "Unknown");
+        if (device->ops->identify)
+            device->ops->identify(device, buf, sizeof(buf));
+
+        console_printf(console, "%-*s%-*s -> %s\n", indent + child, "", 7 - child, device->name, buf);
+    }
+}
+
+/** Set the current device.
+ * @param args          Argument list.
+ * @return              Whether successful. */
+static bool config_cmd_device(value_list_t *args) {
+    device_t *device;
+    value_t value;
+
+    if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
+        config_printf("device: Invalid arguments\n");
+        return false;
+    }
+
+    device = device_lookup(args->values[0].string);
+    if (!device) {
+        config_printf("device: Device '%s' not found\n", args->values[0].string);
+        return false;
+    }
+
+    current_environ->device = device;
+
+    value.type = VALUE_TYPE_STRING;
+    value.string = device->name;
+    environ_insert(current_environ, "device", &value);
+
+    if (device->mount) {
+        value.string = device->mount->label;
+        environ_insert(current_environ, "device_label", &value);
+        value.string = device->mount->uuid;
+        environ_insert(current_environ, "device_uuid", &value);
+    } else {
+        environ_remove(current_environ, "device_label");
+        environ_remove(current_environ, "device_uuid");
+    }
+
+    return true;
+}
+
+BUILTIN_COMMAND("device", config_cmd_device);
+
+/** Print a list of devices.
+ * @param args          Argument list.
+ * @return              Whether successful. */
+static bool config_cmd_lsdev(value_list_t *args) {
+    if (args->count == 0) {
+        print_device_list(config_console, 0);
+        return true;
+    } else if (args->count == 1 && args->values[0].type == VALUE_TYPE_STRING) {
+        device_t *device;
+        char buf[128];
+
+        device = device_lookup(args->values[0].string);
+        if (!device) {
+            config_printf("lsdev: Device '%s' not found\n", args->values[0].string);
+            return false;
+        }
+
+        snprintf(buf, sizeof(buf), "Unknown");
+        if (device->ops->identify)
+            device->ops->identify(device, buf, sizeof(buf));
+
+        config_printf("name     = %s\n", device->name);
+        config_printf("identity = %s\n", buf);
+        if (device->mount) {
+            config_printf("fs       = %s\n", device->mount->ops->name);
+            config_printf("uuid     = %s\n", device->mount->uuid);
+            config_printf("label    = %s\n", device->mount->label);
+        }
+
+        return true;
+    } else {
+        config_printf("lsdev: Invalid arguments");
+        return false;
+    }
+}
+
+BUILTIN_COMMAND("lsdev", config_cmd_lsdev);
+
+/** Initialize the device manager. */
 void device_init(void) {
     target_device_probe();
 
-    dprintf("device: detect devices:\n");
-    list_foreach(&device_list, iter) {
-        device_t *device = list_entry(iter, device_t, header);
-        size_t indent = 0;
-        char buf[128];
+    /* Print out a list of all devices. */
+    dprintf("device: detected devices:\n");
+    print_device_list(&debug_console, 1);
 
-        /**
-         * Figure out how much to indent the string (so we get a tree-like view
-         * with child devices indented).
-         */
-        for (size_t i = 0; device->name[i]; i++) {
-            if (device->name[i] == ',') {
-                indent++;
-            }
-        }
-
-        snprintf(buf, sizeof(buf), "Unknow");
-        if (device->ops->identify) {
-            device->ops->identify(device, buf, sizeof(buf));
-        }
-
-        dprintf(" %-*s%-*s -> %s\n", indent, "", 7 - indent, device->name, buf);
-    }
-
-    if (!boot_device || !boot_device->mount) {
+    if (!boot_device || !boot_device->mount)
         boot_error("Unable to find boot filesystem");
-    }
 
     dprintf("device: boot device is %s\n", (boot_device) ? boot_device->name : "unknown");
 }

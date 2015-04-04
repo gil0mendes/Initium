@@ -34,6 +34,7 @@
 
 #include <platform/loader.h>
 
+#include <console.h>
 #include <status.h>
 #include <types.h>
 
@@ -135,13 +136,13 @@ static inline ptr_t phys_to_virt(phys_ptr_t addr) {
        return (addr + LOADER_VIRT_OFFSET);
 }
 
-extern int vprintf(const char *fmt, va_list args);
-extern int printf(const char *fmt, ...) __printf(1, 2);
-extern int dvprintf(const char *fmt, va_list args);
-extern int dprintf(const char *fmt, ...) __printf(1, 2);
+#define vprintf(fmt, args) console_vprintf(&main_console, fmt, args)
+#define printf(fmt...) console_printf(&main_console, fmt)
+#define dvprintf(fmt, args) console_vprintf(&debug_console, fmt, args)
+#define dprintf(fmt...) console_printf(&debug_console, fmt)
 
-extern void boot_error(const char *fmt, ...) __noreturn;
-extern void internal_error(const char *fmt, ...) __noreturn;
+extern void boot_error(const char *fmt, ...) __printf(1, 2) __noreturn;
+extern void internal_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 
 extern void backtrace(int (*print)(const char *fmt, ...));
 

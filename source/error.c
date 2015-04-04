@@ -31,6 +31,7 @@
 
 #include <console.h>
 #include <loader.h>
+#include <shell.h>
 
 /**
  * Helper for printing error messages.
@@ -122,6 +123,10 @@ void __noreturn boot_error(const char *fmt, ...) {
 	error_printf("Ensure that you have enough memory available, that you do not have any\n");
 	error_printf("malfunctioning hardware and that your computer meets the minimum system\n");
 	error_printf("requirements for the operating system.\n");
+
+	// temporary
+	error_printf("\n");
+	shell_main();
 
 	system_halt();
 }

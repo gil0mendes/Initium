@@ -27,14 +27,23 @@
  * @brief               Loader main function.
  */
 
+#include <config.h>
 #include <device.h>
 #include <loader.h>
 #include <memory.h>
+#include <shell.h>
 
 /** Main function of the loader. */
 void loader_main(void) {
+    // initialize memory
     memory_init();
+
+    // initialize devices
     device_init();
 
-    internal_error("TODO");
+    // load the configuration file
+    config_init();
+
+    // jump to the shell
+    shell_main();
 }
