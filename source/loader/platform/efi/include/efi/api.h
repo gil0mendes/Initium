@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -176,9 +176,20 @@ typedef struct efi_device_path {
 /** ACPI device path structure. */
 typedef struct efi_device_path_acpi {
     efi_device_path_t header;
-    uint32_t hid;
-    uint32_t uid;
+    efi_uint32_t hid;
+    efi_uint32_t uid;
 } __packed efi_device_path_acpi_t;
+
+/** Hard disk device path structure. */
+typedef struct efi_device_path_hd {
+    efi_device_path_t header;
+    efi_uint32_t partition_number;
+    efi_uint64_t partition_start;
+    efi_uint64_t partition_size;
+    efi_uint8_t partition_signature[16];
+    efi_uint8_t partition_format;
+    efi_uint8_t signature_type;
+} __packed efi_device_path_hd_t;
 
 /** Device path to text protocol GUID. */
 #define EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_GUID \
@@ -716,5 +727,34 @@ typedef struct efi_system_table {
 
 /** EFI system table signature. */
 #define EFI_SYSTEM_TABLE_SIGNATURE          0x5453595320494249ll
+
+/**
+ * EFI loaded image protocol definitions.
+ */
+
+/** Loaded image protocol GUID. */
+#define EFI_LOADED_IMAGE_PROTOCOL_GUID \
+    { 0x5b1b31a1, 0x9562, 0x11d2, 0x8e, 0x3f, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
+
+/** Loaded image protocol revisions. */
+#define EFI_LOADED_IMAGE_PROTOCOL_REVISION  0x1000
+
+/** Loaded image protocol. */
+typedef struct efi_loaded_image {
+    efi_uint32_t revision;
+    efi_handle_t parent_handle;
+    efi_system_table_t *system_table;
+    efi_handle_t device_handle;
+    efi_device_path_t *file_path;
+    void *reserved;
+    efi_uint32_t load_options_size;
+    void *load_options;
+    void *image_base;
+    efi_uint64_t image_size;
+    efi_uint32_t image_code_type;
+    efi_uint32_t image_data_type;
+
+    efi_status_t (*unload)(efi_handle_t image_handle) __efiapi;
+} efi_loaded_image_t;
 
 #endif /* __EFI_API_H */

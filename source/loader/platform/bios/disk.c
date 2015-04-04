@@ -23,9 +23,9 @@
 */
 
 /**
-* @file
-* @brief               BIOS disk device support.
-*/
+ * @file
+ * @brief               BIOS disk device support.
+ */
 
 #include <lib/string.h>
 #include <lib/utility.h>
@@ -95,9 +95,45 @@ static status_t bios_disk_read_blocks(disk_device_t *_disk, void *buf, size_t co
     return STATUS_SUCCESS;
 }
 
+/** Check if a partition is the boot partition.
+ * @param disk          Disk the partition resides on.
+ * @param id            ID of partition.
+ * @param lba           Block that the partition starts at.
+ * @return              Whether partition is a boot partition. */
+static bool bios_disk_is_boot_partition(disk_device_t *disk, uint8_t id, uint64_t lba) {
+    if (multiboot_magic == MULTIBOOT_LOADER_MAGIC) {
+        if (id == (multiboot_info.boot_device & 0x00FF0000) >> 16)
+            return true;
+    } else {
+        if (lba == bios_boot_partition)
+            return true;
+    }
+
+    return false;
+}
+
+/** Get a string to identify a BIOS disk.
+ * @param _disk         Disk to identify.
+ * @param buf           Where to store identification string.
+ * @param size          Size of the buffer. */
+static void bios_disk_identify(disk_device_t *_disk, char *buf, size_t size) {
+    bios_disk_t *disk = (bios_disk_t *)_disk;
+
+    if (disk->disk.blocks != ~0ULL) {
+        snprintf(buf, size,
+            "BIOS disk 0x%" PRIx8 " (block size: %zu, blocks: %" PRIu64 ")",
+            disk->id, disk->disk.block_size, disk->disk.blocks);
+    } else {
+        snprintf(buf, size,
+            "BIOS disk 0x%" PRIx8 " (block size: %zu)", disk->id, disk->disk.block_size);
+    }
+}
+
 /** Operations for a BIOS disk device. */
 static disk_ops_t bios_disk_ops = {
     .read_blocks = bios_disk_read_blocks,
+    .is_boot_partition = bios_disk_is_boot_partition,
+    .identify = bios_disk_identify,
 };
 
 /** Add the disk with the specified ID.
@@ -138,13 +174,7 @@ static void add_disk(uint8_t id) {
             disk->disk.type = DISK_TYPE_CDROM;
             disk->disk.block_size = 2048;
             disk->disk.blocks = ~0ULL;
-            disk_device_register(&disk->disk);
-
-            dprintf("bios: disk %s at 0x%x (block_size: %zu)\n",
-                disk->disk.device.name, disk->id, disk->disk.block_size);
-
-            disk_device_probe(&disk->disk);
-
+            disk_device_register(&disk->disk, true);
             return;
         }
     }
@@ -179,13 +209,7 @@ static void add_disk(uint8_t id) {
     disk->disk.type = DISK_TYPE_HD;
     disk->disk.block_size = params->sector_size;
     disk->disk.blocks = params->sector_count;
-    disk_device_register(&disk->disk);
-
-    dprintf("bios: disk %s at 0x%x (block_size: %zu, blocks: %" PRId64 ")\n",
-        disk->disk.device.name, disk->id, disk->disk.block_size,
-        disk->disk.blocks);
-
-    disk_device_probe(&disk->disk);
+    disk_device_register(&disk->disk, id == bios_boot_device);
 }
 
 /** Detect and register all disk devices. */

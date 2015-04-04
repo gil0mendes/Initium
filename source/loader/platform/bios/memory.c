@@ -36,7 +36,7 @@
 /**
  * Detect physical memory.
  */
-void bios_memory_init(void) {
+void target_memory_probe(void) {
 	bios_regs_t regs;
 	size_t count = 0, i;
 	e820_entry_t *mmap;
@@ -110,7 +110,4 @@ void bios_memory_init(void) {
 
 	// Mark the memory area we use for BIOS calls as internal
 	memory_protect(BIOS_MEM_BASE, BIOS_MEM_SIZE + PAGE_SIZE);
-
-	// Initialize the memory manager
-	memory_init();
 }

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@
 #include <status.h>
 
 extern efi_handle_t efi_image_handle;
+extern efi_loaded_image_t *efi_loaded_image;
 extern efi_system_table_t *efi_system_table;
 
 extern status_t efi_convert_status(efi_status_t status);
@@ -78,6 +79,6 @@ extern void efi_console_init(void);
 extern void efi_disk_init(void);
 extern void efi_memory_init(void);
 
-efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab);
+extern efi_status_t platform_init(efi_handle_t image_handle, efi_system_table_t *system_table);
 
 #endif /* __EFI_EFI_H */

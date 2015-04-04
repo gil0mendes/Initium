@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,10 @@
 #include <bios/bios.h>
 #include <bios/multiboot.h>
 
-#include <disk.h>
+#include <device.h>
 #include <loader.h>
 #include <screen.h>
+#include <memory.h>
 
 extern void loader_main(void);
 
@@ -50,11 +51,11 @@ void platform_init(void)
     // Initialize the console
     bios_console_init();
 
-    // Detect memory
-    bios_memory_init();
+    // Initialize memory
+    memory_init();
 
-    // Initialize disks
-    bios_disk_init();
+    // Initialize devices
+    device_init();
 
     #ifdef CONFIG_GUI_MODE
     // Initialize VBE video mode
@@ -70,6 +71,13 @@ void platform_init(void)
 
     // Call loader main function
     loader_main();
+}
+
+/**
+ * Detect and register all devices.
+ */
+void target_device_probe(void) {
+    bios_disk_init();
 }
 
 /**

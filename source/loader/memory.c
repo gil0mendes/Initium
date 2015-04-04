@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -171,8 +171,8 @@ void memory_dump(list_t *memory_map) {
        list_foreach(memory_map, iter) {
                range = list_entry(iter, memory_range_t, header);
 
-               dprintf(" 0x%016" PRIxPHYS "-0x%016" PRIxPHYS ": ",
-                       range->start, range->start + range->size);
+               dprintf(" 0x%016" PRIxPHYS "-0x%016" PRIxPHYS " (%" PRIu64 " KiB) -> ",
+                       range->start, range->start + range->size, range->size / 1024);
 
                switch(range->type) {
                case MEMORY_TYPE_FREE:
@@ -197,8 +197,7 @@ void memory_dump(list_t *memory_map) {
                        dprintf("Internal\n");
                        break;
                default:
-                       dprintf("???\n");
-                       break;
+                       internal_error("Bad memory type %d", range->type);
                }
        }
 }
@@ -438,9 +437,6 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
  * @param type         Type of the range. */
 void memory_add(phys_ptr_t start, phys_size_t size, uint8_t type) {
        memory_range_insert(start, size, type);
-
-       dprintf("memory: added range 0x%" PRIxPHYS "-0x%" PRIxPHYS " (type: %"
-               PRIu8 ")\n", start, start + size, type);
 }
 
 /**
@@ -475,20 +471,22 @@ void memory_protect(phys_ptr_t start, phys_size_t size) {
        }
 }
 
-/** Initialise the memory manager.
- * @note               Platform code is expected to add all memory ranges
- *                     before calling this function. */
+/**
+ * Initialise the memory manager.
+ */
 void memory_init(void) {
-       phys_ptr_t start, end;
+   phys_ptr_t start, end;
 
-       /* Mark the boot loader itself as internal so that it gets reclaimed
-        * before entering the kernel. */
-       start = round_down(virt_to_phys((ptr_t)__start), PAGE_SIZE);
-       end = round_up(virt_to_phys((ptr_t)__end), PAGE_SIZE);
-       memory_protect(start, end - start);
+	target_memory_probe();
 
-       dprintf("memory: initial memory map:\n");
-       memory_dump(&memory_ranges);
+	/* Mark the boot loader itself as internal so that it gets reclaimed
+	* before entering the kernel. */
+	start = round_down(virt_to_phys((ptr_t)__start), PAGE_SIZE);
+	end = round_up(virt_to_phys((ptr_t)__end), PAGE_SIZE);
+	memory_protect(start, end - start);
+
+	dprintf("memory: initial memory map:\n");
+	memory_dump(&memory_ranges);
 }
 
 /**

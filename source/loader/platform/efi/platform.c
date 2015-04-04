@@ -29,32 +29,41 @@
 
 #include <efi/efi.h>
 
+#include <device.h>
 #include <loader.h>
 #include <screen.h>
 #include <disk.h>
 
+/** Loaded image protocol GUID. */
+static efi_guid_t loaded_image_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+
 extern void loader_main(void);
 
-// Handle to the loader image
+/** Handle to the loader image */
 efi_handle_t efi_image_handle;
 
-// Pointer to the EFI system table
+/** Loaded image strucutre for the loader image */
+efi_loaded_image_t *efi_loaded_image;
+
+/** Pointer to the EFI system table */
 efi_system_table_t *efi_system_table;
 
 /**
  * Main function of the EFI loader.
  *
- * @param image       Handle to the loader image
- * @param systab      Pointer to EFI system table.
+ * @param image_handle  Handle to the loader image.
+ * @param system_table  Pointer to EFI system table.
  *
  * @return   EFI Status code
  */
- efi_status_t platform_init(efi_handle_t image, efi_system_table_t *systab) {
+ efi_status_t platform_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
+    efi_status_t ret;
+
     // Save image handler
-    efi_image_handle = image;
+    efi_image_handle = image_handle;
 
     // Save EFI system table
-    efi_system_table = systab;
+    efi_system_table = system_table;
 
     // Initialize architecture code
     arch_init();
@@ -65,13 +74,21 @@ efi_system_table_t *efi_system_table;
 
     // Initialise console
     efi_console_init();
-    dprintf("efi: load base %p\n", __start);
+
+    /* Get the loaded image protocol. */
+    ret = efi_open_protocol(
+        image_handle, &loaded_image_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL,
+        (void **)&efi_loaded_image);
+
+    if (ret != EFI_SUCCESS) {
+        internal_error("Failed to get loaded image protocol (0x%x)", ret);
+    }
 
     // Initialise memory map
     efi_memory_init();
 
-    // Initialize disk
-    efi_disk_init();
+    // Initialize devices
+    device_init();
 
     // Initialize screen
     screenInit();
@@ -80,4 +97,11 @@ efi_system_table_t *efi_system_table;
     loader_main();
 
     return EFI_SUCCESS;
+}
+
+/**
+ * Detect and register all devices.
+ */
+void target_device_probe(void) {
+    efi_disk_init();
 }

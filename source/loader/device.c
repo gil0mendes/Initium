@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,9 @@
 /** List of all registered devices. */
 static LIST_DECLARE(device_list);
 
+/** Boot device. */
+device_t *boot_device;
+
 /** Read from a device.
  * @param device        Device to read from.
  * @param buf           Buffer to read into.
@@ -45,6 +48,10 @@ static LIST_DECLARE(device_list);
 status_t device_read(device_t *device, void *buf, size_t count, offset_t offset) {
     if (!device->ops || !device->ops->read)
         return STATUS_NOT_SUPPORTED;
+
+    if (!count) {
+        return STATUS_SUCCESS;
+    }
 
     return device->ops->read(device, buf, count, offset);
 }
@@ -84,4 +91,37 @@ void device_register(device_t *device, const char *name) {
 
     list_init(&device->header);
     list_append(&device_list, &device->header);
+}
+
+/**
+ * Initialize the device manager.s
+ */
+void device_init(void) {
+    target_device_probe();
+
+    dprintf("device: detect devices:\n");
+    list_foreach(&device_list, iter) {
+        device_t *device = list_entry(iter, device_t, header);
+        size_t indent = 0;
+        char buf[128];
+
+        /**
+         * Figure out how much to indent the string (so we get a tree-like view
+         * with child devices indented).
+         */
+        for (size_t i = 0; device->name[i]; i++) {
+            if (device->name[i] == ',') {
+                indent++;
+            }
+        }
+
+        snprintf(buf, sizeof(buf), "Unknow");
+        if (device->ops->identify) {
+            device->ops->identify(device, buf, sizeof(buf));
+        }
+
+        dprintf(" %-*s%-*s -> %s\n", indent, "", 7 - indent, device->name, buf);
+    }
+
+    dprintf("device: boot device is %s\n", (boot_device) ? boot_device->name : "unknown");
 }
