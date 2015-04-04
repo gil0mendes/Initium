@@ -55,7 +55,7 @@ static void set_current_mode(video_mode_t *mode) {
 
     if (!main_console.out || was_console) {
         main_console.out = mode->ops->console;
-        
+
         if (mode->ops->console && mode->ops->console->init)
             mode->ops->console->init(mode);
     }
@@ -65,13 +65,14 @@ static void set_current_mode(video_mode_t *mode) {
  * @param mode          Mode to set.
  * @return              Status code describing the result of the operation. */
 status_t video_set_mode(video_mode_t *mode) {
-    status_t ret;
+    if (mode != current_video_mode) {
+        status_t ret = mode->ops->set_mode(mode);
+        if (ret != STATUS_SUCCESS) {
+            return ret;
+        }
+    }
 
-    ret = mode->ops->set_mode(mode);
-    if (ret == STATUS_SUCCESS)
-        set_current_mode(mode);
-
-    return ret;
+    return STATUS_SUCCESS;
 }
 
 /**

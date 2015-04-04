@@ -41,12 +41,12 @@
 #define BIOS_MEM_SIZE		0xe000
 
 /** Convert a segment + offset pair to a linear address. */
-#define SEGOFF2LIN(segoff) \
-	(ptr_t)((((segoff) & 0xffff0000) >> 12) + ((segoff) & 0xffff))
+#define segoff_to_linear(segoff) \
+    (ptr_t)((((segoff) & 0xffff0000) >> 12) + ((segoff) & 0xffff))
 
 /** Convert a linear address to a segment + offset pair. */
-#define LIN2SEGOFF(lin) \
-	(uint32_t)(((lin & 0xfffffff0) << 12) + (lin & 0xf))
+#define linear_to_segoff(linear) \
+    (uint32_t)((((linear) & 0xfffffff0) << 12) + ((linear) & 0xf))
 
 /** Structure describing registers to pass to a BIOS interrupt. */
 typedef struct bios_regs {
