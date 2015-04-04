@@ -28,23 +28,24 @@ Import(*vars)
 from util import FeatureSources
 
 sources = FeatureSources(config, [
-  'lib/printf.c',
-  'lib/string.c',
-  'lib/qsort.c',
+    ('TARGET_HAS_DISK', 'fs/ext2.c'),
+    #('FS_ISO9660', 'fs/iso9660.c'),
 
-  ('TARGET_HAS_DISK', 'partition/mbr.c'),
-  ('TARGET_HAS_DISK', 'partition/gpt.c'),
-  
-  #('FS_ISO9660', 'fs/iso9660.c'),
+    'lib/printf.c',
+    'lib/string.c',
+    'lib/qsort.c',
 
-  'fs.c',
-  ('TARGET_HAS_DISK', 'disk.c'),
-  'device.c',
-  'error.c',
-  #'config.c',
-  'console.c',
-  'memory.c',
-  'loader.c',
+    ('TARGET_HAS_DISK', 'partition/mbr.c'),
+    ('TARGET_HAS_DISK', 'partition/gpt.c'),
+
+    'fs.c',
+    ('TARGET_HAS_DISK', 'disk.c'),
+    'device.c',
+    'error.c',
+    #'config.c',
+    'console.c',
+    'memory.c',
+    'loader.c',
 ])
 
 # Set the include search paths.
