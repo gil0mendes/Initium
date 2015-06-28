@@ -28,6 +28,8 @@ config = {
   'config': {
     'EFI_ARCH': 'amd64',
     'EFI_ARCH_AMD64': True,
-    'DEBUG_LEVEL': 2
+    'DEBUG_LEVEL': 2,
+    'DRIVER_SERIAL_NS16550': True,
+    'TARGET_NS16550_IO': True
   },
 }
