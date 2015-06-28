@@ -30,6 +30,7 @@ from util import FeatureSources
 sources = FeatureSources(config, [
   'efi.c',
   'disk.c',
+  'video.c',
   'memory.c',
   'console.c',
   'platform.c',

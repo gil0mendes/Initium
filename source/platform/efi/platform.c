@@ -75,6 +75,12 @@ efi_system_table_t *efi_system_table;
     // Initialise console
     efi_console_init();
 
+    // Initialise memory map
+    efi_memory_init();
+
+    // Initialize video
+    efi_video_init();
+
     /* Get the loaded image protocol. */
     ret = efi_open_protocol(
         image_handle, &loaded_image_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL,
@@ -83,9 +89,6 @@ efi_system_table_t *efi_system_table;
     if (ret != EFI_SUCCESS) {
         internal_error("Failed to get loaded image protocol (0x%x)", ret);
     }
-
-    // Initialise memory map
-    efi_memory_init();
 
     // Call loader main function
     loader_main();

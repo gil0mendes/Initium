@@ -26,6 +26,7 @@ sources = FeatureSources(config, [
   'bios.S',
   'disk.c',
   'start.S',
+  'video.c',
   'memory.c',
   'console.c',
   'platform.c',

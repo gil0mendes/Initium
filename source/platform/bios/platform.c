@@ -48,8 +48,9 @@ void bios_init(void)
     // Initialize architecture code
     arch_init();
 
-    // Initialize the console
+    // Initialize the console and video
     bios_console_init();
+    bios_video_init();
 
     // Call loader main function
     loader_main();
