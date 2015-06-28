@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -79,6 +79,6 @@ typedef ptr_t ns16550_t;
 #endif
 
 extern void ns16550_init(ns16550_t base);
-extern void ns16550_config(uint32_t clock_rate, unsigned baud_rate);
+extern void ns16550_config(ns16550_t base, uint32_t clock_rate, unsigned baud_rate);
 
 #endif // __DRIVERS_SERIAL_NS16550_H

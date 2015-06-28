@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,14 @@
 #define SERIAL_CLOCK        1843200
 #define SERIAL_BAUD_RATE    115200
 
-/** Check for a character from the console.
- * @return              Whether a character is available. */
-static bool bios_console_poll(void) {
+/**
+ * Check for a character from the console.
+ *
+ * @param private       Unused.
+ *
+ * @return              Whether a character is available.
+ */
+static bool bios_console_poll(void *private) {
     bios_regs_t regs;
 
     bios_regs_init(&regs);
@@ -52,9 +57,14 @@ static bool bios_console_poll(void) {
     return !(regs.eflags & X86_FLAGS_ZF);
 }
 
-/** Read a character from the console.
- * @return              Character read. */
-static uint16_t bios_console_getc(void) {
+/**
+ * Read a character from the console.
+ *
+ * @param private       Unused.
+ *
+ * @return              Character read.
+ */
+static uint16_t bios_console_getc(void *private) {
     bios_regs_t regs;
     uint8_t ascii, scan;
 
@@ -110,9 +120,9 @@ void bios_console_init(void) {
     /* Initialize the serial port as the debug console. TODO: Disable for
      * non-debug builds? */
     status = in8(SERIAL_PORT + 6);
-    if ((status & ((1<<4) | (1<<5))) && status != 0xff) {
+    if ((status & ((1 << 4) | (1 << 5))) && status != 0xff) {
         ns16550_init(SERIAL_PORT);
-        ns16550_config(SERIAL_CLOCK, SERIAL_BAUD_RATE);
+        ns16550_config(SERIAL_PORT, SERIAL_CLOCK, SERIAL_BAUD_RATE);
     }
 
     /* Use BIOS for input. */
