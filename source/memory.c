@@ -313,43 +313,53 @@ static void memory_range_insert(phys_ptr_t start, phys_size_t size, uint8_t type
        memory_range_merge(range);
 }
 
-/** Check whether a range can satisfy an allocation.
- * @param range                Range to check.
+/**
+ * Check whether a range can satisfy an allocation.
+ *
+ * @param range        Range to check.
  * @param size         Size of the allocation.
- * @param align                Alignment of the allocation.
+ * @param align        Alignment of the allocation.
  * @param min_addr     Minimum address for the start of the allocated range.
  * @param max_addr     Maximum address of the end of the allocated range.
- * @param flags                Behaviour flags.
- * @param _phys                Where to store address for allocation.
- * @return             Whether the range can satisfy the allocation. */
+ * @param flags        Behaviour flags.
+ * @param _phys        Where to store address for allocation.
+ *
+ * @return             Whether the range can satisfy the allocation.
+ */
 static bool is_suitable_range(memory_range_t *range, phys_size_t size,
        phys_size_t align, phys_ptr_t min_addr, phys_ptr_t max_addr,
        unsigned flags, phys_ptr_t *_phys)
 {
-       phys_ptr_t start, match_start, match_end;
+	phys_ptr_t start, match_start, match_end;
 
-       if(range->type != MEMORY_TYPE_FREE)
-               return false;
+	if(range->type != MEMORY_TYPE_FREE) {
+		return false;
+	}
 
-       /* Check if this range contains addresses in the requested range. */
-       match_start = max(min_addr, range->start);
-       match_end = min(max_addr, range->start + range->size - 1);
-       if(match_end <= match_start)
-               return false;
 
-       /* Align the base address and check that the range fits. */
-       if(flags & MEMORY_ALLOC_HIGH) {
-               start = round_down((match_end - size) + 1, align);
-               if(start < match_start)
-                       return false;
-       } else {
-               start = round_up(match_start, align);
-               if((start + size - 1) > match_end)
-                       return false;
-       }
+   	/* Check if this range contains addresses in the requested range. */
+   	match_start = max(min_addr, range->start);
+   	match_end = min(max_addr, range->start + range->size - 1);
+	if(match_end <= match_start) {
+		return false;
+	}
 
-       *_phys = start;
-       return true;
+
+	/* Align the base address and check that the range fits. */
+	if(flags & MEMORY_ALLOC_HIGH) {
+		start = round_down((match_end - size) + 1, align);
+       	if(start < match_start) {
+			return false;
+		}
+	} else {
+		start = round_up(match_start, align);
+		if((start + size - 1) > match_end) {
+			return false;
+		}
+	}
+
+	*_phys = start;
+	return true;
 }
 
 /**
@@ -423,9 +433,9 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
        /* Insert a new range over the top of the allocation. */
        memory_range_insert(start, size, type);
 
-       dprintf("memory: allocated 0x%" PRIxPHYS "-0x%" PRIxPHYS " (align: 0x%"
-               PRIxPHYS ", type: %u, flags: 0x%x)\n", start, start + size,
-               align, type, flags);
+	dprintf(
+		"memory: allocated 0x%" PRIxPHYS "-0x%" PRIxPHYS " (align: 0x%" PRIxPHYS ", type: %u, flags: 0x%x)\n",
+		start, start + size, align, type, flags);
 
 	if (_phys) {
 		*_phys = start;
@@ -447,7 +457,18 @@ void memory_free(void *addr, phys_size_t size) {
 	assert(!(phys % PAGE_SIZE));
 	assert(!(size % PAGE_SIZE));
 
-	memory_range_insert(phys, size, MEMORY_TYPE_FREE);
+	list_foreach(&memory_ranges, iter) {
+		memory_range_t *range = list_entry(iter, memory_range_t, header);
+
+		if (range->type != MEMORY_TYPE_FREE) {
+			if (phys >= range->start && (phys + size - 1) <= (range->start + range->size - 1)) {
+				memory_range_insert(phys, size, MEMORY_TYPE_FREE);
+				return;
+			}
+		}
+	}
+
+	internal_error("Bad memory_free address 0x%" PRIxPHYS, phys);
 }
 
 /** Add a range of physical memory.
