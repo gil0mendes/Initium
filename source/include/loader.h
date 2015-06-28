@@ -101,8 +101,8 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * not specified by the architecture, it is assumed that physical addresses
  * can be used directly without modification.
  */
-#ifndef LOADER_VIRT_OFFSET
-# define LOADER_VIRT_OFFSET    0
+#ifndef TARGET_VIRT_OFFSET
+# define TARGET_VIRT_OFFSET    0
 #endif
 
 /**
@@ -112,8 +112,8 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * is not specified by the architecture, it is assumed that the loader can
  * access the low 4GB of the physical address space.
  */
-#ifndef LOADER_PHYS_MAX
-# define LOADER_PHYS_MAX       0xffffffff
+#ifndef TARGET_PHYS_MAX
+# define TARGET_PHYS_MAX       0xffffffff
 #endif
 
 /**
@@ -123,7 +123,7 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * @return             Converted physical address.
  */
 static inline phys_ptr_t virt_to_phys(ptr_t addr) {
-       return (addr - LOADER_VIRT_OFFSET);
+       return (addr - TARGET_VIRT_OFFSET);
 }
 
 /**
@@ -133,7 +133,7 @@ static inline phys_ptr_t virt_to_phys(ptr_t addr) {
  * @return             Converted virtual address.
  */
 static inline ptr_t phys_to_virt(phys_ptr_t addr) {
-       return (addr + LOADER_VIRT_OFFSET);
+       return (addr + TARGET_VIRT_OFFSET);
 }
 
 #define vprintf(fmt, args) console_vprintf(&main_console, fmt, args)

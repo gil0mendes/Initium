@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -185,18 +185,19 @@ reverse_sort_compare(const void *a, const void *b) {
     return second->physical_start - first->physical_start;
 }
 
-// ============================================================================
-// Allocate a range of physical memory.
-//
-// @param size			Size of the range (multiple of PAGE_SIZE).
-// @param align			Alignment of the range (power of 2, at least PAGE_SIZE).
-// @param min_addr	Minimum address for the start of the allocated range.
-// @param max_addr	Maximum address of the last byte of the allocated range.
-// @param type			Type to give the allocated range.
-// @param flags			Behaviour flags.
-// @param _phys			Where to store physical address of allocation.
-// @return					Pointer to virtual mapping of the allocation on success,
-// 		NULL on failure.
+/**
+ * Allocate a range of physical memory.
+ *
+ * @param  size     Size of the range (multiple of PAGE_SIZE).
+ * @param  align    Alignment of the range (power of 2, at least PAGE_SIZE).
+ * @param  min_addr Minimum address for the start of the allocated range.
+ * @param  max_addr Maximum address of the last byte of the allocated range.
+ * @param  type     Type to give the allocated range.
+ * @param  flags    Behaviour flags.
+ * @param  _phys    Where to store physical address of allocation.
+ *
+ * @return          Virtual address of the allocation on success, NULL on failure.
+ */
 void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
         phys_ptr_t max_addr, uint8_t type, unsigned flags,
         phys_ptr_t *_phys)
@@ -219,8 +220,8 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
     }
 
     // Ensure the memory allocated isn't greater than max physical address
-    if(!max_addr || max_addr > LOADER_PHYS_MAX) {
-        max_addr = LOADER_PHYS_MAX;
+    if(!max_addr || max_addr > TARGET_PHYS_MAX) {
+        max_addr = TARGET_PHYS_MAX;
     }
 
     assert(!(size % PAGE_SIZE));
@@ -254,7 +255,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
                 EFI_ALLOCATE_ADDRESS, type | EFI_OS_MEMORY_TYPE,
                 size / EFI_PAGE_SIZE, &start);
         if(ret != STATUS_SUCCESS) {
-            dprintf("efi: failed to allocate memory: 0x%zx\n", ret);
+            dprintf("efi: failed to allocate memory with status 0x%zx\n", ret);
             return NULL;
         }
 
@@ -267,13 +268,35 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
         free(memory_map);
 
         // Return the virtual address of the alocated memory range
-        *_phys = start;
+        if (_phys) {
+            *_phys = start;
+        }
+
         return (void *)phys_to_virt(start);
     }
 
     // Free memory map pointer
     free(memory_map);
     return NULL;
+}
+
+/**
+ * Free a range of physical memory.
+ *
+ * @param addr Virtual address of allocation.
+ * @param size Size of range to free.
+ */
+void memory_free(void *addr, phys_size_t size) {
+    phys_ptr_t phys = virt_to_phys((ptr_t)addr);
+    efi_status_t ret;
+
+    assert(!(phys % PAGE_SIZE));
+    assert(!(size % PAGE_SIZE));
+
+    ret = efi_call(efi_system_table->boot_services->free_pages, phys, size / EFI_PAGE_SIZE);
+    if (ret != STATUS_SUCCESS) {
+        internal_error("Failed to free EFI memory with status (0x%zx)", ret);
+    }
 }
 
 // ============================================================================
