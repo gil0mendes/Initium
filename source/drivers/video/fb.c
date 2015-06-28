@@ -252,7 +252,7 @@ static void fb_console_putc(char ch) {
     if (fb_console_y >= fb_console_rows) {
         /* Move everything up and fill the last row with blanks. */
         memmove(fb_console_glyphs, fb_console_glyphs + fb_console_cols, (fb_console_rows - 1) * fb_console_cols);
-        memset(fb_console_glyphs * ((fb_console_rows - 1) * fb_console_cols, ' ', fb_console_cols));
+        memset(fb_console_glyphs + ((fb_console_rows - 1) * fb_console_cols), ' ', fb_console_cols);
         fb_copyrect(0, 0, 0, FONT_HEIGHT, fb_mode->width, (fb_console_rows - 1) * FONT_HEIGHT);
         fb_fillrect(0, FONT_HEIGHT * (fb_console_rows - 1), fb_mode->width, FONT_HEIGHT, FONT_BG);
 
@@ -293,7 +293,7 @@ static void fb_console_init(video_mode_t *mode) {
     memset(fb_backbuffer, 0, size);
 
     size = round_up(fb_console_cols * fb_console_rows * sizeof(*fb_console_glyphs), PAGE_SIZE);
-    fb_console_glyphs = memory_alloc(size, 0, 0, 0 MEMORY_TYPE_INTERNAL, MEMORY_ALLOC_HIGH, NULL);
+    fb_console_glyphs = memory_alloc(size, 0, 0, 0, MEMORY_TYPE_INTERNAL, MEMORY_ALLOC_HIGH, NULL);
     if (!fb_console_glyphs) {
         internal_error("Failed to allocate console glyph cache");
     }
