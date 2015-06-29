@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -122,8 +122,13 @@ typedef struct fs_open_data {
  * @return              Whether to continue iteration. */
 static bool fs_open_cb(const char *name, fs_handle_t *handle, void *_data) {
     fs_open_data_t *data = _data;
+    int result;
 
-    if (strcmp(name, data->name) == 0) {
+    result = (handle->mount->case_insensitive)
+        ? strcasecmp(name, data->name)
+        : strcmp(name, data->name);
+
+    if (!result) {
         fs_handle_retain(handle);
         data->handle = handle;
         return false;

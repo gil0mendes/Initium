@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -111,6 +111,7 @@ typedef struct fs_mount {
     fs_ops_t *ops;                      /**< Operations structure for the filesystem. */
     struct device *device;              /**< Device that the filesystem is on. */
     struct fs_handle *root;             /**< Handle to root of FS (not needed if open() implemented). */
+    bool case_insensitive;              /**< Whether the filesystem is case insensitive. */
     char *label;                        /**< Label of the filesystem. */
     char *uuid;                         /**< UUID of the filesystem. */
 } fs_mount_t;
