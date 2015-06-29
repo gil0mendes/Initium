@@ -238,8 +238,8 @@ static void toggle_cursor(fb_console_t *fb) {
             /* Nothing has yet been writen, initialize the character. We must
              * be enabling the cursor if this is the case, so invert colours. */
             fb->chars[idx].ch = ' ';
-            fb->chars[idx].fg = CONSOLE_COLOUR_BG;
-            fb->chars[idx].bg = CONSOLE_COLOUR_FG;
+            fb->chars[idx].fg = fb->fg_colour;
+            fb->chars[idx].bg = fb->bg_colour;
         }
 
         /* Redraw in new colours. */
