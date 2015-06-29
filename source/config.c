@@ -125,6 +125,9 @@ static size_t current_file_size;        /**< Size of the current file. */
 
 /** Configuration file paths to try. */
 static const char *config_file_paths[] = {
+    #ifdef CONFIG_PLATFORM_EFI
+    "/efi/boot/loader.cfg",
+    #endif
     "/boot/loader.cfg",
     "/loader.cfg",
 };
