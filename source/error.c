@@ -31,7 +31,13 @@
 
 #include <console.h>
 #include <loader.h>
+#include <memory.h>
 #include <shell.h>
+#include <ui.h>
+
+/** Boot error message. */
+static const char *boot_error_format;
+static va_list boot_error_args;
 
 /**
  * Helper for printing error messages.
@@ -74,7 +80,7 @@ void __noreturn internal_error(const char *fmt, ...) {
 		main_console.out->reset(main_console.out_private);
 	}
 
-	error_printf("\nAn internal error has occurred:\n\n");
+	error_printf("\nInternal Error: ");
 
 	va_start(args, fmt);
 	do_vprintf(error_printf_helper, NULL, fmt, args);
@@ -92,6 +98,63 @@ void __noreturn internal_error(const char *fmt, ...) {
 	system_halt();
 }
 
+/** Display the boot error message. */
+static void boot_error_message(void) {
+	do_vprintf(error_printf_helper, NULL, boot_error_format, boot_error_args);
+
+	error_printf("\n\n");
+	error_printf("Ensure that you have enough memory available, that you do not have any\n");
+	error_printf("malfunctioning hardware and that your computer meets the minimum system\n");
+	error_printf("requirements for the operating system.\n");
+}
+
+#ifdef CONFIG_TARGET_HAS_UI
+
+/**
+ * Render the boot error window.
+ * @param  window Window to render.
+ */
+static void boot_error_render(ui_window_t *window) {
+	boot_error_message();
+}
+
+/**
+ * Write the help text for the boot error.
+ * @param window Window to write for.
+ */
+static void boot_error_help(ui_window_t *window) {
+	ui_print_action('\e', "Reboot");
+	ui_print_action(CONSOLE_KEY_F1, "Shell");
+	ui_print_action(CONSOLE_KEY_F2, "Debug Log");
+}
+
+/**
+ * Handle input on the boot error window.
+ * @param  window Window input was performed on.
+ * @param  key    Key that was pressed.
+ * @return        Input handling result.
+ */
+static input_result_t boot_error_input(ui_window_t *window, uint16_t key) {
+	/* TODO: Reboot, debug log */
+	switch (key) {
+		case CONSOLE_KEY_F1:
+			/* We start the shell in boot_error() upon return. */
+			return INPUT_CLOSE;
+		default:
+			return INPUT_HANDLED;
+	}
+}
+
+/** Boot error window type. */
+static ui_window_type_t boot_error_window_type = {
+	.render = boot_error_render,
+	.help = boot_error_help,
+	.input = boot_error_input,
+};
+
+#endif /* CONFIG_TARGET_HAS_UI. */
+
+// return for shell
 /**
  * Display details of a boot error.
  *
@@ -99,29 +162,32 @@ void __noreturn internal_error(const char *fmt, ...) {
  * @param ...		Values to substitute into format.
  */
 void __noreturn boot_error(const char *fmt, ...) {
-	va_list args;
+    console_printf(&debug_console, "\nBoot Error: ");
 
-	/* TODO: This eventually needs to go in a UI window and should let you
-	 * reboot the machine. */
+    /* Save the format string and arguments for UI render code. */
+    boot_error_format = fmt;
+    va_start(boot_error_args, fmt);
 
-	if(main_console.out) {
-		main_console.out->reset(main_console.out_private);
-	}
+    #ifdef CONFIG_TARGET_HAS_UI
+        ui_window_t *window;
 
-	error_printf("\nAn error has occurred during boot:\n\n");
+        window = malloc(sizeof(*window));
+        window->type = &boot_error_window_type;
+        window->title = "Boot Error";
 
-	va_start(args, fmt);
-	do_vprintf(error_printf_helper, NULL, fmt, args);
-	va_end(args);
+        ui_display(window, &main_console, 0);
+        ui_window_destroy(window);
+    #else
+        /* Just print it straight out on the console. */
+        console_reset(&main_console);
+        console_printf(&main_console, "\nBoot Error: ");
+        boot_error_message();
+        error_printf("\n");
+    #endif
 
-	error_printf("\n\n");
-	error_printf("Ensure that you have enough memory available, that you do not have any\n");
-	error_printf("malfunctioning hardware and that your computer meets the minimum system\n");
-	error_printf("requirements for the operating system.\n");
+    va_end(boot_error_args);
 
-	// temporary
-	error_printf("\n");
-	shell_main();
-
-	system_halt();
+    /* Jump into the shell. */
+    shell_main();
+    system_halt();
 }
