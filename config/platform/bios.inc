@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2014-2015 Gil Mendes <gil00mendes@gmail>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ include = {
 		'PLATFORM': 'bios',
 		'PLATFORM_BIOS': True,
 		'TARGET_HAS_DISK': True,
+		'TARGET_HAS_UI': True,
 		'TARGET_HAS_VIDEO': True,
 		'DRIVER_SERIAL_NS16550': True,
 		'TARGET_NS16550_IO': True,
