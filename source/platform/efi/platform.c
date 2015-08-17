@@ -102,3 +102,11 @@ efi_system_table_t *efi_system_table;
 void target_device_probe(void) {
     efi_disk_init();
 }
+
+/**
+ * Reboot the system.
+ */
+void target_reboot(void) {
+    efi_call(efi_system_table->runtime_services->reset_system, EFI_RESET_WARM, EFI_SUCCESS, 0, NULL);
+    internal_error("EFI reset failed");
+}

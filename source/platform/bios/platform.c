@@ -29,6 +29,9 @@
 
 #include <arch/io.h>
 
+#include <x86/cpu.h>
+#include <x86/descriptor.h>
+
 #include <bios/vbe.h>
 #include <bios/bios.h>
 #include <bios/multiboot.h>
@@ -39,6 +42,35 @@
 #include <memory.h>
 
 extern void loader_main(void);
+
+/**
+ * Reboot the system.
+ */
+void target_reboot(void) {
+    uint8_t val;
+    uint64_t target;
+
+    /* Try the keyboard controller. */
+    do {
+        val = in8(0x64);
+        if (val & (1 << 0)) {
+            in8(0x60);
+        }
+    } while (val & (1 << 1));
+    out8(0x64, 0xfe);
+
+    /* FIXME: delay function. */
+    target = x86_rdtsc() + 1000000000ull;
+    while (x86_rdtsc() < target) {
+        __asm__ volatile("pause");
+    }
+
+    /* Fall back on a triple fault. */
+    x86_lidt(0, 0);
+    __asm__ volatile("ud2");
+
+    while (true);
+}
 
 /**
  * Main function of the BIOS loader

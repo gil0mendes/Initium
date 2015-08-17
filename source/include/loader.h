@@ -141,6 +141,8 @@ static inline ptr_t phys_to_virt(phys_ptr_t addr) {
 #define dvprintf(fmt, args) console_vprintf(&debug_console, fmt, args)
 #define dprintf(fmt...) console_printf(&debug_console, fmt)
 
+extern void target_reboot(void) __noreturn;
+
 extern void boot_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 extern void internal_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 
