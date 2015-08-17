@@ -36,10 +36,10 @@
 
 /** Type of a partition disk device. */
 typedef struct partition {
-    disk_device_t disk;         /**< Disk structure header */
+    disk_device_t disk;                 /**< Disk structure header. */
 
-    disk_device_t *parent;      /**< Parent disk */
-    uint64_t offset;            /**< Offset of the partition on the disk */
+    disk_device_t *parent;              /**< Parent disk. */
+    uint64_t offset;                    /**< Offset of the partition on the disk. */
 } partition_t;
 
 /** Next disk IDs. */
@@ -54,16 +54,12 @@ static const char *const disk_type_names[] = {
 
 static void probe_partitions(disk_device_t *disk);
 
-/**
- * Read from a disk.
- *
+/** Read from a disk.
  * @param device        Device to read from.
  * @param buf           Buffer to read into.
  * @param count         Number of bytes to read.
  * @param offset        Offset in the disk to read from.
- *
- * @return              Whether the read was successful.
- */
+ * @return              Whether the read was successful. */
 status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t offset) {
     disk_device_t *disk = (disk_device_t *)device;
     void *block __cleanup_free = NULL;
@@ -71,14 +67,12 @@ status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t of
     size_t size;
     status_t ret;
 
-    if ((uint64_t)(offset + count) > (disk->blocks * disk->block_size)) {
-        return STATUS_DEVICE_ERROR;
-    }
+    if ((uint64_t)(offset + count) > (disk->blocks * disk->block_size))
+        return STATUS_END_OF_FILE;
 
     /* Allocate a temporary buffer for partial transfers if required. */
-    if (offset % disk->block_size || count % disk->block_size) {
+    if (offset % disk->block_size || count % disk->block_size)
         block = malloc(disk->block_size);
-    }
 
     /* Now work out the start block and the end block. Subtract one from count
      * to prevent end from going onto the next block when the offset plus the
@@ -92,9 +86,8 @@ status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t of
     if (offset % disk->block_size) {
         /* Read the block into the temporary buffer. */
         ret = disk->ops->read_blocks(disk, block, 1, start);
-        if (ret != STATUS_SUCCESS) {
+        if (ret != STATUS_SUCCESS)
             return ret;
-        }
 
         size = (start == end) ? count : disk->block_size - (size_t)(offset % disk->block_size);
         memcpy(buf, block + (offset % disk->block_size), size);
@@ -107,9 +100,8 @@ status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t of
     size = count / disk->block_size;
     if (size) {
         ret = disk->ops->read_blocks(disk, buf, size, start);
-        if (ret != STATUS_SUCCESS) {
+        if (ret != STATUS_SUCCESS)
             return ret;
-        }
 
         buf += (size * disk->block_size);
         count -= (size * disk->block_size);
@@ -119,9 +111,8 @@ status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t of
     /* Handle anything that's left. */
     if (count > 0) {
         ret = disk->ops->read_blocks(disk, block, 1, start);
-        if (ret != STATUS_SUCCESS) {
+        if (ret != STATUS_SUCCESS)
             return ret;
-        }
 
         memcpy(buf, block, count);
     }
@@ -129,12 +120,25 @@ status_t disk_device_read(device_t *device, void *buf, size_t count, offset_t of
     return STATUS_SUCCESS;
 }
 
-static void disk_device_identify(device_t *device, char *buf, size_t size) {
+/** Get disk device identification information.
+ * @param device        Device to identify.
+ * @param type          Type of the information to get.
+ * @param buf           Where to store identification string.
+ * @param size          Size of the buffer. */
+static void disk_device_identify(device_t *device, device_identify_t type, char *buf, size_t size) {
     disk_device_t *disk = (disk_device_t *)device;
 
-    if (disk->ops->identify) {
-        disk->ops->identify(disk, buf, size);
+    if (type == DEVICE_IDENTIFY_LONG) {
+        size_t ret = snprintf(buf, size,
+            "block size = %zu\n"
+            "blocks     = %" PRIu64 "\n",
+            disk->block_size, disk->blocks);
+        buf += ret;
+        size -= ret;
     }
+
+    if (disk->ops->identify)
+        disk->ops->identify(disk, type, buf, size);
 }
 
 /** Disk device operations. */
@@ -155,20 +159,19 @@ static status_t partition_read_blocks(disk_device_t *disk, void *buf, size_t cou
     return partition->parent->ops->read_blocks(partition->parent, buf, count, lba + partition->offset);
 }
 
-/**
- * Get a string to identify a partition.
- *
- * @param disk Disk to identify.
- * @param buf  Where to store identification string.
- * @param size Size of the buffer.
- */
-static void partition_identify(disk_device_t *disk, char *buf, size_t size) {
+/** Get partition identification information.
+ * @param disk          Disk to identify.
+ * @param type          Type of the information to get.
+ * @param buf           Where to store identification string.
+ * @param size          Size of the buffer. */
+static void partition_identify(disk_device_t *disk, device_identify_t type, char *buf, size_t size) {
     partition_t *partition = (partition_t *)disk;
 
-    snprintf(buf, size,
-        "%s partition %" PRIu8 " (lba: %" PRIu64 ", blocks: %" PRIu64 ")",
-        partition->parent->partition_ops->name, disk->id, partition->offset,
-        disk->blocks);
+    if (type == DEVICE_IDENTIFY_SHORT) {
+        snprintf(buf, size,
+            "%s partition %" PRIu8 " @ %" PRIu64,
+            partition->parent->partition_ops->name, disk->id, partition->offset);
+    }
 }
 
 /** Operations for a partition. */
@@ -201,21 +204,18 @@ static void add_partition(disk_device_t *parent, uint8_t id, uint64_t lba, uint6
 
     device_register(&partition->disk.device, name);
 
+    /* Check if this is the boot partition. */
     if (boot_device == &parent->device && parent->ops->is_boot_partition) {
-        if (parent->ops->is_boot_partition(parent, id, lba)) {
+        if (parent->ops->is_boot_partition(parent, id, lba))
             boot_device = &partition->disk.device;
-        }
     }
 
     /* Probe for partitions. */
     probe_partitions(&partition->disk);
 }
 
-/**
- * Probe a disk device for partitions.
- *
- * @param disk          Disk device to probe.
- */
+/** Probe a disk device for partitions.
+ * @param disk          Disk device to probe. */
 static void probe_partitions(disk_device_t *disk) {
     if (!disk->blocks || disk->device.mount)
         return;
@@ -229,13 +229,10 @@ static void probe_partitions(disk_device_t *disk) {
     }
 }
 
-/**
- * Register a disk device.
- *
+/** Register a disk device.
  * @param disk          Disk device to register (details should be filled in).
  * @param boot          Whether the device is the boot device or contains the
- *                      boot partition.
- */
+ *                      boot partition. */
 void disk_device_register(disk_device_t *disk, bool boot) {
     char name[16];
 
@@ -248,9 +245,8 @@ void disk_device_register(disk_device_t *disk, bool boot) {
     disk->device.ops = &disk_device_ops;
     device_register(&disk->device, name);
 
-    if (boot) {
+    if (boot)
         boot_device = &disk->device;
-    }
 
     probe_partitions(disk);
 }
