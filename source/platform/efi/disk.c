@@ -39,7 +39,7 @@
 typedef struct efi_disk {
     disk_device_t disk;                 /**< Disk device header. */
 
-    efi_handle_t handle;                /**< Handle to disk */
+    efi_handle_t handle;                /**< Handle to disk. */
     efi_device_path_t *path;            /**< Device path. */
     efi_block_io_protocol_t *block;     /**< Block I/O protocol. */
     efi_uint32_t media_id;              /**< Media ID. */

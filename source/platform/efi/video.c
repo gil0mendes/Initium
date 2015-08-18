@@ -27,7 +27,7 @@
  * @brief               EFI video mode detection.
  *
  * TODO:
- * 	- Need to implement UGA support for pre-UEFI 2.0 machines, such as Macs.
+ *  - Need to implement UGA support for pre-UEFI 2.0 machines, such as Macs.
  */
 
 #include <drivers/video/fb.h>
@@ -113,9 +113,7 @@ static void get_component_size_pos(uint32_t mask, uint8_t *_size, uint8_t *_pos)
     *_pos = first - 1;
 }
 
-/**
- * Detect available video modes.
- */
+/** Detect available video modes. */
 void efi_video_init(void) {
     efi_handle_t *handles;
     efi_uintn_t num_handles;

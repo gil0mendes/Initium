@@ -196,7 +196,7 @@ void shell_main(void) {
     while (true) {
         command_list_t *list;
 
-console_set_colour(config_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
+        console_set_colour(config_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
         config_printf("Initium> ");
         console_set_colour(config_console, CONSOLE_COLOUR_FG, CONSOLE_COLOUR_BG);
 

@@ -16,7 +16,7 @@
 
 /**
  * @file
- * @brief               Video mode management.
+ * @brief           Video mode management.
  *
  * TODO:
  *  - Get preferred mode via EDID.
@@ -43,7 +43,7 @@ static LIST_DECLARE(video_modes);
 static video_mode_t *current_video_mode;
 
 /** Set a mode as the current mode.
- * @param mode          Mode that is now current. */
+ * @param mode      Mode that is now current. */
 static void set_current_mode(video_mode_t *mode) {
     video_mode_t *prev = current_video_mode;
     bool was_console = prev && prev->ops->console && main_console.out == prev->ops->console;
@@ -64,14 +64,16 @@ static void set_current_mode(video_mode_t *mode) {
 }
 
 /** Set a video mode.
- * @param mode          Mode to set.
- * @return              Status code describing the result of the operation. */
+ * @param mode      Mode to set.
+ * @return          Status code describing the result of the operation. */
 status_t video_set_mode(video_mode_t *mode) {
     if (mode != current_video_mode) {
         status_t ret = mode->ops->set_mode(mode);
         if (ret != STATUS_SUCCESS) {
             return ret;
         }
+
+        set_current_mode(mode);
     }
 
     return STATUS_SUCCESS;
@@ -85,12 +87,12 @@ status_t video_set_mode(video_mode_t *mode) {
  * just bpp is zero, the highest available depth mode with the requested
  * dimensions will be returned.
  *
- * @param type          Type of the video mode to search for.
- * @param width         Desired pixel width for LFB, number of columns for VGA.
- * @param height        Desired pixel height for LFB, number of rows for VGA.
- * @param bpp           Bits per pixel for LFB, ignored for VGA.
+ * @param type      Type of the video mode to search for.
+ * @param width     Desired pixel width for LFB, number of columns for VGA.
+ * @param height    Desired pixel height for LFB, number of rows for VGA.
+ * @param bpp       Bits per pixel for LFB, ignored for VGA.
  *
- * @return              Mode found, or NULL if none matching.
+ * @return          Mode found, or NULL if none matching.
  */
 video_mode_t *video_find_mode(video_mode_type_t type, uint32_t width, uint32_t height, uint32_t bpp) {
     video_mode_t *mode, *ret;
@@ -143,9 +145,9 @@ video_mode_t *video_find_mode(video_mode_type_t type, uint32_t width, uint32_t h
  * Parses a string in the form "<type>[:<width>x<height>[x<bpp>]]" and returns
  * the result of video_find_mode() on the parsed values.
  *
- * @param str           String to parse.
+ * @param str       String to parse.
  *
- * @return              Mode found, or NULL if none matching.
+ * @return          Mode found, or NULL if none matching.
  */
 video_mode_t *video_parse_and_find_mode(const char *str) {
     char *orig __cleanup_free = NULL;
@@ -178,13 +180,13 @@ video_mode_t *video_parse_and_find_mode(const char *str) {
 }
 
 /** Get the current video mode.
- * @return              Current video mode. */
+ * @return          Current video mode. */
 video_mode_t *video_current_mode(void) {
     return current_video_mode;
 }
 
 /** Register a video mode.
- * @param mode          Mode to register.
+ * @param mode      Mode to register.
  * @param current       Whether the mode is the current mode. */
 void video_mode_register(video_mode_t *mode, bool current) {
     assert(!current || !current_video_mode);
@@ -196,15 +198,12 @@ void video_mode_register(video_mode_t *mode, bool current) {
         set_current_mode(mode);
 }
 
-/**
- * Print a list of video modes.
- *
- * @param  args Argument list.
- * @return      Whether successful.
- */
+/** Print a list of video modes.
+ * @param args      Argument list.
+ * @return          Whether successful. */
 static bool config_cmd_lsvideo(value_list_t *args) {
     if (args->count != 0) {
-        config_error("lsvideo: Invalid arguments\n");
+        config_error("lsvideo: Invalid arguments");
         return false;
     }
 
@@ -212,12 +211,12 @@ static bool config_cmd_lsvideo(value_list_t *args) {
         video_mode_t *mode = list_entry(iter, video_mode_t, header);
 
         switch (mode->type) {
-            case VIDEO_MODE_VGA:
-                config_printf("vga:%" PRIu32 "x%" PRIu32, mode->width, mode->height);
-                break;
-            case VIDEO_MODE_LFB:
-                config_printf("lfb:%" PRIu32 "x%" PRIu32 "x%" PRIu8, mode->width, mode->height, mode->bpp);
-                break;
+        case VIDEO_MODE_VGA:
+            config_printf("vga:%" PRIu32 "x%" PRIu32, mode->width, mode->height);
+            break;
+        case VIDEO_MODE_LFB:
+            config_printf("lfb:%" PRIu32 "x%" PRIu32 "x%" PRIu8, mode->width, mode->height, mode->bpp);
+            break;
         }
 
         config_printf("%s\n", (mode == current_video_mode) ? " (current)" : "");

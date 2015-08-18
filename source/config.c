@@ -1199,8 +1199,9 @@ void config_init(void) {
 /** Load the configuration. */
 void config_load(void) {
     if (config_file_override) {
-        if (!load_config_file(config_file_override))
+        if (!load_config_file(config_file_override)) {
             boot_error("Specified configuration file does not exist");
+        }
     } else {
         /* Try the various paths. */
         for (size_t i = 0; i < array_size(config_file_paths); i++) {
