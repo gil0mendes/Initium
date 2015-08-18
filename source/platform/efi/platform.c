@@ -22,14 +22,16 @@
  * SOFTWARE.
  */
 
- /**
-  * @file
-  * @brief       EFI platform main functions.
-  */
+/**
+ * @file
+ * @brief       EFI platform main functions.
+ */
 
+#include <efi/console.h>
 #include <efi/disk.h>
 #include <efi/efi.h>
 #include <efi/memory.h>
+#include <efi/video.h>
 
 #include <device.h>
 #include <loader.h>
@@ -56,7 +58,7 @@ efi_boot_services_t *efi_boot_services;
  *
  * @return   EFI Status code
  */
- efi_status_t efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
+efi_status_t efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
     efi_status_t ret;
 
     // Save image handler
@@ -87,8 +89,8 @@ efi_boot_services_t *efi_boot_services;
     ret = efi_get_loaded_image(image_handle, &efi_loaded_image);
 
     if (ret != EFI_SUCCESS) {
-        internal_error("Failed to get loaded image protocol (0x%x)", ret);
-    }
+	    internal_error("Failed to get loaded image protocol (0x%x)", ret);
+	}
 
     // Call loader main function
     loader_main();

@@ -75,7 +75,7 @@ void target_reboot(void) {
 /**
  * Main function of the BIOS loader
  */
-void bios_init(void)
+void bios_main(void)
 {
     // Initialize architecture code
     arch_init();

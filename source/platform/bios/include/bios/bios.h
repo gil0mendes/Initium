@@ -87,7 +87,7 @@ extern void bios_console_init(void);
 extern void bios_disk_init(void);
 extern void bios_video_init(void);
 
-extern void bios_init(void);
+extern void bios_main(void);
 extern void platform_reboot(void);
 
 #endif /* __BIOS_BIOS_H */

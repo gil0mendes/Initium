@@ -49,18 +49,18 @@ static void set_current_mode(video_mode_t *mode) {
     bool was_console = prev && prev->ops->console && main_console.out == prev->ops->console;
 
     if (was_console && prev->ops->console->deinit) {
-        prev->ops->console->deinit(main_console.out_private);
-    }
+	    prev->ops->console->deinit(main_console.out_private);
+	}
 
     current_video_mode = mode;
 
-    if (!main_console.out || was_console) {
-        if (mode->ops->console && mode->ops->console->init) {
-            main_console.out_private = mode->ops->console->init(mode);
-        }
+    if (mode && (!main_console.out || was_console)) {
+	    if (mode->ops->console && mode->ops->console->init) {
+		    main_console.out_private = mode->ops->console->init(mode);
+		}
 
-        main_console.out = mode->ops->console;
-    }
+	    main_console.out = mode->ops->console;
+	}
 }
 
 /** Set a video mode.
@@ -68,13 +68,15 @@ static void set_current_mode(video_mode_t *mode) {
  * @return          Status code describing the result of the operation. */
 status_t video_set_mode(video_mode_t *mode) {
     if (mode != current_video_mode) {
-        status_t ret = mode->ops->set_mode(mode);
-        if (ret != STATUS_SUCCESS) {
-            return ret;
-        }
+	    if (mode) {
+		    status_t ret = mode->ops->set_mode(mode);
+		    if (ret != STATUS_SUCCESS) {
+			    return ret;
+			}
+		}
 
-        set_current_mode(mode);
-    }
+	    set_current_mode(mode);
+	}
 
     return STATUS_SUCCESS;
 }
@@ -98,42 +100,42 @@ video_mode_t *video_find_mode(video_mode_type_t type, uint32_t width, uint32_t h
     video_mode_t *mode, *ret;
 
     if (width == 0 != height == 0)
-        return NULL;
+	return NULL;
 
     /* Check if we've been asked for a preferred mode. TODO: EDID */
     if (width == 0 && height == 0 && bpp == 0) {
-        switch (type) {
-        case VIDEO_MODE_VGA:
-            return video_find_mode(type, 80, 25, 0);
-        case VIDEO_MODE_LFB:
-            ret = video_find_mode(type, PREFERRED_MODE_WIDTH, PREFERRED_MODE_HEIGHT, 0);
-            if (!ret)
-                ret = video_find_mode(type, FALLBACK_MODE_WIDTH, FALLBACK_MODE_HEIGHT, 0);
+	    switch (type) {
+		case VIDEO_MODE_VGA:
+		    return video_find_mode(type, 80, 25, 0);
+		case VIDEO_MODE_LFB:
+		    ret = video_find_mode(type, PREFERRED_MODE_WIDTH, PREFERRED_MODE_HEIGHT, 0);
+		    if (!ret)
+			ret = video_find_mode(type, FALLBACK_MODE_WIDTH, FALLBACK_MODE_HEIGHT, 0);
 
-            return ret;
-        }
-    }
+		    return ret;
+		}
+	}
 
     /* Search for a matching mode. */
     ret = NULL;
     list_foreach(&video_modes, iter) {
-        mode = list_entry(iter, video_mode_t, header);
+	mode = list_entry(iter, video_mode_t, header);
 
-        if (mode->type != type)
-            continue;
+	if (mode->type != type)
+	    continue;
 
-        if (mode->width == width && mode->height == height) {
-            if (type == VIDEO_MODE_LFB) {
-                if (bpp) {
-                    if (mode->bpp == bpp)
-                        return mode;
-                } else if (!ret || mode->bpp > ret->bpp) {
-                    ret = mode;
-                }
-            } else {
-                return mode;
-            }
-        }
+	if (mode->width == width && mode->height == height) {
+		if (type == VIDEO_MODE_LFB) {
+			if (bpp) {
+				if (mode->bpp == bpp)
+				    return mode;
+			    } else if (!ret || mode->bpp > ret->bpp) {
+				ret = mode;
+			    }
+		    } else {
+			return mode;
+		    }
+	    }
     }
 
     return ret;
@@ -159,15 +161,15 @@ video_mode_t *video_parse_and_find_mode(const char *str) {
 
     tok = strsep(&dup, ":");
     if (!tok)
-        return NULL;
+	return NULL;
 
     if (strcmp(tok, "vga") == 0) {
-        type = VIDEO_MODE_VGA;
-    } else if (strcmp(tok, "lfb") == 0) {
-        type = VIDEO_MODE_LFB;
-    } else {
-        return NULL;
-    }
+	    type = VIDEO_MODE_VGA;
+	} else if (strcmp(tok, "lfb") == 0) {
+	    type = VIDEO_MODE_LFB;
+	} else {
+	    return NULL;
+	}
 
     tok = strsep(&dup, "x");
     width = (tok) ? strtoul(tok, NULL, 10) : 0;
@@ -195,7 +197,7 @@ void video_mode_register(video_mode_t *mode, bool current) {
     list_append(&video_modes, &mode->header);
 
     if (current)
-        set_current_mode(mode);
+	set_current_mode(mode);
 }
 
 /** Print a list of video modes.
@@ -203,23 +205,23 @@ void video_mode_register(video_mode_t *mode, bool current) {
  * @return          Whether successful. */
 static bool config_cmd_lsvideo(value_list_t *args) {
     if (args->count != 0) {
-        config_error("lsvideo: Invalid arguments");
-        return false;
-    }
+	    config_error("lsvideo: Invalid arguments");
+	    return false;
+	}
 
     list_foreach(&video_modes, iter) {
-        video_mode_t *mode = list_entry(iter, video_mode_t, header);
+	video_mode_t *mode = list_entry(iter, video_mode_t, header);
 
-        switch (mode->type) {
-        case VIDEO_MODE_VGA:
-            config_printf("vga:%" PRIu32 "x%" PRIu32, mode->width, mode->height);
-            break;
-        case VIDEO_MODE_LFB:
-            config_printf("lfb:%" PRIu32 "x%" PRIu32 "x%" PRIu8, mode->width, mode->height, mode->bpp);
-            break;
-        }
+	switch (mode->type) {
+	    case VIDEO_MODE_VGA:
+		config_printf("vga:%" PRIu32 "x%" PRIu32, mode->width, mode->height);
+		break;
+	    case VIDEO_MODE_LFB:
+		config_printf("lfb:%" PRIu32 "x%" PRIu32 "x%" PRIu8, mode->width, mode->height, mode->bpp);
+		break;
+	    }
 
-        config_printf("%s\n", (mode == current_video_mode) ? " (current)" : "");
+	config_printf("%s\n", (mode == current_video_mode) ? " (current)" : "");
     }
 
     return true;
