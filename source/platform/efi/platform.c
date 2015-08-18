@@ -27,12 +27,12 @@
   * @brief       EFI platform main functions.
   */
 
+#include <efi/disk.h>
 #include <efi/efi.h>
 
 #include <device.h>
 #include <loader.h>
 #include <screen.h>
-#include <disk.h>
 
 /** Loaded image protocol GUID. */
 static efi_guid_t loaded_image_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
