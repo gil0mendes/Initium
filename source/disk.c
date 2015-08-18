@@ -34,14 +34,6 @@
 #include <loader.h>
 #include <memory.h>
 
-/** Type of a partition disk device. */
-typedef struct partition {
-    disk_device_t disk;                 /**< Disk structure header. */
-
-    disk_device_t *parent;              /**< Parent disk. */
-    uint64_t offset;                    /**< Offset of the partition on the disk. */
-} partition_t;
-
 /** Next disk IDs. */
 static uint8_t next_disk_ids[DISK_TYPE_FLOPPY + 1];
 
@@ -51,8 +43,6 @@ static const char *const disk_type_names[] = {
     [DISK_TYPE_CDROM] = "cdrom",
     [DISK_TYPE_FLOPPY] = "floppy",
 };
-
-static void probe_partitions(disk_device_t *disk);
 
 /** Read from a disk.
  * @param device        Device to read from.
@@ -154,9 +144,7 @@ static device_ops_t disk_device_ops = {
  * @param lba           Block number to start reading from.
  * @return              Status code describing the result of the operation. */
 static status_t partition_read_blocks(disk_device_t *disk, void *buf, size_t count, uint64_t lba) {
-    partition_t *partition = (partition_t *)disk;
-
-    return partition->parent->ops->read_blocks(partition->parent, buf, count, lba + partition->offset);
+    return disk->parent->ops->read_blocks(disk->parent, buf, count, lba + disk->partition.offset);
 }
 
 /** Get partition identification information.
@@ -165,12 +153,10 @@ static status_t partition_read_blocks(disk_device_t *disk, void *buf, size_t cou
  * @param buf           Where to store identification string.
  * @param size          Size of the buffer. */
 static void partition_identify(disk_device_t *disk, device_identify_t type, char *buf, size_t size) {
-    partition_t *partition = (partition_t *)disk;
-
     if (type == DEVICE_IDENTIFY_SHORT) {
         snprintf(buf, size,
             "%s partition %" PRIu8 " @ %" PRIu64,
-            partition->parent->partition_ops->name, disk->id, partition->offset);
+            disk->parent->raw.partition_ops->name, disk->id, disk->partition.offset);
     }
 }
 
@@ -186,32 +172,32 @@ static disk_ops_t partition_disk_ops = {
  * @param lba           Start LBA.
  * @param blocks        Size in blocks. */
 static void add_partition(disk_device_t *parent, uint8_t id, uint64_t lba, uint64_t blocks) {
-    partition_t *partition;
+    disk_device_t *partition;
     char name[32];
 
     partition = malloc(sizeof(*partition));
-    partition->disk.device.type = DEVICE_TYPE_DISK;
-    partition->disk.device.ops = &disk_device_ops;
-    partition->disk.type = parent->type;
-    partition->disk.ops = &partition_disk_ops;
-    partition->disk.blocks = blocks;
-    partition->disk.block_size = parent->block_size;
-    partition->disk.id = id;
+    partition->device.type = DEVICE_TYPE_DISK;
+    partition->device.ops = &disk_device_ops;
+    partition->type = parent->type;
+    partition->ops = &partition_disk_ops;
+    partition->blocks = blocks;
+    partition->block_size = parent->block_size;
+    partition->id = id;
     partition->parent = parent;
-    partition->offset = lba;
+    partition->partition.offset = lba;
 
     snprintf(name, sizeof(name), "%s,%u", parent->device.name, id);
 
-    device_register(&partition->disk.device, name);
+    list_init(&partition->partition.link);
+    list_append(&parent->raw.partitions, &partition->partition.link);
+
+    device_register(&partition->device, name);
 
     /* Check if this is the boot partition. */
     if (boot_device == &parent->device && parent->ops->is_boot_partition) {
         if (parent->ops->is_boot_partition(parent, id, lba))
-            boot_device = &partition->disk.device;
+            boot_device = &partition->device;
     }
-
-    /* Probe for partitions. */
-    probe_partitions(&partition->disk);
 }
 
 /** Probe a disk device for partitions.
@@ -223,7 +209,7 @@ static void probe_partitions(disk_device_t *disk) {
     /* Check for a partition table on the device. */
     builtin_foreach(BUILTIN_TYPE_PARTITION, partition_ops_t, ops) {
         if (ops->iterate(disk, add_partition)) {
-            disk->partition_ops = ops;
+            disk->raw.partition_ops = ops;
             return;
         }
     }
@@ -235,6 +221,8 @@ static void probe_partitions(disk_device_t *disk) {
  *                      boot partition. */
 void disk_device_register(disk_device_t *disk, bool boot) {
     char name[16];
+
+    list_init(&disk->raw.partitions);
 
     /* Assign an ID for the disk and name it. */
     disk->id = next_disk_ids[disk->type]++;
