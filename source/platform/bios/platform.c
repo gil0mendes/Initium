@@ -35,6 +35,7 @@
 #include <bios/vbe.h>
 #include <bios/bios.h>
 #include <bios/multiboot.h>
+#include <bios/disk.h>
 
 #include <device.h>
 #include <loader.h>

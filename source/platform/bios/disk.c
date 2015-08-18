@@ -132,6 +132,23 @@ static disk_ops_t bios_disk_ops = {
     .identify = bios_disk_identify,
 };
 
+/** Get the ID for a BIOS disk.
+ * @param _disk         Disk to get ID of. If this is a partition, will get the
+ *                      ID of its parent.
+ * @return              Disk ID, or 0 if not a BIOS disk. */
+uint8_t bios_disk_get_id(disk_device_t *_disk) {
+    if (disk_device_is_partition(_disk))
+        _disk = _disk->parent;
+
+    if (_disk->ops == &bios_disk_ops) {
+        bios_disk_t *disk = (bios_disk_t *)_disk;
+
+        return disk->id;
+    } else {
+        return 0;
+    }
+}
+
 /** Add the disk with the specified ID.
  * @param id            ID of the device. */
 static void add_disk(uint8_t id) {
@@ -158,8 +175,7 @@ static void add_disk(uint8_t id) {
         if (!(regs.eflags & X86_FLAGS_CF) && packet->drive_number == id) {
             /* Should be no emulation. */
             if (packet->media_type & 0xf) {
-                dprintf("bios: boot CD should be no emulation\n");
-                return;
+                boot_error("Boot CD should be no emulation");
             }
 
             /* Add the drive. We do not bother checking whether extensions are
