@@ -30,6 +30,7 @@
 #include <efi/efi.h>
 #include <efi/memory.h>
 
+#include <lib/charset.h>
 #include <lib/string.h>
 
 #include <loader.h>
@@ -50,30 +51,30 @@ static efi_device_path_to_text_protocol_t *device_path_to_text;
  * @return        Internal status code
  */
 status_t efi_convert_status(efi_status_t status) {
-    switch (status) {
-        case EFI_SUCCESS:
-            return STATUS_SUCCESS;
-        case EFI_UNSUPPORTED:
-            return STATUS_NOT_SUPPORTED;
-        case EFI_INVALID_PARAMETER:
-            return STATUS_INVALID_ARG;
-        case EFI_DEVICE_ERROR:
-        case EFI_NO_MEDIA:
-        case EFI_MEDIA_CHANGED:
-            return STATUS_DEVICE_ERROR;
-        case EFI_WRITE_PROTECTED:
-            return STATUS_READ_ONLY;
-        case EFI_VOLUME_CORRUPTED:
-            return STATUS_CORRUPT_FS;
-        case EFI_VOLUME_FULL:
-            return STATUS_FS_FULL;
-        case EFI_NOT_FOUND:
-            return STATUS_NOT_FOUND;
-        case EFI_TIMEOUT:
-            return STATUS_TIMED_OUT;
-        default:
-            return STATUS_SYSTEM_ERROR;
-    }
+	switch (status) {
+	case EFI_SUCCESS:
+		return STATUS_SUCCESS;
+	case EFI_UNSUPPORTED:
+		return STATUS_NOT_SUPPORTED;
+	case EFI_INVALID_PARAMETER:
+		return STATUS_INVALID_ARG;
+	case EFI_DEVICE_ERROR:
+	case EFI_NO_MEDIA:
+	case EFI_MEDIA_CHANGED:
+		return STATUS_DEVICE_ERROR;
+	case EFI_WRITE_PROTECTED:
+		return STATUS_READ_ONLY;
+	case EFI_VOLUME_CORRUPTED:
+		return STATUS_CORRUPT_FS;
+	case EFI_VOLUME_FULL:
+		return STATUS_FS_FULL;
+	case EFI_NOT_FOUND:
+		return STATUS_NOT_FOUND;
+	case EFI_TIMEOUT:
+		return STATUS_TIMED_OUT;
+	default:
+		return STATUS_SYSTEM_ERROR;
+	}
 }
 
 /**
@@ -86,7 +87,7 @@ status_t efi_convert_status(efi_status_t status) {
  */
 efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer)
 {
-    return efi_call(efi_boot_services->allocate_pool, pool_type, size, _buffer);
+	return efi_call(efi_boot_services->allocate_pool, pool_type, size, _buffer);
 }
 
 /**
@@ -97,7 +98,7 @@ efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, vo
  */
 efi_status_t efi_free_pool(void *buffer)
 {
-    return efi_call(efi_boot_services->free_pool, buffer);
+	return efi_call(efi_boot_services->free_pool, buffer);
 }
 
 //============================================================================
@@ -117,28 +118,28 @@ efi_status_t efi_free_pool(void *buffer)
 // @return             EFI status code.
 efi_status_t
 efi_locate_handle(
-    efi_locate_search_type_t search_type, efi_guid_t *protocol,
-    void *search_key, efi_handle_t **_handles, efi_uintn_t *_num_handles)
+        efi_locate_search_type_t search_type, efi_guid_t *protocol,
+        void *search_key, efi_handle_t **_handles, efi_uintn_t *_num_handles)
 {
-       efi_handle_t *handles = NULL;
-       efi_uintn_t size = 0;
-       efi_status_t ret;
+	efi_handle_t *handles = NULL;
+	efi_uintn_t size = 0;
+	efi_status_t ret;
 
-       // Call a first time to get the needed buffer size
-       ret = efi_call(efi_boot_services->locate_handle,
-               search_type, protocol, search_key, &size, handles);
-       if(ret == EFI_BUFFER_TOO_SMALL) {
-               handles = malloc(size);
+	// Call a first time to get the needed buffer size
+	ret = efi_call(efi_boot_services->locate_handle,
+	               search_type, protocol, search_key, &size, handles);
+	if(ret == EFI_BUFFER_TOO_SMALL) {
+		handles = malloc(size);
 
-               ret = efi_call(efi_boot_services->locate_handle,
-                       search_type, protocol, search_key, &size, handles);
-               if(ret != EFI_SUCCESS)
-                       free(handles);
-       }
+		ret = efi_call(efi_boot_services->locate_handle,
+		               search_type, protocol, search_key, &size, handles);
+		if(ret != EFI_SUCCESS)
+			free(handles);
+	}
 
-       *_handles = handles;
-       *_num_handles = size / sizeof(efi_handle_t);
-       return ret;
+	*_handles = handles;
+	*_num_handles = size / sizeof(efi_handle_t);
+	return ret;
 }
 
 // ============================================================================
@@ -155,11 +156,11 @@ efi_locate_handle(
 // @return             EFI status code.
 efi_status_t
 efi_open_protocol(
-    efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
-    void **interface)
+        efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
+        void **interface)
 {
-       return efi_call(efi_boot_services->open_protocol, handle,
-        protocol, interface, efi_image_handle, NULL, attributes);
+	return efi_call(efi_boot_services->open_protocol, handle,
+	                protocol, interface, efi_image_handle, NULL, attributes);
 }
 
 /**
@@ -170,7 +171,7 @@ efi_open_protocol(
  * @return              EFI status code.
  */
 efi_status_t efi_get_loaded_image(efi_handle_t handle, efi_loaded_image_t **_image) {
-    return efi_open_protocol(handle, &loaded_image_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)_image);
+	return efi_open_protocol(handle, &loaded_image_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)_image);
 }
 
 /**
@@ -182,19 +183,19 @@ efi_status_t efi_get_loaded_image(efi_handle_t handle, efi_loaded_image_t **_ima
  */
 efi_device_path_t *efi_get_device_path(efi_handle_t handle)
 {
-    efi_device_path_t *path;
-    efi_status_t ret;
+	efi_device_path_t *path;
+	efi_status_t ret;
 
-    ret = efi_open_protocol(handle, &device_path_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)&path);
-    if (ret != EFI_SUCCESS) {
-        return NULL;
-    }
+	ret = efi_open_protocol(handle, &device_path_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)&path);
+	if (ret != EFI_SUCCESS) {
+		return NULL;
+	}
 
-    if (path->type == EFI_DEVICE_PATH_TYPE_END) {
-        return NULL;
-    }
+	if (path->type == EFI_DEVICE_PATH_TYPE_END) {
+		return NULL;
+	}
 
-    return path;
+	return path;
 }
 
 /**
@@ -204,46 +205,47 @@ efi_device_path_t *efi_get_device_path(efi_handle_t handle)
  * @param cb            Helper function to print with
  * @param data          Data to pass to helper function
  */
-void
-efi_print_device_path(efi_device_path_t *path, void (*cb)(void *data, char ch), void *data)
-{
-    static efi_char16_t unknown[] = {'U', 'n', 'k', 'n', 'o', 'w', 'n'};
+void efi_print_device_path(efi_device_path_t *path, void (*cb)(void *data, char ch), void *data) {
+	efi_char16_t *str;
+	char *buf __cleanup_free = NULL;
 
-    efi_char16_t *str;
+	/* For now this only works on UEFI 2.0+, previous versions do not have the
+	 * device path to text protocol. */
+	if (!device_path_to_text) {
+		efi_handle_t *handles __cleanup_free = NULL;
+		efi_uintn_t num_handles;
+		efi_status_t ret;
 
-    // For now this only works on UEFI 2.0+, previous versions do not jave the device path to text protocol
-    if (!device_path_to_text) {
-        efi_handle_t *handles;
-        efi_uintn_t num_handles;
-        efi_status_t ret;
+		/* Get the device path to text protocol. */
+		ret = efi_locate_handle(EFI_BY_PROTOCOL, &device_path_to_text_guid, NULL, &handles, &num_handles);
+		if (ret == EFI_SUCCESS) {
+			efi_open_protocol(
+			        handles[0], &device_path_to_text_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL,
+			        (void **)&device_path_to_text);
+		}
+	}
 
-        // Get the device path to text protocol
-        ret = efi_locate_handle(EFI_BY_PROTOCOL, &device_path_to_text_guid, NULL, &handles, &num_handles);
-        if (ret == EFI_SUCCESS) {
-            efi_open_protocol(
-                    handles[0], &device_path_to_text_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL, (void **)&device_path_to_text
-            );
-            free(handles);
-        }
-    }
+	/* Get the device path string. */
+	str = (path && device_path_to_text)
+	      ? efi_call(device_path_to_text->convert_device_path_to_text, path, false, false)
+	      : NULL;
+	if (str) {
+		size_t len = 0;
 
-    // Get the device path string
-    str = (path && device_path_to_text) ? efi_call(device_path_to_text->convert_device_path_to_text, path, false, false) : NULL;
+		while (str[len])
+			len++;
 
-    if (!str) {
-        str = unknown;
-    }
+		buf = malloc((len * MAX_UTF8_PER_UTF16) + 1);
+		len = utf16_to_utf8((uint8_t *)buf, str, len);
+		buf[len] = 0;
 
-    for (size_t i = 0; str[i]; i++) {
-        // FIXME: Unicode
-        if (str[i] & 0x7f) {
-            cb(data, str[i] & 0x7f);
-        }
-    }
+		efi_free_pool(str);
+	} else {
+		buf = strdup("Unknown");
+	}
 
-    if (str != unknown) {
-        efi_free_pool(str);
-    }
+	for (size_t i = 0; buf[i]; i++)
+		cb(data, buf[i]);
 }
 
 /**
@@ -255,16 +257,16 @@ efi_print_device_path(efi_device_path_t *path, void (*cb)(void *data, char ch), 
  */
 bool efi_is_child_device_node(efi_device_path_t *parent, efi_device_path_t *child)
 {
-    while (parent) {
-        if (memcmp(child, parent, min(parent->length, child->length)) != 0) {
-            return false;
-        }
+	while (parent) {
+		if (memcmp(child, parent, min(parent->length, child->length)) != 0) {
+			return false;
+		}
 
-        parent = efi_next_device_node(parent);
-        child = efi_next_device_node(child);
-    }
+		parent = efi_next_device_node(parent);
+		child = efi_next_device_node(child);
+	}
 
-    return child != NULL;
+	return child != NULL;
 }
 
 /**
@@ -275,16 +277,16 @@ bool efi_is_child_device_node(efi_device_path_t *parent, efi_device_path_t *chil
  * @param data_size     Size of the exit data in bytes.
  */
 __noreturn void efi_exit(efi_status_t status, efi_char16_t *data, efi_uintn_t data_size) {
-    efi_status_t ret;
+	efi_status_t ret;
 
-    /* Clear the framebuffer, and reset the EFI consoles. */
-    console_reset(&main_console);
-    efi_call(efi_system_table->con_in->reset, efi_system_table->con_in, false);
-    efi_call(efi_system_table->con_out->reset, efi_system_table->con_out, false);
+	/* Clear the framebuffer, and reset the EFI consoles. */
+	console_reset(&main_console);
+	efi_call(efi_system_table->con_in->reset, efi_system_table->con_in, false);
+	efi_call(efi_system_table->con_out->reset, efi_system_table->con_out, false);
 
-    /* Release all memory allocated by the loader. */
-    efi_memory_cleanup();
+	/* Release all memory allocated by the loader. */
+	efi_memory_cleanup();
 
-    ret = efi_call(efi_boot_services->exit, efi_image_handle, status, data_size, data);
-    internal_error("EFI exit failed (0x%zx)", ret);
+	ret = efi_call(efi_boot_services->exit, efi_image_handle, status, data_size, data);
+	internal_error("EFI exit failed (0x%zx)", ret);
 }
