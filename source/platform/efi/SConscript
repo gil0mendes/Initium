@@ -36,6 +36,7 @@ sources = FeatureSources(config, [
   'memory.c',
   'console.c',
   'platform.c',
+  'time.c',
 ])
 
 # Add architecture-specific headers.

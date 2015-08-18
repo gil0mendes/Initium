@@ -28,7 +28,7 @@
  */
 
 #include <x86/descriptor.h>
-#include <x86/cpu.h>
+#include <x86/time.h>
 
 #include <loader.h>
 
@@ -39,6 +39,18 @@ void arch_init(void) {
   // Init descriptor table
   x86_descriptor_init();
 
-  // Init CPU
-  cpuInit();
+  // Init timer
+  x86_time_init();
+}
+
+/**
+ * Halt the system.
+ */
+__noreturn void target_halt(void) {
+    while (true) {
+        __asm__ __volatile__(
+            "cli\n"
+            "hlt\n"
+        );
+    }
 }

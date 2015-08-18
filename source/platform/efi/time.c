@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,18 @@
 
 /**
  * @file
- * @brief		x86 architecture core definitions
+ * @brief       EFI timing functions.
  */
 
-#ifndef __ARCH__LOADER_H
-#define __ARCH__LOADER_H
+#include <efi/efi.h>
 
-#include <types.h>
-
-// Properties of the architecture (function we provide etc.).
-#define TARGET_HAS_MEMCPY          1
-#define TARGET_HAS_MEMSET          2
+#include <time.h>
 
 /**
- * Spin loop hint.
+ * Deplay for a number of milliseconds.
+ *
+ * @param msecs     Milliseconds to delay for.
  */
-static inline void arch_pause(void) {
-    __asm__ __volatile__("pause");
+void deplay(mstime_t msecs) {
+    efi_call(efi_boot_services->stall, msecs * 1000);
 }
-
-extern void arch_init(void);
-
-#endif // __ARCH__LOADER_H

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,29 @@
 
 /**
  * @file
- * @brief		x86 architecture core definitions
+ * @brief               Timming functions.
  */
-
-#ifndef __ARCH__LOADER_H
-#define __ARCH__LOADER_H
-
-#include <types.h>
-
-// Properties of the architecture (function we provide etc.).
-#define TARGET_HAS_MEMCPY          1
-#define TARGET_HAS_MEMSET          2
 
 /**
- * Spin loop hint.
+ * @file
+ * @brief               Timing functions.
  */
-static inline void arch_pause(void) {
-    __asm__ __volatile__("pause");
+
+ #include <loader.h>
+ #include <time.h>
+
+ #ifndef TARGET_HAS_DELAY
+
+/**
+ * Delay for a number of milliseconds.
+ *
+ * @param msecs         Milliseconds to delay for.
+ */
+void delay(mstime_t msecs) {
+    mstime_t target = target_internal_time() + msecs;
+
+    while (target_internal_time() < target)
+	arch_pause();
 }
 
-extern void arch_init(void);
-
-#endif // __ARCH__LOADER_H
+ #endif /* TARGET_HAS_DELAY */

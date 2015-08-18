@@ -203,7 +203,5 @@ static inline uint64_t x86_rdtsc(void) {
 	return ((uint64_t)high << 32) | low;
 }
 
-extern void cpuInit(void);
-
 #endif /* __ASM__ */
 #endif /* __ARCH_X86_CPU_H */
