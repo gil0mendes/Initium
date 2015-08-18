@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -136,10 +136,18 @@ static inline ptr_t phys_to_virt(phys_ptr_t addr) {
        return (addr + TARGET_VIRT_OFFSET);
 }
 
-#define vprintf(fmt, args) console_vprintf(&main_console, fmt, args)
-#define printf(fmt...) console_printf(&main_console, fmt)
-#define dvprintf(fmt, args) console_vprintf(&debug_console, fmt, args)
-#define dprintf(fmt...) console_printf(&debug_console, fmt)
+/** Operating modes for a loaded OS. */
+typedef enum load_mode {
+    LOAD_MODE_32BIT,                    /**< 32-bit. */
+    LOAD_MODE_64BIT,                    /**< 64-bit. */
+} load_mode_t;
+
+/** Structure defining operations for an OS loader. */
+typedef struct loader_ops {
+    /** Load the operating system.
+     * @param private       Loader private data. */
+    void (*load)(void *private) __noreturn;
+} loader_ops_t;
 
 extern void target_reboot(void) __noreturn;
 

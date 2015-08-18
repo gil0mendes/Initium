@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,8 +39,17 @@
 #   define PRIuPHYS	"llu"		/**< Format for phys_ptr_t. */
 #endif
 
-/** Integer type that can represent a pointer. */
+/** Integer type that can represent a pointer in the loader's address space. */
 typedef unsigned long ptr_t;
+
+/**
+ * Integer pointer/size types for use by OS loaders.
+ *
+ * On x86 we can load both 32-bit and 64-bit kernels, so there are defined to be
+ * 64-bit to account for this.
+ */
+typedef uint64_t load_ptr_t;
+typedef uint64_t load_size_t;
 
 /** Integer types that can represent a physical address/size. */
 typedef uint64_t phys_ptr_t;

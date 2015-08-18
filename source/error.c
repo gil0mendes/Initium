@@ -124,7 +124,11 @@ static void boot_error_render(ui_window_t *window) {
  */
 static void boot_error_help(ui_window_t *window) {
 	ui_print_action('\e', "Reboot");
-	ui_print_action(CONSOLE_KEY_F1, "Shell");
+
+	if (shell_enabled) {
+		ui_print_action(CONSOLE_KEY_F1, "Shell");
+	}
+
 	ui_print_action(CONSOLE_KEY_F2, "Debug Log");
 }
 
@@ -142,7 +146,7 @@ static input_result_t boot_error_input(ui_window_t *window, uint16_t key) {
 			return INPUT_HANDLED;
 		case CONSOLE_KEY_F1:
 			/* We start the shell in boot_error() upon return. */
-			return INPUT_CLOSE;
+			return (shell_enabled) ? INPUT_CLOSE : INPUT_HANDLED;
 		default:
 			return INPUT_HANDLED;
 	}
@@ -157,7 +161,6 @@ static ui_window_type_t boot_error_window_type = {
 
 #endif /* CONFIG_TARGET_HAS_UI. */
 
-// return for shell
 /**
  * Display details of a boot error.
  *
@@ -190,7 +193,7 @@ void __noreturn boot_error(const char *fmt, ...) {
 
     va_end(boot_error_args);
 
-    /* Jump into the shell. */
+    /* Jump into the shell (will only get here if it is enabled). */
     shell_main();
     system_halt();
 }
