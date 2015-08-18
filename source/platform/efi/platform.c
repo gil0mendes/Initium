@@ -45,8 +45,10 @@ efi_handle_t efi_image_handle;
 /** Loaded image strucutre for the loader image */
 efi_loaded_image_t *efi_loaded_image;
 
-/** Pointer to the EFI system table */
+/** Pointer to the EFI system table and boot/runtime services. */
 efi_system_table_t *efi_system_table;
+efi_runtime_services_t *efi_runtime_services;
+efi_boot_services_t *efi_boot_services;
 
 /**
  * Main function of the EFI loader.
@@ -64,13 +66,15 @@ efi_system_table_t *efi_system_table;
 
     // Save EFI system table
     efi_system_table = system_table;
+    efi_runtime_services = system_table->runtime_services;
+    efi_boot_services = system_table->boot_services;
 
     // Initialize architecture code
     arch_init();
 
     // Firmware is required to set a 5 minute watchdog timer before
     // running an image. Disable it.
-    efi_call(efi_system_table->boot_services->set_watchdog_timer, 0, 0, 0, NULL);
+    efi_call(efi_boot_services->set_watchdog_timer, 0, 0, 0, NULL);
 
     // Initialise console
     efi_console_init();
@@ -107,6 +111,6 @@ void target_device_probe(void) {
  * Reboot the system.
  */
 void target_reboot(void) {
-    efi_call(efi_system_table->runtime_services->reset_system, EFI_RESET_WARM, EFI_SUCCESS, 0, NULL);
+    efi_call(efi_runtime_services->reset_system, EFI_RESET_WARM, EFI_SUCCESS, 0, NULL);
     internal_error("EFI reset failed");
 }

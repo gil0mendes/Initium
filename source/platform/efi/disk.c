@@ -87,7 +87,7 @@ static bool efi_disk_is_boot_partition(disk_device_t *_disk, uint8_t id, uint64_
 static void efi_disk_identify(disk_device_t *_disk, device_identify_t type, char *buf, size_t size) {
     efi_disk_t *disk = (efi_disk_t *)_disk;
 
-    if (type == DEVICE_IDENTITY_SHORT) {
+    if (type == DEVICE_IDENTIFY_SHORT) {
         snprintf(buf, size, "EFI disk %pE", disk->path);
     }
 }

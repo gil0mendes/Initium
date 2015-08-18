@@ -84,7 +84,7 @@ status_t efi_convert_status(efi_status_t status) {
  */
 efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, void **_buffer)
 {
-    return efi_call(efi_system_table->boot_services->allocate_pool, pool_type, size, _buffer);
+    return efi_call(efi_boot_services->allocate_pool, pool_type, size, _buffer);
 }
 
 /**
@@ -95,7 +95,7 @@ efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t size, vo
  */
 efi_status_t efi_free_pool(void *buffer)
 {
-    return efi_call(efi_system_table->boot_services->free_pool, buffer);
+    return efi_call(efi_boot_services->free_pool, buffer);
 }
 
 //============================================================================
@@ -123,12 +123,12 @@ efi_locate_handle(
        efi_status_t ret;
 
        // Call a first time to get the needed buffer size
-       ret = efi_call(efi_system_table->boot_services->locate_handle,
+       ret = efi_call(efi_boot_services->locate_handle,
                search_type, protocol, search_key, &size, handles);
        if(ret == EFI_BUFFER_TOO_SMALL) {
                handles = malloc(size);
 
-               ret = efi_call(efi_system_table->boot_services->locate_handle,
+               ret = efi_call(efi_boot_services->locate_handle,
                        search_type, protocol, search_key, &size, handles);
                if(ret != EFI_SUCCESS)
                        free(handles);
@@ -156,7 +156,7 @@ efi_open_protocol(
     efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
     void **interface)
 {
-       return efi_call(efi_system_table->boot_services->open_protocol, handle,
+       return efi_call(efi_boot_services->open_protocol, handle,
         protocol, interface, efi_image_handle, NULL, attributes);
 }
 

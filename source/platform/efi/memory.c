@@ -96,7 +96,7 @@ static efi_status_t efi_get_memory_map(
     efi_status_t ret;
 
     /* Call a first time to get the needed buffer size. */
-    ret = efi_call(efi_system_table->boot_services->get_memory_map,
+    ret = efi_call(efi_boot_services->get_memory_map,
             &size, memory_map, _map_key, &descriptor_size,
             &descriptor_version);
     if (ret != EFI_SUCCESS && ret != EFI_BUFFER_TOO_SMALL)
@@ -107,7 +107,7 @@ static efi_status_t efi_get_memory_map(
     if (ret == EFI_BUFFER_TOO_SMALL) {
         memory_map = malloc(size);
 
-        ret = efi_call(efi_system_table->boot_services->get_memory_map,
+        ret = efi_call(efi_boot_services->get_memory_map,
                 &size, memory_map, _map_key, &descriptor_size,
                 &descriptor_version);
         if (ret != EFI_SUCCESS) {
@@ -269,7 +269,7 @@ void *memory_alloc(phys_size_t size, phys_size_t align, phys_ptr_t min_addr,
         }
 
         /* Ask the firmware to allocate this exact address */
-        ret = efi_call(efi_system_table->boot_services->allocate_pages,
+        ret = efi_call(efi_boot_services->allocate_pages,
                 EFI_ALLOCATE_ADDRESS, EFI_LOADER_DATA, size / EFI_PAGE_SIZE,
                 &start);
         if(ret != STATUS_SUCCESS) {
@@ -325,7 +325,7 @@ void memory_free(void *addr, phys_size_t size) {
                 size, range->size);
             }
 
-            ret = efi_call(efi_system_table->boot_services->free_pages, phys, size / EFI_PAGE_SIZE);
+            ret = efi_call(efi_boot_services->free_pages, phys, size / EFI_PAGE_SIZE);
             if (ret != STATUS_SUCCESS) {
                 internal_error("Failed to free EFI memory (0x%zx)", ret);
             }
