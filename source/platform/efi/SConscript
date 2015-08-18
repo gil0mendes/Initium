@@ -28,6 +28,8 @@ Import(*vars)
 from util import FeatureSources
 
 sources = FeatureSources(config, [
+  'loaders/efi.c',
+
   'efi.c',
   'disk.c',
   'video.c',

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,6 @@
 #include <device.h>
 #include <loader.h>
 #include <screen.h>
-
-/** Loaded image protocol GUID. */
-static efi_guid_t loaded_image_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
 extern void loader_main(void);
 
@@ -87,9 +84,7 @@ efi_boot_services_t *efi_boot_services;
     efi_video_init();
 
     /* Get the loaded image protocol. */
-    ret = efi_open_protocol(
-        image_handle, &loaded_image_guid, EFI_OPEN_PROTOCOL_GET_PROTOCOL,
-        (void **)&efi_loaded_image);
+    ret = efi_get_loaded_image(image_handle, &efi_loaded_image);
 
     if (ret != EFI_SUCCESS) {
         internal_error("Failed to get loaded image protocol (0x%x)", ret);
