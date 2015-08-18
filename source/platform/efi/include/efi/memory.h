@@ -24,18 +24,15 @@
 
  /**
  * @file
- * @brief               EFI disk functions.
+ * @brief               EFI memory functions.
  */
 
-#ifndef __EFI_DISK_H
-#define __EFI_DISK_H
+#ifndef __EFI_MEMORY_H
+#define __EFI_MEMORY_H
 
 #include <efi/api.h>
 
-#include <disk.h>
+extern void efi_memory_init(void);
+extern void efi_memory_cleanup(void);
 
-extern efi_handle_t efi_disk_get_handle(disk_device_t *disk);
-
-extern void efi_disk_init(void);
-
-#endif /* __EFI_DISK_H */
+#endif /* __EFI_MEMORY_H */

@@ -45,6 +45,7 @@
 #include <lib/utility.h>
 
 #include <efi/efi.h>
+#include <efi/memory.h>
 
 #include <assert.h>
 #include <loader.h>
@@ -391,4 +392,22 @@ void efi_memory_init(void) {
 
     // Free memory map pointer
     free(memory_map);
+}
+
+/**
+ * Release all allocated memory.
+ */
+void efi_memory_cleanup(void) {
+    list_foreach_safe(&efi_memory_ranges, iter) {
+        efi_memory_range_t *range = list_entry(iter, efi_memory_range_t, header);
+        efi_status_t ret;
+
+        ret = efi_call(efi_boot_services->free_pages, range->start, range->size / EFI_PAGE_SIZE);
+        if (ret != EFI_SUCCESS) {
+            internal_error("Failed to free EFI memory (0x%zx)", ret);
+        }
+
+        list_remove(&range->header);
+        free(range);
+    }
 }
