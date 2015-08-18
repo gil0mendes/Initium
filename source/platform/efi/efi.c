@@ -28,6 +28,7 @@
  */
 
 #include <efi/efi.h>
+#include <efi/memory.h>
 
 #include <lib/string.h>
 
@@ -275,6 +276,14 @@ bool efi_is_child_device_node(efi_device_path_t *parent, efi_device_path_t *chil
  */
 __noreturn void efi_exit(efi_status_t status, efi_char16_t *data, efi_uintn_t data_size) {
     efi_status_t ret;
+
+    /* Clear the framebuffer, and reset the EFI consoles. */
+    console_reset(&main_console);
+    efi_call(efi_system_table->con_in->reset, efi_system_table->con_in, false);
+    efi_call(efi_system_table->con_out->reset, efi_system_table->con_out, false);
+
+    /* Release all memory allocated by the loader. */
+    efi_memory_cleanup();
 
     ret = efi_call(efi_boot_services->exit, efi_image_handle, status, data_size, data);
     internal_error("EFI exit failed (0x%zx)", ret);

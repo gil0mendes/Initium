@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -446,7 +446,7 @@ void environ_remove(environ_t *env, const char *name) {
  * Set the loader for an environment.
  *
  * Sets the loader for an environment. After this is called, no more commands
- * can be executed on the encironment, whuch guarantees that the environment
+ * can be executed on the environment, which guarantees that the environment
  * cannot be further modified.
  *
  * @param env           Environment to set in.
@@ -1106,6 +1106,20 @@ static bool config_cmd_reboot(value_list_t *args) {
 }
 
 BUILTIN_COMMAND("reboot", config_cmd_reboot);
+
+/** Exit the loader and (if supported) return to the firmware.
+ * @param args          Argument list.
+ * @return              Whether successful. */
+static bool config_cmd_exit(value_list_t *args) {
+    if (args->count != 0) {
+        config_error("exit: Invalid arguments");
+        return false;
+    }
+
+    target_exit();
+}
+
+BUILTIN_COMMAND("exit", config_cmd_exit);
 
 /**
  * Initialization functions.
