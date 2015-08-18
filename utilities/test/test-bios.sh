@@ -15,16 +15,16 @@ cat > ${isodir}/boot/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	# laos "/test32.elf" ["/test32.elf"]
+	pulsar "/test32.elf" ["/test32.elf"]
 }
 
 entry "Test (64-bit)" {
-	# laos "/test64.elf" ["/test64.elf"]
+	pulsar "/test64.elf" ["/test64.elf"]
 }
 
 entry "Chainload (hd0)" {
 	device "(hd0)"
-	# chainload
+	chainload
 }
 EOF
 

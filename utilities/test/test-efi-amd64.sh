@@ -13,11 +13,11 @@ cat > ${fsdir}/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	#laos "/test32.elf" ["/test32.elf"]
+	pulsar "/test32.elf" ["/test32.elf"]
 }
 
 entry "Test (64-bit)" {
-	#laos "/test64.elf" ["/test64.elf"]
+	pulsar "/test64.elf" ["/test64.elf"]
 }
 EOF
 
@@ -26,7 +26,5 @@ if [ ! -e ".ovmf-x86_64.bin" ]; then
 fi
 
 qemu-system-x86_64 -pflash .ovmf-x86_64.bin -hda fat:${fsdir} -serial stdio -m 512 -monitor vc:1024x768 -s
-
-#mkisofs -J -R -l -V "CDROM" -o ${builddir}/test.iso ${fsdir}
 
 rm -rf ${fsdir}
