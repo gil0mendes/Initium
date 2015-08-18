@@ -90,7 +90,7 @@ extern builtin_t __builtins_start[], __builtins_end[];
 	for (object_type *var = (object_type *)__builtins_start[0].object; \
 	    __iter_##var < (__builtins_end - __builtins_start); \
 	    var = (object_type *)__builtins_start[++__iter_##var].object) \
-		if(__builtins_start[__iter_##var].type == builtin_type)
+		if (__builtins_start[__iter_##var].type == builtin_type)
 
 /**
  * Offset to apply to a physical address to get a virtual address.
@@ -152,9 +152,11 @@ typedef struct loader_ops {
 	/**
 	 * Get a configuration window for the OS.
 	 *
+	 * @param private		Loader private data.
+	 * @param title			Title to give the window.
 	 * @return              Window for configuring the OS.
 	 */
-	struct ui_window *(*configure)(void);
+	struct ui_window *(*configure)(void *private, const char *title);
 	#endif
 } loader_ops_t;
 
