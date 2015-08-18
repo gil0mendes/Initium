@@ -31,10 +31,13 @@
 #include <device.h>
 #include <loader.h>
 #include <memory.h>
+#include <menu.h>
 #include <shell.h>
 
 /** Main function of the loader. */
 void loader_main(void) {
+    environ_t *env;
+
     // initialize config
     config_init();
 
@@ -47,6 +50,13 @@ void loader_main(void) {
     // load the configuration file
     config_load();
 
-    // jump to the shell
-    shell_main();
+    // display the menu
+    env = menu_display();
+
+    // and finnaly boot the OS
+    if (env->loader) {
+        environ_boot(env);
+    } else {
+        boot_error("No operating system to boot");
+    }
 }

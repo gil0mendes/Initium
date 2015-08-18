@@ -147,6 +147,15 @@ typedef struct loader_ops {
     /** Load the operating system.
      * @param private       Loader private data. */
     void (*load)(void *private) __noreturn;
+
+	#ifdef CONFIG_TARGET_HAS_UI
+	/**
+	 * Get a configuration window for the OS.
+	 *
+	 * @return              Window for configuring the OS.
+	 */
+	struct ui_window *(*configure)(void);
+	#endif
 } loader_ops_t;
 
 extern void target_reboot(void) __noreturn;

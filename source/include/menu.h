@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2015 Gil Mendes
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
 /**
 * @file
-* @brief 			Bootloader menu interface
+* @brief 			Menu interface
 */
 
 #ifndef __MENU_H
@@ -32,6 +32,14 @@
 
 #include <config.h>
 
-environ_t *menuDisplay(void);
+#ifdef CONFIG_TARGET_HAS_UI
 
-#endif // __MENU_H
+extern environ_t *menu_display(void);
+
+#else
+
+static inline environ_t *menu_display(void) { return root_environ; }
+
+#endif /* CONFIG_TARGET_HAS_UI */
+
+#endif /* __MENU_H */
