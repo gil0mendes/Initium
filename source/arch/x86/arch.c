@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
  * @brief       x86 architecture main functions
  */
 
+#include <x86/cpu.h>
 #include <x86/descriptor.h>
 #include <x86/time.h>
 
@@ -36,11 +37,20 @@
  * Perform early architecture initialization
  */
 void arch_init(void) {
-  // Init descriptor table
-  x86_descriptor_init();
+    unsigned long flags;
 
-  // Init timer
-  x86_time_init();
+    // check if CPUID is supported - if we can change EFLAGS.ID, it is.
+    flags = x86_read_flags();
+    x86_write_flags(flags ^ X86_FLAGS_ID);
+    if ((x86_read_flags() & X86_FLAGS_ID) == (flags & X86_FLAGS_ID)) {
+        boot_error("CPU does not support CPUID");
+    }
+
+    // Init descriptor table
+    x86_descriptor_init();
+
+    // Init timer
+    x86_time_init();
 }
 
 /**
@@ -48,9 +58,9 @@ void arch_init(void) {
  */
 __noreturn void target_halt(void) {
     while (true) {
-        __asm__ __volatile__(
-            "cli\n"
-            "hlt\n"
-        );
-    }
+	    __asm__ __volatile__ (
+	        "cli\n"
+	        "hlt\n"
+	        );
+	}
 }

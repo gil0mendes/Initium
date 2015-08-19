@@ -73,12 +73,12 @@ void target_reboot(void) {
  */
 void bios_main(void)
 {
-    // Initialize architecture code
-    arch_init();
-
     // Initialize the console and video
     bios_console_init();
     bios_video_init();
+
+    // Initialize architecture code
+    arch_init();
 
     // Call loader main function
     loader_main();

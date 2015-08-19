@@ -97,14 +97,20 @@
 #define X86_CPUID_XSAVE		0xd		/**< XSAVE Features. */
 
 /** Extended CPUID function definitions. */
-#define X86_CPUID_EXT_MAX	0x80000000	/**< Largest Extended Function. */
+#define X86_CPUID_EXT_MAX		0x80000000	/**< Largest Extended Function. */
 #define X86_CPUID_EXT_FEATURE	0x80000001	/**< Extended Feature Bits. */
 #define X86_CPUID_BRAND_STRING1	0x80000002	/**< Processor Name/Brand String (Part 1). */
 #define X86_CPUID_BRAND_STRING2	0x80000003	/**< Processor Name/Brand String (Part 2). */
 #define X86_CPUID_BRAND_STRING3	0x80000004	/**< Processor Name/Brand String (Part 3). */
-#define X86_CPUID_L2_CACHE	0x80000006	/**< Extended L2 Cache Features. */
+#define X86_CPUID_L2_CACHE		0x80000006	/**< Extended L2 Cache Features. */
 #define X86_CPUID_ADVANCED_PM	0x80000007	/**< Advanced Power Management. */
 #define X86_CPUID_ADDRESS_SIZE	0x80000008	/**< Virtual/Physical Address Sizes. */
+
+/** CPUID feature bits. */
+#define X86_FEATURE_TSC 		(1<<4) 		/**< Whether the TSC is supportted. */
+
+/** CPUID extended feature bits. */
+#define X86_EXT_FEATURE_LM 		(1<<29) 	/**< Long mode. */
 
 #ifndef __ASM__
 
