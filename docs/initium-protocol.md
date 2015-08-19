@@ -493,8 +493,8 @@ give the option value.
     	initium_tag_t header;
 
     	uint8_t     type;
-    	uint32_t    name_size;
-    	uint32_t    value_size;
+    	uint32_t    name_len;
+    	uint32_t    value_len;
     } initium_tag_option_t;
 
 This structure is followed by 2 variable length fields, `name` and `value`.
@@ -502,8 +502,8 @@ This structure is followed by 2 variable length fields, `name` and `value`.
 Fields:
 
  * `type`: Type of the option (see `INITIUM_ITAG_OPTION`).
- * `name_size`: Length of the name string, including null terminator.
- * `value_size`: Size of the option value, in bytes.
+ * `name_len`: Length of the name string, including null terminator.
+ * `value_len`: Size of the option value, in bytes.
  * `name`: Name of the option. The start of this field is the end of the tag
    structure, aligned up to an 8 byte boundary.
  * `value`: Value of the option, dependent on the type (see `INITIUM_ITAG_OPTION`).
@@ -594,7 +594,7 @@ been loaded.
 
     	initium_paddr_t addr;
     	uint32_t      size;
-    	uint32_t      name_size;
+    	uint32_t      name_len;
     } initium_tag_module_t;
 
 This structure is followed by a variable length `name` field.
@@ -605,7 +605,7 @@ Fields:
    page size. The data is not mapped into the virtual address space. The memory
    containing module data is marked as `INITIUM_MEMORY_MODULES`.
  * `size`: Size of the module data, in bytes.
- * `name_size`: Length of the name string, including null terminator.
+ * `name_len`: Length of the name string, including null terminator.
  * `name`: Name of the module. This is the base name of the file that the module
    was loaded from.
 
@@ -762,6 +762,8 @@ Fields:
       from a boot image.
     - `INITIUM_BOOTDEV_DISK` (1): Booted from a disk device.
     - `INITIUM_BOOTDEV_NET` (2): Booted from the network.
+	- `INITIUM_BOOTDEV_OTHER` (3): Booted from some other device, specified by a
+	  string, the meaning of which is OS-defined.
 
    The remainder of the structure is dependent on the device type.
 
@@ -795,6 +797,11 @@ Fields (`INITIUM_BOOTDEV_NET`):
  * `hw_type`: Type of the network interface, as specified by the _Hardware Type_
    section of RFC 1700.
  * `hw_addr_len`: Length of the client MAC address.
+
+Fields (`INITIUM_BOOTDEV_OTHER`):
+
+ * `str_len`: Length of the device specifier string following the structure,
+   including null terminator.
 
 ### `INITIUM_TAG_LOG` (`9`)
 
@@ -958,12 +965,11 @@ field of the `INITIUM_TAG_BOOTDEV` tag contains a string representation of the
 filesystem's UUID. There are others that do not, however for some it is
 possible to give a reasonably unique identifier based on other information.
 This section describes what a boot loader should give as a UUID for certain
-filesystems.
+filesystems. These should follow the behaviour of the `libblkid` library.
 
 ### ISO9660
 
-The algorithm used to generate a UUID for ISO9660 filesystems originates from
-the libblkid library on Linux. If the filesystem has a modification date set,
-that is used, else the creation date is used, and formatted into the following:
+If the filesystem has a modification date set, that is used, else the creation
+date is used, and formatted into the following:
 
     yyyy-mm-dd-hh-mm-ss-cc
