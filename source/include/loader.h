@@ -106,6 +106,21 @@ extern builtin_t __builtins_start[], __builtins_end[];
 #endif
 
 /**
+ * Minimum physical address to allocate.
+ *
+ * Unless specifically requested to with non-zero minimum address constrainsts,
+ * the loaded will not allocate addresses bellow this address. Targets can
+ * override this, for example, to avoid allocatting from low memory.
+ */
+#ifdef TARGET_PHYS_MIN
+#	if TARGET_PHYS_MIN < 0x1000
+#		error "Invalid minimum physical address"
+#	endif
+#else
+#	define TARGET_PHYS_MIN		0x1000
+#endif
+
+/**
  * Highest physical address accessible to the loader.
  *
  * Specifies the highest physical address which the loader can access. If this

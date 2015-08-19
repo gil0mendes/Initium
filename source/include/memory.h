@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,16 +49,17 @@ typedef struct memory_range {
  * Memory types to be used with the memory allocation functions. These match
  * the types specified by the KBoot spec, with some additions.
  */
-#define MEMORY_TYPE_FREE       0       /**< Free, usable memory. */
-#define MEMORY_TYPE_ALLOCATED  1       /**< Kernel image and other non-reclaimable data. */
-#define MEMORY_TYPE_RECLAIMABLE        2       /**< Memory reclaimable when boot information is no longer needed. */
-#define MEMORY_TYPE_PAGETABLES 3       /**< Temporary page tables for the kernel. */
-#define MEMORY_TYPE_STACK      4       /**< Stack set up for the kernel. */
-#define MEMORY_TYPE_MODULES    5       /**< Module data. */
-#define MEMORY_TYPE_INTERNAL   6       /**< Freed before the OS is entered. */
+ #define MEMORY_TYPE_FREE        0       /**< Free, usable memory. */
+ #define MEMORY_TYPE_ALLOCATED   1       /**< Kernel image and other non-reclaimable data. */
+ #define MEMORY_TYPE_RECLAIMABLE 2       /**< Memory reclaimable when boot information is no longer needed. */
+ #define MEMORY_TYPE_PAGETABLES  3       /**< Temporary page tables for the kernel. */
+ #define MEMORY_TYPE_STACK       4       /**< Stack set up for the kernel. */
+ #define MEMORY_TYPE_MODULES     5       /**< Module data. */
+ #define MEMORY_TYPE_INTERNAL    6       /**< Freed before the OS is entered. */
 
-// Memory allocation behaviour flags
-#define MEMORY_ALLOC_HIGH      (1<<0)  // Allocate highest possible address
+ /** Memory allocation behaviour flags. */
+ #define MEMORY_ALLOC_HIGH       (1<<0)  /**< Allocate highest possible address. */
+ #define MEMORY_ALLOC_CAN_FAIL   (1<<1)  /**< Allocation is allowed to fail. */
 
 extern void *malloc(size_t size);
 extern void *realloc(void *addr, size_t size);
