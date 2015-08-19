@@ -36,6 +36,6 @@
  *
  * @param msecs     Milliseconds to delay for.
  */
-void deplay(mstime_t msecs) {
+void delay(mstime_t msecs) {
     efi_call(efi_boot_services->stall, msecs * 1000);
 }
