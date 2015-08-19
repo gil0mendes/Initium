@@ -29,8 +29,8 @@ regardless of architecture (e.g. on 32-bit x86, 64-bit fields need only be
 aligned to 4 bytes). Only the standard C fixed-width integer types are used, to
 addictional type aliases are defined:
 
-	typedef uint64_t laos_paddr_t;
-	typedef uint64_t laos_vaddr_t;
+	typedef uint64_t initium_paddr_t;
+	typedef uint64_t initium_vaddr_t;
 
 These types are used to store physical and virtual address, respectively.
 They are fixed to 64 bits in order to keep the format of all structures the
@@ -70,11 +70,11 @@ This image tag is the only tag that is required to be present in a kernel image.
 All other tags are optional. It is used to identify the image as a Initium kernel.
 There must only be one `INITIUM_ITAG_IMAGE` tag a kernel image.
 
-	Typedef struct laos_itag_image
+	Typedef struct initium_itag_image
 	{
 		uint32_t version;
 		uint32_t flags;
-	} laos_itag_image_t;
+	} initium_itag_image_t;
 
 Fields:
 
@@ -99,11 +99,11 @@ tag in a kernel image.
 	{
 		uint32_t		flags;
 		uint32_t		_pad;
-		laos_paddr_t 	aligment;
-		laos_paddr_t 	min_aligment;
-		laos_vaddr_t	virt_map_base;
-		laos_vaddr_t	virt_map_size;
-	} laos_itag_laod_t;
+		initium_paddr_t 	aligment;
+		initium_paddr_t 	min_aligment;
+		initium_vaddr_t	virt_map_base;
+		initium_vaddr_t	virt_map_size;
+	} initium_itag_laod_t;
 
 Fields:
 
@@ -139,13 +139,13 @@ option for the kernel that can be configured by the user via the boot loader.
 The boot loader can use the information given by these tags, for example, to
 display a configuration menu.
 
-	typedef struct laos_itag_option
+	typedef struct initium_itag_option
 	{
 		uint8_t		type;
 		uint32_t	name_len;
 		uint32_t	desc_len;
 		uint32_t	default_len;
-	} laos_itag_option_t;
+	} initium_itag_option_t;
 
 This structure is followed by 3 variable length fields: `name`, `desc` and
 `default`.
@@ -173,17 +173,17 @@ Fields:
 This tag specifies a range of physical memory to map in to the kernel virtual
 address space.
 
-    typedef struct laos_itag_mapping
+    typedef struct initium_itag_mapping
 	{
-     	laos_vaddr_t virt;
-    	laos_paddr_t phys;
-    	laos_vaddr_t size;
-    } laos_itag_mapping_t;
+     	initium_vaddr_t virt;
+    	initium_paddr_t phys;
+    	initium_vaddr_t size;
+    } initium_itag_mapping_t;
 
 Fields:
 
  * `virt`: The virtual address to map at. If this is set to the special value
-   `0xFFFFFFFFFFFFFFFF`, then the boot loader will allocate an address to map
+   `0xffffffffffffffff`, then the boot loader will allocate an address to map
    at. The allocated address can be found in the kernel by iterating over the
    provided virtual address space map to find an entry with matching physical
    address and size. Otherwise, the exact address specified (must be aligned to
@@ -200,13 +200,13 @@ This tag is used to specify to the boot loader what video types are supported
 and what display mode it should attempt to set. There must be at most one
 `INITIUM_ITAG_VIDEO` tag in a kernel image.
 
-    typedef struct laos_itag_video
+    typedef struct initium_itag_video
 	{
     	uint32_t types;
     	uint32_t width;
     	uint32_t height;
     	uint8_t  bpp;
-    } laos_itag_video_t;
+    } initium_itag_video_t;
 
 Fields:
 
@@ -229,9 +229,9 @@ Kernel Environment
 
 The kernel entry point takes 2 arguments:
 
-    void kmain(uint32_t magic, laos_tag_t *tags);
+    void kmain(uint32_t magic, initium_tag_t *tags);
 
-The first argument is the magic value, `0xB007CAFE`, which can be used by the
+The first argument is the magic value, `0xb007cafe`, which can be used by the
 kernel to ensure that it has been loaded by a Initium boot loader. The second
 argument is a pointer to the first tag in the information tag list, described
 in the _Kernel Information_ section.
@@ -268,7 +268,7 @@ physical memory used by it.
 The following sections describe the environment upon entering the kernel for
 each supported architecture.
 
-### x86
+### IA32
 
 The arguments to the kernel entry point are passed on the stack. The machine
 state upon entry to the kernel is as follows:
@@ -299,24 +299,32 @@ The address space set up by the boot loader will _not_ have the global flag set
 on any mappings.
 
 To allow the kernel to manipulate the virtual address space, the page directory
-is recursively mapped. A 4MB region of address space is allocated, and the page
-directory entry for that range is set to point to itself. The format of the
-`INITIUM_TAG_PAGETABLES` tag for x86 is as follows:
+is recursively mapped. A 4MB (sized and aligned) region of address space is
+allocated, and the page directory entry for that range is set to point to
+itself. This region is allocated as high as possible _outside_ of the virtual
+map range specified by the `INITIUM_ITAG_LOAD` tag and any mappings specified by
+`INITIUM_ITAG_MAPPING` tags. The range is additionally not included in any
+`INITIUM_TAG_VMEM` tags passed to the kernel. This region is kept separate like
+this because it is intended to be temporary to assist the kernel in setting up
+its own page tables, and should be hidden from architecture-independent kernel
+code.
 
-    typedef struct laos_tag_pagetables
+The format of the `INITIUM_TAG_PAGETABLES` tag for IA32 is as follows:
+
+    typedef struct initium_tag_pagetables
 	{
-    	laos_tag_t 		header;
+    	initium_tag_t 		header;
 
-    	laos_paddr_t 	page_dir;
-    	laos_vaddr_t 	mapping;
-    } laos_tag_pagetables_t;
+    	initium_paddr_t 	page_dir;
+    	initium_vaddr_t 	mapping;
+    } initium_tag_pagetables_t;
 
 Fields:
 
  * `page_dir`: Physical address of the page directory.
  * `mapping`: Virtual address of the recursive page directory mapping.
 
-### x86_64
+### AMD64
 
 The arguments to the kernel entry point are passed as per the AMD64 ABI. The
 machine state upon entry to the kernel is as follows:
@@ -343,20 +351,19 @@ The address space set up by the boot loader will _not_ have the global flag set
 on any mappings.
 
 To allow the kernel to manipulate the virtual address space, the PML4 is
-recursively mapped. A 512GB region of the virtual address space is allocated,
-and the PML4 entry for that range is set to point to itself. Since this is such
-a large region, it is _not_ allocated from the available range stated in the
-`INITIUM_ITAG_LOAD` tag. Instead, the first available PML4 entry searching back
-from the end of the virtual address space is chosen. The format of the
-`INITIUM_TAG_PAGETABLES` tag for x86_64 is as follows:
+recursively mapped. A 512GB (sized and aligned) region of the virtual address
+space is allocated, and the PML4 entry for that range is set to point to itself.
+The same rules for allocation of this region as for IA32 apply here.
 
-    typedef struct laos_tag_pagetables
+The format of the `INITIUM_TAG_PAGETABLES` tag for AMD64 is as follows:
+
+    typedef struct initium_tag_pagetables
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_paddr_t pml4;
-    	laos_vaddr_t mapping;
-    } laos_tag_pagetables_t;
+    	initium_paddr_t pml4;
+    	initium_vaddr_t mapping;
+    } initium_tag_pagetables_t;
 
 Fields:
 
@@ -383,21 +390,23 @@ The boot loader may make use of sections (1MB page mappings) within a single
 virtual mapping when constructing the virtual address space, however separate
 mappings should not be mapped together on a single section.
 
-Unlike x86 and x86_64, on ARM it is not possible to recursively map the paging
+Unlike IA32 and AMD64, on ARM it is not possible to recursively map the paging
 structures as the first and second level tables have different formats.
-Instead, a 1MB region of the virtual address space is allocated, and the last
-page within it is mapped to the second level table that covers that region.
-The kernel can then set up temporary mappings within this region by modifying
-the page table. The format of the `INITIUM_TAG_PAGETABLES` tag for ARM is as
-follows:
+Instead, a 1MB (sized and aligned) region of the virtual address space is
+allocated, and the last page within it is mapped to the second level table that
+covers that region. The kernel can then set up temporary mappings within this
+region by modifying the page table. The same rules for allocation of this region
+as for IA32 apply here.
 
-    typedef struct laos_tag_pagetables
+The format of the `INITIUM_TAG_PAGETABLES` tag for ARM is as follows:
+
+    typedef struct initium_tag_pagetables
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_paddr_t l1;
-    	laos_vaddr_t mapping;
-    } laos_tag_pagetables_t;
+    	initium_paddr_t l1;
+    	initium_vaddr_t mapping;
+    } initium_tag_pagetables_t;
 
 Fields:
 
@@ -421,11 +430,11 @@ be grouped together in the tag list.
 
 The header of each tag is in the following format:
 
-    typedef struct laos_tag
+    typedef struct initium_tag
 	{
     	uint32_t type;
     	uint32_t size;
-    } laos_tag_t;
+    } initium_tag_t;
 
 Fields:
 
@@ -446,20 +455,20 @@ the header.
 This tag is always present in the tag list, and it is always the first tag in
 the list.
 
-    typedef struct laos_tag_core
+    typedef struct initium_tag_core
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_paddr_t tags_phys;
+    	initium_paddr_t tags_phys;
     	uint32_t      tags_size;
     	uint32_t      _pad;
 
-    	laos_paddr_t kernel_phys;
+    	initium_paddr_t kernel_phys;
 
-    	laos_vaddr_t stack_base;
-    	laos_paddr_t stack_phys;
+    	initium_vaddr_t stack_base;
+    	initium_paddr_t stack_phys;
     	uint32_t      stack_size;
-    } laos_tag_core_t;
+    } initium_tag_core_t;
 
 Fields:
 
@@ -479,14 +488,14 @@ This tag gives details of the value of a kernel option. For each option defined
 by a `INITIUM_ITAG_OPTION` image tag, a `INITIUM_TAG_OPTION` will be present to
 give the option value.
 
-    typedef struct laos_tag_option
+    typedef struct initium_tag_option
 	{
-    	laos_tag_t header;
+    	initium_tag_t header;
 
     	uint8_t     type;
     	uint32_t    name_size;
     	uint32_t    value_size;
-    } laos_tag_option_t;
+    } initium_tag_option_t;
 
 This structure is followed by 2 variable length fields, `name` and `value`.
 
@@ -515,14 +524,14 @@ additional information may be included in the tag list about such regions. See
 the _Platform Specifics_ section for more information. All memory tags are
 sorted in the tag list by lowest start address first.
 
-    typedef struct laos_tag_memory
+    typedef struct initium_tag_memory
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_paddr_t start;
-    	laos_paddr_t size;
+    	initium_paddr_t start;
+    	initium_paddr_t size;
     	uint8_t       type;
-    } laos_tag_memory_t;
+    } initium_tag_memory_t;
 
 Fields:
 
@@ -548,22 +557,20 @@ The set of `INITIUM_TAG_VMEM` tags describe all virtual memory mappings that
 exist in the kernel virtual address space. All virtual memory tags are sorted
 in the tag list by lowest start address first.
 
-    typedef struct laos_tag_vmem
+    typedef struct initium_tag_vmem
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_vaddr_t start;
-    	laos_vaddr_t size;
-    	laos_paddr_t phys;
-    } laos_tag_vmem_t;
+    	initium_vaddr_t start;
+    	initium_vaddr_t size;
+    	initium_paddr_t phys;
+    } initium_tag_vmem_t;
 
 Fields:
 
  * `start`: Start address of the virtual memory range. Aligned to the page size.
  * `size`: Size of the virtual memory range. Multiple of the page size.
- * `phys`: Start of the physical memory range that this range maps to. If set
-   to `0xFFFFFFFFFFFFFFFF`, ignore this value (virtual range is a special
-   mapping, such as a recursive page directory mapping).
+ * `phys`: Start of the physical memory range that this range maps to.
 
 ### `INITIUM_TAG_PAGETABLES` (`5`)
 
@@ -581,14 +588,14 @@ be able to access the boot filesystem, or loading a file system image to run
 the OS from. Each instance of this tag describes one of the modules that has
 been loaded.
 
-    typedef struct laos_tag_module
+    typedef struct initium_tag_module
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_paddr_t addr;
+    	initium_paddr_t addr;
     	uint32_t      size;
     	uint32_t      name_size;
-    } laos_tag_module_t;
+    } initium_tag_module_t;
 
 This structure is followed by a variable length `name` field.
 
@@ -608,16 +615,16 @@ This tag describes the current video mode. This tag may not always be present,
 whether it is is platform dependent. For more details, see `INITIUM_ITAG_VIDEO`
 and the _Platform Specifics_ section.
 
-    typedef struct laos_colour
+    typedef struct initium_colour
 	{
     	uint8_t red;
     	uint8_t green;
     	uint8_t blue;
-    } laos_colour_t;
+    } initium_colour_t;
 
-    typedef struct laos_tag_video
+    typedef struct initium_tag_video
 	{
-    	laos_tag_t header;
+    	initium_tag_t header;
 
     	uint32_t     type;
     	uint32_t    _pad;
@@ -629,8 +636,8 @@ and the _Platform Specifics_ section.
     			uint8_t        x;
     			uint8_t        y;
     			uint32_t       _pad;
-    			laos_paddr_t  mem_phys;
-    			laos_vaddr_t  mem_virt;
+    			initium_paddr_t  mem_phys;
+    			initium_vaddr_t  mem_virt;
     			uint32_t       mem_size;
     		} vga;
 
@@ -641,8 +648,8 @@ and the _Platform Specifics_ section.
     			uint8_t        bpp;
     			uint32_t       pitch;
     			uint32_t       _pad;
-    			laos_paddr_t  fb_phys;
-    			laos_vaddr_t  fb_virt;
+    			initium_paddr_t  fb_phys;
+    			initium_vaddr_t  fb_virt;
     			uint32_t       fb_size;
     			uint8_t        red_size;
     			uint8_t        red_pos;
@@ -651,10 +658,10 @@ and the _Platform Specifics_ section.
     			uint8_t        blue_size;
     			uint8_t        blue_pos;
     			uint16_t       palette_size;
-    			laos_colour_t palette[0];
+    			initium_colour_t palette[0];
     		} lfb;
     	};
-    } laos_tag_video_t;
+    } initium_tag_video_t;
 
 Fields:
 
@@ -669,7 +676,7 @@ Fields (`INITIUM_VIDEO_VGA`):
  * `lines`: Number of lines on the text display (in characters).
  * `x`: Current X position of the cursor.
  * `y`: Current Y position of the cursor.
- * `mem_phys`: Physical address of VGA memory (0xB8000 on PC).
+ * `mem_phys`: Physical address of VGA memory (0xb8000 on PC).
  * `mem_virt`: Virtual address of a mapping of the VGA memory.
  * `mem_size`: Size of the virtual mapping (multiple of page size). The size of
    the mapping will be sufficient to access the entire screen (i.e. at least
@@ -706,22 +713,22 @@ Fields (`INITIUM_VIDEO_LFB`);
 
 This tag describes the device that the system was booted from.
 
-    typedef uint8_t laos_mac_addr_t[16];
-    typedef uint8_t laos_ipv4_addr_t[4];
-    typedef uint8_t laos_ipv6_addr_t[16];
-    typedef union laos_ip_addr {
-    	laos_ipv4_addr_t v4;
-    	laos_ipv6_addr_t v6;
-    } laos_ip_addr_t;
+    typedef uint8_t initium_mac_addr_t[16];
+    typedef uint8_t initium_ipv4_addr_t[4];
+    typedef uint8_t initium_ipv6_addr_t[16];
+    typedef union initium_ip_addr {
+    	initium_ipv4_addr_t v4;
+    	initium_ipv6_addr_t v6;
+    } initium_ip_addr_t;
 
 The above types are used to store network address information. A MAC address is
-stored in the `laos_mac_addr_t` type, formatted according to the information
-provided in the tag. IP addresses are stored in the `laos_ip_addr_t` union,
+stored in the `initium_mac_addr_t` type, formatted according to the information
+provided in the tag. IP addresses are stored in the `initium_ip_addr_t` union,
 in network byte order.
 
-    typedef struct laos_tag_bootdev
+    typedef struct initium_tag_bootdev
 	{
-    	laos_tag_t header;
+    	initium_tag_t header;
 
     	uint32_t type;
 
@@ -736,16 +743,16 @@ in network byte order.
 
     		struct {
     			uint32_t         flags;
-    			laos_ip_addr_t  server_ip;
+    			initium_ip_addr_t  server_ip;
     			uint16_t         server_port;
-    			laos_ip_addr_t  gateway_ip;
-    			laos_ip_addr_t  client_ip;
-    			laos_mac_addr_t client_mac;
+    			initium_ip_addr_t  gateway_ip;
+    			initium_ip_addr_t  client_ip;
+    			initium_mac_addr_t client_mac;
     			uint8_t          hw_type;
     			uint8_t          hw_addr_len;
     		} net;
     	};
-    } laos_tag_bootdev_t;
+    } initium_tag_bootdev_t;
 
 Fields:
 
@@ -770,9 +777,9 @@ Fields (`INITIUM_BOOTDEV_DISK`):
    other platforms.
  * `partition`: Partition number on the boot device. Partitions are numebered
    starting from 0. Logical partitions in DOS extended partitions start from 4.
-   If not booted from a partition, will be set to `0xFF`.
+   If not booted from a partition, will be set to `0xff`.
  * `sub_partition`: Sub-partition number within the partition, e.g. for BSD
-   disklabels. If not booted from a sub-partition, will be set to `0xFF`.
+   disklabels. If not booted from a sub-partition, will be set to `0xff`.
 
 Fields (`INITIUM_BOOTDEV_NET`):
 
@@ -802,18 +809,18 @@ that it wishes to use this feature by setting the `INITIUM_IMAGE_LOG` flag in th
 `INITIUM_ITAG_IMAGE` tag. If the boot loader supports this feature, this tag type
 will be included in the tag list.
 
-    typedef struct laos_tag_log
+    typedef struct initium_tag_log
 	{
-    	laos_tag_t   header;
+    	initium_tag_t   header;
 
-    	laos_vaddr_t log_virt;
-    	laos_paddr_t log_phys;
+    	initium_vaddr_t log_virt;
+    	initium_paddr_t log_phys;
     	uint32_t      log_size;
     	uint32_t      _pad;
 
-    	laos_paddr_t prev_phys;
+    	initium_paddr_t prev_phys;
     	uint32_t      prev_size;
-    } laos_tag_log_t;
+    } initium_tag_log_t;
 
 Fields:
 
@@ -831,7 +838,7 @@ contained in physical memory marked as `INITIUM_MEMORY_RECLAIMABLE`.
 The log buffer is a circular buffer. It includes a header at the start, any
 remaining space contains the log itself. The header has the following format:
 
-    typedef struct laos_log
+    typedef struct initium_log
 	{
     	uint32_t magic;
 
@@ -840,7 +847,7 @@ remaining space contains the log itself. The header has the following format:
 
     	uint32_t info[3];
     	uint8_t  buffer[0];
-    } laos_log_t;
+    } initium_log_t;
 
 Fields:
 
@@ -848,10 +855,10 @@ Fields:
    exact value is not specified, it should not be modified by the kernel.
  * `start`: Offset in the buffer of the start of the log. A new log buffer will
    have this field initialized to 0. Must not exceed
-   `(tag->log_size - sizeof(laos_log_t))`.
+   `(tag->log_size - sizeof(initium_log_t))`.
  * `length`: Number of characters in the log buffer. A new log buffer will have
    this field initialized to 0. Must not exceed
-   `(tag->log_size - sizeof(laos_log_t))`.
+   `(tag->log_size - sizeof(initium_log_t))`.
  * `info`: These fields are free for use by the kernel. A new log buffer will
    have them initialized to 0, the previous session log buffer will contain
    the values written by the previous kernel.
@@ -859,7 +866,7 @@ Fields:
 The kernel should modify the `start` and `length` fields as it writes into the
 buffer. An algorithm for writing to the buffer is shown below:
 
-    log_size = tag->log_size - sizeof(laos_log_t);
+    log_size = tag->log_size - sizeof(initium_log_t);
     log->buffer[(log->start + log->length) % log_size] = ch;
     if(log->length < log_size)
 	{
@@ -885,9 +892,9 @@ will be loaded in physical memory marked as `INITIUM_MEMORY_ALLOCATED`, and each
 will have its header modified to contain the allocated physical address in the
 `sh_addr` field.
 
-    typedef struct laos_tag_sections
+    typedef struct initium_tag_sections
 	{
-    	laos_tag_t header;
+    	initium_tag_t header;
 
     	uint32_t    num;
     	uint32_t    entsize;
@@ -896,7 +903,7 @@ will have its header modified to contain the allocated physical address in the
     	uint32_t    _pad;
 
     	uint8_t     sections[0];
-    } laos_tag_sections_t;
+    } initium_tag_sections_t;
 
 Fields:
 
@@ -929,15 +936,15 @@ the tag list in the order in which they were returned by the BIOS. Each tag's
 data will contain the tag header and then the data returned by the BIOS. The
 format of each descriptor as of ACPI 5.0 is as follows:
 
-    typedef struct laos_tag_e820
+    typedef struct initium_tag_e820
 	{
-    	laos_tag_t header;
+    	initium_tag_t header;
 
     	uint64_t    start;
     	uint64_t    length;
     	uint32_t    type;
     	uint32_t    attr;
-    } laos_tag_e820_t;
+    } initium_tag_e820_t;
 
 The `start`, `length` and `type` fields are guaranteed to be present, however
 any fields following them may not be present. The kernel should check the tag
