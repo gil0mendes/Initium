@@ -35,6 +35,7 @@
 #include <loader.h>
 #include <memory.h>
 #include <ui.h>
+#include <time.h>
 
 /** Structure representing a list window. */
 typedef struct ui_list {
@@ -245,7 +246,7 @@ static void render_window(ui_window_t *window, unsigned timeout) {
  * @param timeout       Seconds to wait before closing the window if no input.
  *                      If 0, the window will not time out. */
 void ui_display(ui_window_t *window, console_t *console, unsigned timeout) {
-    bool done;
+    mstime_t msecs;
 
     if (!console->out || !console->in)
         return;
@@ -254,28 +255,50 @@ void ui_display(ui_window_t *window, console_t *console, unsigned timeout) {
     render_window(window, timeout);
 
     /* Handle input until told to exit. */
-    done = false;
-    while (!done) {
-        uint16_t key;
-        input_result_t result;
+    msecs = secs_to_msecs(timeout);
+    while (true) {
+        if (timeout) {
+            if (console_poll(ui_console)) {
+                timeout = 0;
+                render_help(window, timeout, true);
+            } else {
+                delay(10);
+                msecs -= 10;
 
-        key = console_getc(ui_console);
-        result = window->type->input(window, key);
-        switch (result) {
-        case INPUT_CLOSE:
-            done = true;
-            break;
-        case INPUT_RENDER_HELP:
-            /* Doing a partial update, should preserve the draw region and the
-             * cursor state within it. */
-            render_help(window, timeout, true);
-            break;
-        case INPUT_RENDER_WINDOW:
-            render_window(window, timeout);
-            break;
-        default:
-            /* INPUT_RENDER_ENTRY is handled by ui_list_input(). */
-            break;
+                if (round_up(msecs, 1000) / 1000 < timeout) {
+                    timeout--;
+                    if (!timeout) {
+                        break;
+                    }
+
+                    render_help(window, timeout, true);
+                }
+            }
+        } else {
+            uint16_t key = console_getc(ui_console);
+            input_result_t result = window->type->input(window, key);
+            bool done = false;
+
+            switch (result) {
+            case INPUT_CLOSE:
+                done = true;
+                break;
+            case INPUT_RENDER_HELP:
+                /* Doing a partial update, should preserve the draw region and the
+                 * cursor state within it. */
+                render_help(window, timeout, true);
+                break;
+            case INPUT_RENDER_WINDOW:
+                render_window(window, timeout);
+                break;
+            default:
+                /* INPUT_RENDER_ENTRY is handled by ui_list_input(). */
+                break;
+            }
+
+            if (done) {
+                break;
+            }
         }
     }
 
