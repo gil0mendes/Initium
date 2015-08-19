@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes
+# Copyright (c) 2014-2015 Gil Mendes
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -95,17 +95,17 @@ Help(helptext)
 # Make the output nice.
 verbose = ARGUMENTS.get('V') == '1'
 if not verbose:
-    def compile_str(msg, name):
-        return ' \033[0;34m%-6s\033[0m %s' % (msg, name)
-    env['ARCOMSTR']     = compile_str('AR', '$TARGET')
-    env['ASCOMSTR']     = compile_str('ASM', '$SOURCE')
-    env['ASPPCOMSTR']   = compile_str('ASM', '$SOURCE')
-    env['CCCOMSTR']     = compile_str('CC', '$SOURCE')
-    env['CXXCOMSTR']    = compile_str('CXX', '$SOURCE')
-    env['LINKCOMSTR']   = compile_str('LINK', '$TARGET')
-    env['RANLIBCOMSTR'] = compile_str('RANLIB', '$TARGET')
-    env['GENCOMSTR']    = compile_str('GEN', '$TARGET')
-    env['STRIPCOMSTR']  = compile_str('STRIP', '$TARGET')
+    def compile_str(msg):
+        return ' \033[0;34m%-6s\033[0m $TARGET' % (msg)
+    env['ARCOMSTR']     = compile_str('AR')
+    env['ASCOMSTR']     = compile_str('ASM')
+    env['ASPPCOMSTR']   = compile_str('ASM')
+    env['CCCOMSTR']     = compile_str('CC')
+    env['CXXCOMSTR']    = compile_str('CXX')
+    env['LINKCOMSTR']   = compile_str('LINK')
+    env['RANLIBCOMSTR'] = compile_str('RANLIB')
+    env['GENCOMSTR']    = compile_str('GEN')
+    env['STRIPCOMSTR']  = compile_str('STRIP')
 
 # Merge in build flags.
 for (k, v) in build_flags.items():
@@ -203,21 +203,28 @@ env['ASFLAGS'] += ['-isystem', incdir]
 # Change the Decider to MD5-timestamp to speed up the build a bit.
 Decider('MD5-timestamp')
 
-# Don't use the Default function for compatibility with the main Infinity OS
-# build system.
+# We place the final output binaries in a single directory.
+env['OUTDIR'] = Dir('build/%s/bin' % (env['CONFIG']))
+
+# Don't use the Default function within the sub-SConscripts for compatibility
+# with the main InfinityOS build system.
 defaults = []
 
 SConscript('source/SConscript',
-    variant_dir = os.path.join('build', env['CONFIG']),
+    variant_dir = os.path.join('build', env['CONFIG'], 'source'),
     exports = ['config', 'defaults', 'env'])
 
 Default(defaults)
 
-###############
-# QEMU target #
-###############
+################
+# Test targets #
+################
+
+SConscript('test/SConscript',
+    variant_dir = os.path.join('build', env['CONFIG'], 'test'),
+    exports = ['config', 'defaults', 'env'])
 
 # Add a target to run the test script for this configuration (if it exists).
-script = os.path.join('utilities', 'test', 'test-%s.sh' % (env['CONFIG']))
+script = os.path.join('test', 'qemu', '%s.sh' % (env['CONFIG']))
 if os.path.exists(script):
-    Alias('qemu', env.Command('__qemu', defaults, Action(script, None)))
+    Alias('qemu', env.Command('__qemu', defaults + ['test'], Action(script, None)))

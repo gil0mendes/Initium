@@ -7,22 +7,22 @@ mkdir ${fsdir}
 mkdir -p ${fsdir}/efi/boot
 
 cp ${builddir}/bin/bootx64.efi ${fsdir}/efi/boot/
-#cp ${builddir}/test/test32.elf ${builddir}/test/test64.elf ${fsdir}/
+cp ${builddir}/test/test32.elf ${builddir}/test/test64.elf ${fsdir}/
 
 cat > ${fsdir}/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	pulsar "/test32.elf" ["/test32.elf"]
+	initium "/test32.elf" ["/test32.elf"]
 }
 
 entry "Test (64-bit)" {
-	pulsar "/test64.elf" ["/test64.elf"]
+	initium "/test64.elf" ["/test64.elf"]
 }
 EOF
 
 if [ ! -e ".ovmf-x86_64.bin" ]; then
-    cp utilities/test/efi/ovmf-x86_64.bin .ovmf-x86_64.bin
+    cp test/qemu/efi/ovmf-x86_64.bin .ovmf-x86_64.bin
 fi
 
 qemu-system-x86_64 -pflash .ovmf-x86_64.bin -hda fat:${fsdir} -serial stdio -m 512 -monitor vc:1024x768 -s

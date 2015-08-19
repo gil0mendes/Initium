@@ -9,22 +9,17 @@ mkdir ${isodir}
 mkdir ${isodir}/boot
 
 cp ${builddir}/bin/cdboot.img ${isodir}/boot/
-#cp ${builddir}/test/test32.elf ${builddir}/test/test64.elf ${isodir}/
+cp ${builddir}/test/test32.elf ${builddir}/test/test64.elf ${isodir}/
 
 cat > ${isodir}/boot/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	pulsar "/test32.elf" ["/test32.elf"]
+	initium "/test32.elf" ["/test32.elf"]
 }
 
 entry "Test (64-bit)" {
-	pulsar "/test64.elf" ["/test64.elf"]
-}
-
-entry "Chainload (hd0)" {
-	device "(hd0)"
-	chainload
+	initium "/test64.elf" ["/test64.elf"]
 }
 EOF
 
