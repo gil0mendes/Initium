@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,23 @@
 
 /**
  * @file
- * @brief               x86 paging definitions.
+ * @brief               MMU functions.
  */
 
-#ifndef __ARCH_PAGE_H
-#define __ARCH_PAGE_H
+#ifndef __MMU_H
+#define __MMU_H
 
-/** Page size definitions. */
-#define PAGE_WIDTH          12              /**< Width of a page in bits. */
-#define PAGE_SIZE           0x1000          /**< Size of a page. */
-#define LARGE_PAGE_SIZE_32  0x400000        /**< 32-bit large page size. */
-#define LARGE_PAGE_SIZE_64  0x200000        /**< 64-bit large page size. */
+#include <loader.h>
 
-/** Masks to clear page offset and unsupported bits from a virtual address. */
-#define PAGE_MASK_32        0xfffff000ul
-#define PAGE_MASK_64        0x000ffffffffff000ull
+/** Type of an MMU context. */
+typedef struct mmu_context mmu_context_t;
 
-/** Native paging definitions. */
-#ifdef __LP64__
-#   define LARGE_PAGE_SIZE  LARGE_PAGE_SIZE_64
-#   define PAGE_MASK        PAGE_MASK_64
-#else
-#   define LARGE_PAGE_SIZE  LARGE_PAGE_SIZE_32
-#   define PAGE_MASK        PAGE_MASK_32
-#endif
+extern bool mmu_map(mmu_context_t *ctx, load_ptr_t virt, phys_ptr_t phys, load_size_t size);
 
-/** Mask to clear page offset and unsupported bits from a physical address. */
-#define PHYS_PAGE_MASK_64   0x000000fffffff000ull
-#define PHYS_PAGE_MASK_32   0xfffff000
+extern bool mmu_memset(mmu_context_t *ctx, load_ptr_t addr, uint8_t value, load_size_t size);
+extern bool mmu_memcpy_to(mmu_context_t *ctx, load_ptr_t dest, const void *src, load_size_t size);
+extern bool mmu_memcpy_from(mmu_context_t *ctx, void *dest, load_ptr_t src, load_size_t size);
 
-#endif /* __ARCH_PAGE_H */
+extern mmu_context_t *mmu_context_create(load_mode_t mode, unsigned phys_type);
+
+#endif /* __MMU_H */

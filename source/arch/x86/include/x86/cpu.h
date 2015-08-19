@@ -107,7 +107,8 @@
 #define X86_CPUID_ADDRESS_SIZE	0x80000008	/**< Virtual/Physical Address Sizes. */
 
 /** CPUID feature bits. */
-#define X86_FEATURE_TSC 		(1<<4) 		/**< Whether the TSC is supportted. */
+#define X86_FEATURE_PSE			(1<<3)		/**< Page Size Extension. */
+#define X86_FEATURE_TSC 		(1<<4) 		/**< Time Stamp Counter. */
 
 /** CPUID extended feature bits. */
 #define X86_EXT_FEATURE_LM 		(1<<29) 	/**< Long mode. */
