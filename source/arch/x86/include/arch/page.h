@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2014-2015 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,22 +35,5 @@
 #define PAGE_SIZE           0x1000          /**< Size of a page. */
 #define LARGE_PAGE_SIZE_32  0x400000        /**< 32-bit large page size. */
 #define LARGE_PAGE_SIZE_64  0x200000        /**< 64-bit large page size. */
-
-/** Masks to clear page offset and unsupported bits from a virtual address. */
-#define PAGE_MASK_32        0xfffff000ul
-#define PAGE_MASK_64        0x000ffffffffff000ull
-
-/** Native paging definitions. */
-#ifdef __LP64__
-#   define LARGE_PAGE_SIZE  LARGE_PAGE_SIZE_64
-#   define PAGE_MASK        PAGE_MASK_64
-#else
-#   define LARGE_PAGE_SIZE  LARGE_PAGE_SIZE_32
-#   define PAGE_MASK        PAGE_MASK_32
-#endif
-
-/** Mask to clear page offset and unsupported bits from a physical address. */
-#define PHYS_PAGE_MASK_64   0x000000fffffff000ull
-#define PHYS_PAGE_MASK_32   0xfffff000
 
 #endif /* __ARCH_PAGE_H */
