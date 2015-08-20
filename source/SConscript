@@ -32,6 +32,7 @@ sources = FeatureSources(config, [
     ('TARGET_HAS_DISK', 'fs/fat.c'),
     ('TARGET_HAS_DISK', 'fs/iso9660.c'),
 
+    'lib/allocator.c',
     'lib/printf.c',
     'lib/qsort.c',
     'lib/string.c',
