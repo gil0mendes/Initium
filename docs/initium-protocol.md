@@ -142,13 +142,12 @@ display a configuration menu.
 	typedef struct initium_itag_option
 	{
 		uint8_t		type;
-		uint32_t	name_len;
-		uint32_t	desc_len;
-		uint32_t	default_len;
+		uint32_t	name_size;
+		uint32_t	desc_size;
+		uint32_t	default_size;
 	} initium_itag_option_t;
 
-This structure is followed by 3 variable length fields: `name`, `desc` and
-`default`.
+This structure is followed by 3 variable length fields: `name`, `desc` and `default`.
 
 Fields:
 
@@ -158,9 +157,9 @@ Fields:
    - `INITIUM_OPTION_STRING` (1): String, variable length, null-terminated string
      (length includes null terminator).
    - `INITIUM_OPTION_INTEGER` (2): Integer, 8 bytes, 64-bit integer.
- * `name_len`: Length of the `name` field, including null terminator.
- * `desc_len`: Length of the `desc` field, including null terminator.
- * `default_len`: Length of the `default` field. Dependent on `type`, see above.
+ * `name_size`: Size of the `name` field, including null terminator.
+ * `desc_size`: Size of the `desc` field, including null terminator.
+ * `default_size`: Size of the `default` field. Dependent on `type`, see above.
  * `name`: String name of the option. Must not contain spaces, or any of the
    following characters: `" '`. Names of the format `option_name` are
    recommended.
@@ -250,13 +249,13 @@ space (see below). The following procedure is used to build the address space:
    as necessary to satisfy any alignment requirements.
 
 A map of the virtual address space is provided in the tag list, see
-`INITIUM_TAG_VMEM`. Note that the address space set up by the boot loader is
-intended to only be temporary. The kernel should build its own address space
-using the information provided by Initium as soon as possible. The physical
-memory used by the page tables created by boot loader is marked as
-`INITIUM_MEMORY_PAGETABLES` in the memory map, allowing it to be identified so
-that it can be made free for use once the kernel has switched to its own page
-tables.
+`INITIUM_TAG_VMEM`. Note that the page table set up by the boot loader
+are intended to only be temporary. The kernel should build its own
+page tables using the information provided by boot loader as soon as
+possible. The physical memory used by the page tables
+created by boot loader is marked as `INITIUM_MEMORY_PAGETABLES` in
+the memory map, allowing it to be identified and made free for use once
+the kernel has switched to its own page tables.
 
 On all architectures, the kernel will be entered with a valid stack set up,
 mapped in the virtual address space. Details of the stack mapping are contained
@@ -493,8 +492,8 @@ give the option value.
     	initium_tag_t header;
 
     	uint8_t     type;
-    	uint32_t    name_len;
-    	uint32_t    value_len;
+    	uint32_t    name_size;
+    	uint32_t    value_size;
     } initium_tag_option_t;
 
 This structure is followed by 2 variable length fields, `name` and `value`.
@@ -502,8 +501,8 @@ This structure is followed by 2 variable length fields, `name` and `value`.
 Fields:
 
  * `type`: Type of the option (see `INITIUM_ITAG_OPTION`).
- * `name_len`: Length of the name string, including null terminator.
- * `value_len`: Size of the option value, in bytes.
+ * `name_size`: Size of the name string, including null terminator.
+ * `value_size`: Size of the option value, in bytes.
  * `name`: Name of the option. The start of this field is the end of the tag
    structure, aligned up to an 8 byte boundary.
  * `value`: Value of the option, dependent on the type (see `INITIUM_ITAG_OPTION`).
@@ -594,10 +593,10 @@ been loaded.
 
     	initium_paddr_t addr;
     	uint32_t      size;
-    	uint32_t      name_len;
+    	uint32_t      name_size;
     } initium_tag_module_t;
 
-This structure is followed by a variable length `name` field.
+This structure is followed by a variable-length `name` field.
 
 Fields:
 
@@ -605,7 +604,7 @@ Fields:
    page size. The data is not mapped into the virtual address space. The memory
    containing module data is marked as `INITIUM_MEMORY_MODULES`.
  * `size`: Size of the module data, in bytes.
- * `name_len`: Length of the name string, including null terminator.
+ * `name_size`: Size of the name string, including null terminator.
  * `name`: Name of the module. This is the base name of the file that the module
    was loaded from.
 
@@ -736,7 +735,7 @@ in network byte order.
     		struct {
     			uint32_t         flags;
     			uint8_t          uuid[64];
-    		} disk;
+    		} fs;
 
     		struct {
     			uint32_t         flags;
@@ -746,8 +745,12 @@ in network byte order.
     			initium_ip_addr_t  client_ip;
     			initium_mac_addr_t client_mac;
     			uint8_t          hw_type;
-    			uint8_t          hw_addr_len;
+    			uint8_t          hw_addr_size;
     		} net;
+
+			struct {
+				uint32_t		str_size;
+			} other;
     	};
     } initium_tag_bootdev_t;
 
@@ -757,20 +760,19 @@ Fields:
    currently defined:
     - `INITIUM_BOOTDEV_NONE` (0): No boot device. This is the case when booted
       from a boot image.
-    - `INITIUM_BOOTDEV_DISK` (1): Booted from a disk device.
+    - `INITIUM_BOOTDEV_FS` (1): Booted from a local file system.
     - `INITIUM_BOOTDEV_NET` (2): Booted from the network.
 	- `INITIUM_BOOTDEV_OTHER` (3): Booted from some other device, specified by a
 	  string, the meaning of which is OS-defined.
 
    The remainder of the structure is dependent on the device type.
 
-Fields (`INITIUM_BOOTDEV_DISK`):
+Fields (`INITIUM_BOOTDEV_FS`):
 
  * `flags`: Behaviour flags. No flags are currently defined.
- * `uuid`: If not zero-length, the UUID of the boot filesystem. The UUID is
-   given as a string. It is recommended that this is used if present to identify
-   the boot FS, as it is the most reliable method. See the section
-   _Filesystem UUIDs_ for more information about this field.
+ * `uuid`: The UUID of the boot filesystem. The UUID is given as a
+   string. See the section _Filesystem UUIDs_ for more information
+   about this field.
 
 Fields (`INITIUM_BOOTDEV_NET`):
 
@@ -785,12 +787,12 @@ Fields (`INITIUM_BOOTDEV_NET`):
  * `client_mac`: MAC address of the boot network interface.
  * `hw_type`: Type of the network interface, as specified by the _Hardware Type_
    section of RFC 1700.
- * `hw_addr_len`: Length of the client MAC address.
+ * `hw_addr_size`: Size of the client MAC address.
 
 Fields (`INITIUM_BOOTDEV_OTHER`):
 
- * `str_len`: Length of the device specifier string following the structure,
-   including null terminator.
+ * `str_size`: Size of the device specifier string following the
+   structure, including null terminator.
 
 ### `INITIUM_TAG_LOG` (`9`)
 
@@ -910,41 +912,95 @@ Fields:
 Platform Specifics
 ------------------
 
-### PC
+### PC BIOS
 
-If a video mode image tag is not included, VGA text mode will be used. If both
-`INITIUM_VIDEO_LFB` and `INITIUM_VIDEO_VGA` are set, the boot loader will attempt
-to set a framebuffer mode and fall back on VGA. It is recommended that a
-kernel supports VGA text mode rather than exclusively using an LFB mode, as it
-may not always be possible to set a LFB mode.
+If a video mode image tag is not included, VGA text mode will be used.
+If both `INITIUM_VIDEO_LFB` and `INITIUM_VIDEO_VGA` are set, the boot
+loader will attempt to set a framebuffer mode and fall back on VGA. It
+is recommended that a kernel supports VGA text mode rather than
+exclusively using an LFB mode, as it may not always be possible to set
+a LFB mode.
 
-There are some information tags that are specific to the PC platform. These are
-detailed below.
+There are some information tags that are specific to the PC platform.
+These are detailed below.
 
-#### `INITIUM_TAG_E820` (`11`)
+#### `INITIUM_TAG_BIOS_E820` (`11`)
 
-The PC BIOS provides more memory information than is included in the Initium
-physical memory map. Some of this information is required to support ACPI,
-therefore Initium will provide an unmodified copy of the BIOS E820 memory map
-to the kernel. The tag list will contain an E820 tag for each address range
-descriptor returned by INT 15h function E820h. All E820 tags will be placed in
-the tag list in the order in which they were returned by the BIOS. Each tag's
-data will contain the tag header and then the data returned by the BIOS. The
-format of each descriptor as of ACPI 5.0 is as follows:
+The PC BIOS provides more memory information than is included in the
+Initium physical memory map. Some of this information is required to
+support ACPI, therefore the boot loader will provide an unmodified copy
+of the BIOS E820 memory map to the kernel. A single tag will be
+provided containing all entries returned by the BIOS, in the order which whey were returned.
 
-    typedef struct initium_tag_e820
+    typedef struct initium_tag_bios_e820
 	{
     	initium_tag_t header;
 
-    	uint64_t    start;
-    	uint64_t    length;
-    	uint32_t    type;
-    	uint32_t    attr;
-    } initium_tag_e820_t;
+    	uint32_t    num_entries;
+    	uint32_t    entry_size;
 
-The `start`, `length` and `type` fields are guaranteed to be present, however
-any fields following them may not be present. The kernel should check the tag
-size before accessing them.
+		uint8_t		entries[0];
+    } initium_tag_bios_e820_t;
+
+Fields:
+
+ * `num_entries`: The number of entries present.
+ * `entry_size`: The size of each entry in the array.
+ * `entries`: Array of entries, each `entry_size` bytes long.
+
+### EFI
+
+EFI firmwares provide two sets of services, Boot Services and Runtime
+Services. When the system is executing in Boot Services mode, the
+firmware is in control of the system memory map and hardware. Before
+entering the kernel, the boot loader must call `ExitBootServices`.
+Any ranges in the EFI memory map marked as types `EfiBootServicesCode`
+or `EfiBootServicesData` should be made free in the main Initium
+memory map.
+
+Runtime Services must be called with all ranges in the EFI memory map
+marked with the `EFI_MEMORY_RUNTIME` attribute identity mapped, until
+a call to `SetVirtualAddressMap` is made. Even though the boot loader
+sets up a virtual address space for the kernel, it will _not_ map
+runtime services sections or call `SetVirtualAddressMap`, it is left
+up to the kernel to do so. This is done because `SetVirtualAddressMap`
+is a one-shot operation, it cannot be called multiple times, so it is
+left to the kernel to give it maximum flexibility in mapping things
+how it wants.
+
+There are some information tags which are specific to EFI-based
+platforms. These are detailed below.
+
+#### `INITIUM_TAG_EFI` (`12`)
+
+This tag provides the information needed to access EFI runtime
+services, as well as a copy of the EFI memory map at the time of the
+call to `ExitBootServices`.
+
+    typedef struct initium_tag_efi {
+        initium_tag_t   header;
+
+        initium_paddr_t system_table;
+
+        uint8_t       type;
+
+        uint32_t      num_memory_descs;
+        uint32_t      memory_desc_size;
+        uint32_t      memory_desc_version;
+
+        uint8_t       memory_map[0];
+    } initium_tag_efi_t;
+
+Fields:
+
+ * `system_table`: Physical address of the EFI system table.
+ * `type`: Type of the EFI firmware, one of:
+    - `INITIUM_EFI_32` (0): Firmware is 32-bit.
+    - `INITIUM_EFI_64` (1): Firmware is 64-bit.
+ * `num_memory_descs`: Number of memory descriptors.
+ * `memory_desc_size`: Size of each descriptor in the memory map.
+ * `memory_desc_version`: Memory map descriptor version.
+ * `memory_map`: Array of memory descriptors, each `memory_desc_size` bytes long.
 
 Filesystem UUIDs
 ----------------
