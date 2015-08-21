@@ -56,13 +56,13 @@ static void dump_option_tag(initium_tag_option_t *tag) {
 
     printf("INITIUM_TAG_OPTION:\n");
     printf("  type       = %" PRIu8 "\n", tag->type);
-    printf("  name_size  = %" PRIu32 "\n", tag->name_size);
-    printf("  value_size = %" PRIu32 "\n", tag->value_size);
+    printf("  name_len  = %" PRIu32 "\n", tag->name_len);
+    printf("  value_len = %" PRIu32 "\n", tag->value_len);
 
     name = (const char *)round_up((ptr_t)tag + sizeof(initium_tag_option_t), 8);
     printf("  name       = `%s'\n", name);
 
-    value = (void *)round_up((ptr_t)name + tag->name_size, 8);
+    value = (void *)round_up((ptr_t)name + tag->name_len, 8);
     switch (tag->type) {
     case INITIUM_OPTION_BOOLEAN:
         printf("  value      = boolean: %d\n", *(bool *)value);
@@ -138,7 +138,7 @@ static void dump_module_tag(initium_tag_module_t *tag) {
     printf("INITIUM_TAG_MODULE:\n");
     printf("  addr      = 0x%" PRIx64 "\n", tag->addr);
     printf("  size      = %" PRIu32 "\n", tag->size);
-    printf("  name_size = %" PRIu32 "\n", tag->name_size);
+    printf("  name_len = %" PRIu32 "\n", tag->name_len);
 
     name = (const char *)round_up((ptr_t)tag + sizeof(initium_tag_module_t), 8);
     printf("  name      = `%s'\n", name);
@@ -224,9 +224,6 @@ static void dump_bootdev_tag(initium_tag_bootdev_t *tag) {
         printf("  type          = %" PRIu32 " (INITIUM_BOOTDEV_DISK)\n", tag->type);
         printf("  flags         = 0x%" PRIx32 "\n", tag->disk.flags);
         printf("  uuid          = `%s'\n", tag->disk.uuid);
-        printf("  device        = 0x%x\n", tag->disk.device);
-        printf("  partition     = 0x%x\n", tag->disk.partition);
-        printf("  sub_partition = 0x%x\n", tag->disk.sub_partition);
         break;
     case INITIUM_BOOTDEV_NET:
         printf("  type        = %" PRIu32 " (INITIUM_BOOTDEV_NET)\n", tag->type);

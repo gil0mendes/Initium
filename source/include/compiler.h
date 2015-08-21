@@ -40,9 +40,10 @@
 	#define __printf(a, b)		__attribute__((format(printf, a, b)))
 	#define __deprecated		__attribute__((deprecated))
 	#define __section(s)		__attribute__((section(s)))
-	#define __cleanup(f)     __attribute__((cleanup(f)))
+	#define __cleanup(f)     	__attribute__((cleanup(f)))
 	#define likely(x)			__builtin_expect(!!(x), 1)
 	#define unlikely(x)			__builtin_expect(!!(x), 0)
+	#define unreachable(x)		__builtin_unreachable()
 #else
 	#error "Initium does not currently support compilers other than GCC"
 #endif

@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2014-2015 Gil Mendes
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@ include = {
 	'config': {
 		'ARCH': 'x86',
 		'ARCH_X86': True,
+		'TARGET_HAS_INITIUM32': True,
+		'TARGET_HAS_INITIUM64': True,
 	},
 }
 
