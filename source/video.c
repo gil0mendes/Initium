@@ -43,19 +43,16 @@ static LIST_DECLARE(video_modes);
 /** Current video mode. */
 static video_mode_t *current_video_mode;
 
-/** Set a mode as the current mode.
- * @param mode      Mode that is now current. */
-static void set_current_mode(video_mode_t *mode) {
-    video_mode_t *prev = current_video_mode;
-    bool was_console = prev && prev->ops->console && main_console.out == prev->ops->console;
-
-    if (was_console && prev->ops->console->deinit) {
-	    prev->ops->console->deinit(main_console.out_private);
-	}
-
+/**
+ * Set a mode as the current mode.
+ *
+ * @param mode          Mode that is now current.
+ * @param set_console   Whether to set the mode as console.
+ */
+static void set_current_mode(video_mode_t *mode, bool set_console) {
     current_video_mode = mode;
 
-    if (mode && (!main_console.out || was_console)) {
+    if (mode && set_console) {
 	    if (mode->ops->console && mode->ops->console->init) {
 		    main_console.out_private = mode->ops->console->init(mode);
 		}
@@ -64,22 +61,27 @@ static void set_current_mode(video_mode_t *mode) {
 	}
 }
 
-/** Set a video mode.
- * @param mode      Mode to set.
- * @return          Status code describing the result of the operation. */
-status_t video_set_mode(video_mode_t *mode) {
-    if (mode != current_video_mode) {
-	    if (mode) {
-		    status_t ret = mode->ops->set_mode(mode);
-		    if (ret != STATUS_SUCCESS) {
-			    return ret;
-			}
-		}
+/**
+ * Set a video mode.
+ *
+ * @param mode          Mode to set.
+ * @param set_console   Whether to set the mode as console.
+ */
+void video_set_mode(video_mode_t *mode, bool set_console) {
+    video_mode_t *prev = current_video_mode;
+    bool was_console = prev && prev->ops->console && main_console.out == prev->ops->console;
 
-	    set_current_mode(mode);
+    if (was_console) {
+	    if (prev->ops->console->deinit) {
+		    prev->ops->console->deinit(main_console.out_private);
+		}
 	}
 
-    return STATUS_SUCCESS;
+    if (mode) {
+	    mode->ops->set_mode(mode);
+	}
+
+    set_current_mode(mode, set_console && (!main_console.out || was_console));
 }
 
 /**
@@ -252,7 +254,8 @@ video_mode_t *video_env_set(environ_t *env, const char *name) {
     mode = video_parse_and_find_mode(value->string);
     assert(mode);
 
-    video_set_mode(mode);
+    /* Assume we're setting for the OS, so don't enable the console. */
+    video_set_mode(mode, false);
     return mode;
 }
 
@@ -301,7 +304,7 @@ void video_mode_register(video_mode_t *mode, bool current) {
     list_append(&video_modes, &mode->header);
 
     if (current)
-	set_current_mode(mode);
+	set_current_mode(mode, !main_console.out);
 }
 
 /**
