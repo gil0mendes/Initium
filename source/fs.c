@@ -463,8 +463,6 @@ static bool config_cmd_cat(value_list_t *args) {
         }
     }
 
-    free(buf);
-
     return true;
 }
 
