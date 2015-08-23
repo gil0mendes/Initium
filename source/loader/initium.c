@@ -42,6 +42,9 @@
 
 #include "initium_elf.h"
 
+/** Size to use for tag list area. */
+#define INITIUM_TAGS_SIZE       8192
+
 /**
  * Helper functions.
  */
@@ -92,8 +95,9 @@ void *initium_alloc_tag(initium_loader_t *loader, uint32_t type, size_t size) {
     ret->size = size;
 
     loader->core->tags_size += round_up(size, 8);
-    if (loader->core->tags_size > PAGE_SIZE)
-	internal_error("Exceeded maximum tag list size");
+    if (loader->core->tags_size > INITIUM_TAGS_SIZE) {
+        internal_error("Exceeded maximum tag list size");
+    }
 
     return ret;
 }
@@ -209,8 +213,7 @@ static void alloc_tag_list(initium_loader_t *loader) {
     initium_tag_core_t *core;
     phys_ptr_t phys;
 
-    /* For now, assume that the tag list never exceeds a page. */
-    core = memory_alloc(PAGE_SIZE, 0, 0, 0, MEMORY_TYPE_RECLAIMABLE, MEMORY_ALLOC_HIGH, &phys);
+    core = memory_alloc(INITIUM_TAGS_SIZE, 0, 0, 0, MEMORY_TYPE_RECLAIMABLE, MEMORY_ALLOC_HIGH, &phys);
     memset(core, 0, sizeof(*core));
     core->header.type = INITIUM_TAG_CORE;
     core->header.size = sizeof(*core);
@@ -566,7 +569,7 @@ static __noreturn void initium_loader_load(void *_loader) {
     initium_arch_setup(loader);
 
     /* Now we can allocate a virtual mapping for the tag list. */
-    loader->tags_virt = initium_alloc_virtual(loader, loader->core->tags_phys, PAGE_SIZE);
+    loader->tags_virt = initium_alloc_virtual(loader, loader->core->tags_phys, INITIUM_TAGS_SIZE);
 
     /* Load additional sections if requested. */
     if (loader->image->flags & INITIUM_IMAGE_SECTIONS)

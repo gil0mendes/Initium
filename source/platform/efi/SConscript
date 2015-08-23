@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2014-2015 Gil Mendes
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ from util import FeatureSources
 
 sources = FeatureSources(config, [
   'loader/efi.c',
+  'loader/initium.c',
 
   'efi.c',
   'disk.c',
