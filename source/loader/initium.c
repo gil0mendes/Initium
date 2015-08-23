@@ -39,6 +39,7 @@
 #include <loader.h>
 #include <memory.h>
 #include <ui.h>
+#include <video.h>
 
 #include "initium_elf.h"
 
@@ -96,8 +97,8 @@ void *initium_alloc_tag(initium_loader_t *loader, uint32_t type, size_t size) {
 
     loader->core->tags_size += round_up(size, 8);
     if (loader->core->tags_size > INITIUM_TAGS_SIZE) {
-        internal_error("Exceeded maximum tag list size");
-    }
+	    internal_error("Exceeded maximum tag list size");
+	}
 
     return ret;
 }
@@ -355,6 +356,58 @@ static void setup_trampoline(initium_loader_t *loader) {
             loader->trampoline_phys, loader->trampoline_virt);
 }
 
+#ifdef CONFIG_TARGET_HAS_VIDEO
+
+/**
+ * Set the video mode.
+ *
+ * @param loader        Loader internal data.
+ */
+static void set_video_mode(initium_loader_t *loader) {
+    video_mode_t *mode;
+    initium_tag_video_t *tag;
+
+    /* This will not do anything if the kernel hasn't enabled video support. */
+    mode = video_env_set(current_environ, "video_mode");
+    if (!mode) {
+	    return;
+	}
+
+    tag = initium_alloc_tag(loader, INITIUM_TAG_VIDEO, sizeof(*tag));
+    tag->type = mode->type;
+
+    switch (mode->type) {
+	case VIDEO_MODE_VGA:
+	    tag->vga.cols = mode->width;
+	    tag->vga.lines = mode->height;
+	    tag->vga.x = mode->x;
+	    tag->vga.y = mode->y;
+	    tag->vga.mem_phys = mode->mem_phys;
+	    tag->vga.mem_size = mode->mem_size;
+	    tag->vga.mem_virt = initium_alloc_virtual(loader, mode->mem_phys, mode->mem_size);
+	    break;
+	case VIDEO_MODE_LFB:
+	    /* TODO: Indexed modes. */
+	    tag->lfb.flags = INITIUM_LFB_RGB;
+	    tag->lfb.width = mode->width;
+	    tag->lfb.height = mode->height;
+	    tag->lfb.bpp = mode->bpp;
+	    tag->lfb.pitch = mode->pitch;
+	    tag->lfb.red_size = mode->red_size;
+	    tag->lfb.red_pos = mode->red_pos;
+	    tag->lfb.green_size = mode->green_size;
+	    tag->lfb.green_pos = mode->green_pos;
+	    tag->lfb.blue_size = mode->blue_size;
+	    tag->lfb.blue_pos = mode->blue_pos;
+	    tag->lfb.fb_phys = mode->mem_phys;
+	    tag->lfb.fb_size = mode->mem_size;
+	    tag->lfb.fb_virt = initium_alloc_virtual(loader, mode->mem_phys, mode->mem_size);
+	    break;
+	}
+}
+
+#endif /* CONFIG_TARGET_HAS_VIDEO */
+
 /** Pass options to the kernel.
  * @param loader        Loader internal data. */
 static void add_option_tags(initium_loader_t *loader) {
@@ -516,7 +569,7 @@ static void add_vmem_tags(initium_loader_t *loader) {
     }
 }
 
-/** Load a KBoot kernel.
+/** Load a Initium kernel.
  * @param _loader       Pointer to loader internal data. */
 static __noreturn void initium_loader_load(void *_loader) {
     initium_loader_t *loader = _loader;
@@ -587,6 +640,11 @@ static __noreturn void initium_loader_load(void *_loader) {
     /* Set up the kernel entry trampoline. */
     setup_trampoline(loader);
 
+    /* Set the video mode. */
+    #ifdef CONFIG_TARGET_HAS_VIDEO
+    set_video_mode(loader);
+    #endif
+
     /* Add other information tags. All memory allocation is done at this point. */
     add_option_tags(loader);
     add_bootdev_tag(loader);
@@ -616,17 +674,25 @@ static __noreturn void initium_loader_load(void *_loader) {
 static ui_window_t *initium_loader_configure(void *_loader, const char *title) {
     initium_loader_t *loader = _loader;
     ui_window_t *window;
+    ui_entry_t *entry;
 
     window = ui_list_create(title, true);
 
-    // TODO: video mode
+    /* Create a video mode chooser if needed. */
+    #ifdef CONFIG_TARGET_HAS_VIDEO
+    initium_itag_video_t *video = initium_find_itag(loader, INITIUM_ITAG_VIDEO);
+
+    if (video && video->types) {
+	    entry = video_env_chooser(current_environ, "video_mode", video->types);
+	    ui_list_insert(window, entry, false);
+	}
+    #endif
 
     /* Add entries for each option. */
     initium_itag_foreach(loader, INITIUM_ITAG_OPTION, initium_itag_option_t, option) {
 	char *name = (char *)option + sizeof(*option);
 	char *desc = (char *)option + sizeof(*option) + option->name_size;
 	value_t *value;
-	ui_entry_t *entry;
 
 	/* All entries should be added and the correct type at this point. */
 	value = environ_lookup(current_environ, name);
@@ -777,10 +843,46 @@ static bool add_options(initium_loader_t *loader) {
     return true;
 }
 
-/** Add a module list
+#ifdef CONFIG_TARGET_HAS_VIDEO
+
+/** Initialize video settings.
+ * @param loader        Loader internal data. */
+static void init_video(initium_loader_t *loader) {
+    initium_itag_video_t *video = initium_find_itag(loader, INITIUM_ITAG_VIDEO);
+    uint32_t types;
+    video_mode_t *def = NULL;
+
+    if (video) {
+	    types = video->types;
+
+	    /* If the kernel specifies a preferred mode, try to find it. */
+	    if (types & INITIUM_VIDEO_LFB && video->width && video->height) {
+		    def = video_find_mode(VIDEO_MODE_LFB, video->width, video->height, video->bpp);
+		} else {
+		    def = NULL;
+		}
+	} else {
+	    /* We will only ever get a VGA mode if the platform supports it. */
+	    types = INITIUM_VIDEO_VGA | INITIUM_VIDEO_LFB;
+	    def = NULL;
+	}
+
+    if (types) {
+	    video_env_init(current_environ, "video_mode", types, def);
+	} else {
+	    environ_remove(current_environ, "video_mode");
+	}
+}
+
+#endif /* CONFIG_TARGET_HAS_VIDEO */
+
+/**
+ * Add a module list.
+ *
  * @param loader        Loader internal data.
  * @param list          List of modules to add.
- * @return              Whether successful. */
+ * @return              Whether successful.
+ */
 static bool add_module_list(initium_loader_t *loader, const value_list_t *list) {
     for (size_t i = 0; i < list->count; i++) {
 	    const char *path = list->values[i].string;
@@ -936,7 +1038,7 @@ static bool config_cmd_initium(value_list_t *args) {
 	    config_error("initium: '%s' is not a Initium kernel", loader->path);
 	    goto err_itags;
 	} else if (loader->image->version != INITIUM_VERSION) {
-	    config_error("initium: '%s' has unsupported KBoot version %" PRIu32, loader->path, loader->image->version);
+	    config_error("initium: '%s' has unsupported Initium version %" PRIu32, loader->path, loader->image->version);
 	    goto err_itags;
 	}
 
@@ -961,6 +1063,11 @@ static bool config_cmd_initium(value_list_t *args) {
 			}
 		}
 	}
+
+    #ifdef CONFIG_TARGET_HAS_VIDEO
+    /* Initialize video settings. */
+    init_video(loader);
+    #endif
 
     /* Open all specified modules. Argument types already checked here. */
     if (args->count >= 2) {

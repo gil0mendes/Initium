@@ -28,60 +28,61 @@
 #include <types.h>
 
 struct console_out_ops;
+struct environ;
 
-/** Video mode types. */
+/** Video mode types (defined to match Initium types). */
 typedef enum video_mode_type {
-    VIDEO_MODE_VGA,                     /**< VGA. */
-    VIDEO_MODE_LFB,                     /**< Linear framebuffer. */
+        VIDEO_MODE_VGA = (1<<0),                 /**< VGA. */
+        VIDEO_MODE_LFB = (1<<1),                 /**< Linear framebuffer. */
 } video_mode_type_t;
 
 /** Tag containing video mode information. */
 typedef struct video_mode {
-    list_t header;                      /**< Link to mode list. */
+        list_t header;                  /**< Link to mode list. */
 
-    video_mode_type_t type;             /**< Type of the video mode. */
-    const struct video_ops *ops;        /**< Operations for the video mode. */
+        video_mode_type_t type;         /**< Type of the video mode. */
+        const struct video_ops *ops;    /**< Operations for the video mode. */
 
-    /** Common information. */
-    uint32_t width;                     /**< LFB pixel width/VGA number of columns. */
-    uint32_t height;                    /**< LFB pixel height/VGA number of rows. */
-    phys_ptr_t mem_phys;                /**< Physical address of LFB/VGA memory. */
-    ptr_t mem_virt;                     /**< Loader virtual address of LFB/VGA memory. */
-    uint32_t mem_size;                  /**< Size of LFB/VGA memory. */
+        /** Common information. */
+        uint32_t width;                 /**< LFB pixel width/VGA number of columns. */
+        uint32_t height;                /**< LFB pixel height/VGA number of rows. */
+        phys_ptr_t mem_phys;            /**< Physical address of LFB/VGA memory. */
+        ptr_t mem_virt;                 /**< Loader virtual address of LFB/VGA memory. */
+        uint32_t mem_size;              /**< Size of LFB/VGA memory. */
 
-    union {
-        /** VGA information. */
-        struct {
-            /** Cursor position information, stored in case OS wants it. */
-            uint8_t x;                  /**< Cursor X position. */
-            uint8_t y;                  /**< Cursor Y position. */
+        union {
+                /** VGA information. */
+                struct {
+                        /** Cursor position information, stored in case OS wants it. */
+                        uint8_t x;      /**< Cursor X position. */
+                        uint8_t y;      /**< Cursor Y position. */
+                };
+
+                /** Linear framebuffer information. */
+                struct {
+                        uint8_t bpp;    /**< Number of bits per pixel. */
+                        uint32_t pitch; /**< Number of bytes per line of the framebuffer. */
+                        uint8_t red_size; /**< Size of red component of each pixel. */
+                        uint8_t red_pos; /**< Bit position of the red component of each pixel. */
+                        uint8_t green_size; /**< Size of green component of each pixel. */
+                        uint8_t green_pos; /**< Bit position of the green component of each pixel. */
+                        uint8_t blue_size; /**< Size of blue component of each pixel. */
+                        uint8_t blue_pos; /**< Bit position of the blue component of each pixel. */
+                };
         };
-
-        /** Linear framebuffer information. */
-        struct {
-            uint8_t bpp;                /**< Number of bits per pixel. */
-            uint32_t pitch;             /**< Number of bytes per line of the framebuffer. */
-            uint8_t red_size;           /**< Size of red component of each pixel. */
-            uint8_t red_pos;            /**< Bit position of the red component of each pixel. */
-            uint8_t green_size;         /**< Size of green component of each pixel. */
-            uint8_t green_pos;          /**< Bit position of the green component of each pixel. */
-            uint8_t blue_size;          /**< Size of blue component of each pixel. */
-            uint8_t blue_pos;           /**< Bit position of the blue component of each pixel. */
-        };
-    };
 } video_mode_t;
 
 #ifdef CONFIG_TARGET_HAS_VIDEO
 
 /** Structure containing video mode operations. */
 typedef struct video_ops {
-    /** Main console operations to use with this video mode (optional). */
-    const struct console_out_ops *console;
+        /** Main console operations to use with this video mode (optional). */
+        const struct console_out_ops *console;
 
-    /** Set the mode.
-     * @param mode          Mode to set.
-     * @return              Status code describing the result of the operation. */
-    status_t (*set_mode)(video_mode_t *mode);
+        /** Set the mode.
+         * @param mode          Mode to set.
+         * @return              Status code describing the result of the operation. */
+        status_t (*set_mode)(video_mode_t *mode);
 } video_ops_t;
 
 extern status_t video_set_mode(video_mode_t *mode);
@@ -90,14 +91,14 @@ extern video_mode_t *video_find_mode(video_mode_type_t type, uint32_t width, uin
 extern video_mode_t *video_parse_and_find_mode(const char *str);
 extern video_mode_t *video_current_mode(void);
 
+extern void video_env_init(struct environ *env, const char *name, uint32_t types, video_mode_t *def);
+extern video_mode_t *video_env_set(struct environ *env, const char *name);
+
+#ifdef CONFIG_TARGET_HAS_UI
+extern struct ui_entry *video_env_chooser(struct environ *env, const char *name, uint32_t types);
+#endif
+
 extern void video_mode_register(video_mode_t *mode, bool current);
-
-#else /* CONFIG_TARGET_HAS_VIDEO */
-
-static inline status_t video_set_mode(video_mode_t *) { return STATUS_NOT_SUPPORTED; }
-static inline video_mode_t *video_find_mode(video_mode_type_t, uint32_t, uint32_t, uint32_t) { return NULL; }
-static inline video_mode_t *video_parse_and_find_mode(const char *) { return NULL; }
-static inline video_mode_t *video_current_mode(void) { return NULL; }
 
 #endif /* CONFIG_TARGET_HAS_VIDEO */
 

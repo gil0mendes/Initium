@@ -968,6 +968,10 @@ is a one-shot operation, it cannot be called multiple times, so it is
 left to the kernel to give it maximum flexibility in mapping things
 how it wants.
 
+Only `INITIUM_VIDEO_LFB` is supported on EFI platforms. If a video
+mode image tag is not included, a default video mode will be set (
+if the platform has video output support).
+
 There are some information tags which are specific to EFI-based
 platforms. These are detailed below.
 
