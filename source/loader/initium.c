@@ -1,26 +1,26 @@
 /**
-* The MIT License (MIT)
-*
-* Copyright (c) 2012-2015 Gil Mendes
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2012-2015 Gil Mendes
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 /**
  * @file
@@ -52,10 +52,10 @@
  * @return              Pointer to tag, or NULL if not found. */
 void *initium_find_itag(initium_loader_t *loader, uint32_t type) {
     list_foreach(&loader->itags, iter) {
-        initium_itag_t *itag = list_entry(iter, initium_itag_t, header);
+	initium_itag_t *itag = list_entry(iter, initium_itag_t, header);
 
-        if (itag->type == type)
-            return itag->data;
+	if (itag->type == type)
+	    return itag->data;
     }
 
     return NULL;
@@ -70,10 +70,10 @@ void *initium_next_itag(initium_loader_t *loader, void *data) {
     uint32_t type = itag->type;
 
     while (itag != list_last(&loader->itags, initium_itag_t, header)) {
-        itag = list_next(itag, header);
-        if (itag->type == type)
-            return itag->data;
-    }
+	    itag = list_next(itag, header);
+	    if (itag->type == type)
+		return itag->data;
+	}
 
     return NULL;
 }
@@ -93,7 +93,7 @@ void *initium_alloc_tag(initium_loader_t *loader, uint32_t type, size_t size) {
 
     loader->core->tags_size += round_up(size, 8);
     if (loader->core->tags_size > PAGE_SIZE)
-        internal_error("Exceeded maximum tag list size");
+	internal_error("Exceeded maximum tag list size");
 
     return ret;
 }
@@ -107,20 +107,20 @@ void *initium_alloc_tag(initium_loader_t *loader, uint32_t type, size_t size) {
  * @return              Whether mapping is valid. */
 static bool check_mapping(initium_loader_t *loader, initium_vaddr_t addr, initium_paddr_t phys, initium_vaddr_t size) {
     if (!size || size % PAGE_SIZE)
-        return false;
+	return false;
 
     if (addr != ~(initium_vaddr_t)0) {
-        if (addr % PAGE_SIZE) {
-            return false;
-        } else if (addr + size - 1 < addr) {
-            return false;
-        } else if (loader->mode == LOAD_MODE_32BIT && addr + size - 1 >= 0x100000000ull) {
-            return false;
-        }
-    }
+	    if (addr % PAGE_SIZE) {
+		    return false;
+		} else if (addr + size - 1 < addr) {
+		    return false;
+		} else if (loader->mode == LOAD_MODE_32BIT && addr + size - 1 >= 0x100000000ull) {
+		    return false;
+		}
+	}
 
     if (phys != ~(initium_paddr_t)0 && phys % PAGE_SIZE)
-        return false;
+	return false;
 
     return true;
 }
@@ -144,12 +144,12 @@ static void add_mapping(initium_loader_t *loader, load_ptr_t start, load_size_t 
     list_init(&mapping->header);
 
     list_foreach(&loader->mappings, iter) {
-        initium_mapping_t *other = list_entry(iter, initium_mapping_t, header);
+	initium_mapping_t *other = list_entry(iter, initium_mapping_t, header);
 
-        if (mapping->start <= other->start) {
-            list_add_before(&other->header, &mapping->header);
-            return;
-        }
+	if (mapping->start <= other->start) {
+		list_add_before(&other->header, &mapping->header);
+		return;
+	    }
     }
 
     list_append(&loader->mappings, &mapping->header);
@@ -164,16 +164,16 @@ initium_vaddr_t initium_alloc_virtual(initium_loader_t *loader, initium_paddr_t 
     load_ptr_t addr;
 
     if (!check_mapping(loader, ~(initium_vaddr_t)0, phys, size))
-        boot_error("Invalid virtual mapping (physical 0x%" PRIx64 ")", phys);
+	boot_error("Invalid virtual mapping (physical 0x%" PRIx64 ")", phys);
 
     if (!allocator_alloc(&loader->allocator, size, 0, &addr))
-        boot_error("Insufficient address space available (allocating %" PRIuLOAD " bytes)", size);
+	boot_error("Insufficient address space available (allocating %" PRIuLOAD " bytes)", size);
 
     if (phys != ~(initium_paddr_t)0) {
-        /* Architecture code does extra validation. */
-        if (!mmu_map(loader->mmu, addr, phys, size))
-            boot_error("Invalid virtual mapping (physical 0x%" PRIx64 ")", phys);
-    }
+	    /* Architecture code does extra validation. */
+	    if (!mmu_map(loader->mmu, addr, phys, size))
+		boot_error("Invalid virtual mapping (physical 0x%" PRIx64 ")", phys);
+	}
 
     add_mapping(loader, addr, size, phys);
     return addr;
@@ -186,15 +186,15 @@ initium_vaddr_t initium_alloc_virtual(initium_loader_t *loader, initium_paddr_t 
  * @param size          Size of the range. */
 void initium_map_virtual(initium_loader_t *loader, initium_vaddr_t addr, initium_paddr_t phys, initium_vaddr_t size) {
     if (!check_mapping(loader, addr, phys, size))
-        boot_error("Invalid virtual mapping (virtual 0x%" PRIx64 ")", addr);
+	boot_error("Invalid virtual mapping (virtual 0x%" PRIx64 ")", addr);
 
     if (!allocator_insert(&loader->allocator, addr, size))
-        boot_error("Mapping 0x%" PRIxLOAD " conflicts with another", addr);
+	boot_error("Mapping 0x%" PRIxLOAD " conflicts with another", addr);
 
     if (phys != ~(initium_paddr_t)0) {
-        if (!mmu_map(loader->mmu, addr, phys, size))
-            boot_error("Invalid virtual mapping (virtual 0x%" PRIx64 ")", addr);
-    }
+	    if (!mmu_map(loader->mmu, addr, phys, size))
+		boot_error("Invalid virtual mapping (virtual 0x%" PRIx64 ")", addr);
+	}
 
     add_mapping(loader, addr, size, phys);
 }
@@ -227,22 +227,22 @@ static void alloc_tag_list(initium_loader_t *loader) {
  * @return              Whether parameters are valid. */
 static bool check_alignment_params(initium_itag_load_t *load) {
     if (load->alignment) {
-        if (load->alignment < PAGE_SIZE) {
-            return false;
-        } else if (!is_pow2(load->alignment)) {
-            return false;
-        }
-    }
+	    if (load->alignment < PAGE_SIZE) {
+		    return false;
+		} else if (!is_pow2(load->alignment)) {
+		    return false;
+		}
+	}
 
     if (load->min_alignment) {
-        if (load->min_alignment < PAGE_SIZE || load->min_alignment > load->alignment) {
-            return false;
-        } else if (!is_pow2(load->min_alignment)) {
-            return false;
-        }
-    } else {
-        load->min_alignment = load->alignment;
-    }
+	    if (load->min_alignment < PAGE_SIZE || load->min_alignment > load->alignment) {
+		    return false;
+		} else if (!is_pow2(load->min_alignment)) {
+		    return false;
+		}
+	} else {
+	    load->min_alignment = load->alignment;
+	}
 
     return true;
 }
@@ -253,20 +253,20 @@ static bool check_alignment_params(initium_itag_load_t *load) {
  * @return              Whether parameters are valid. */
 static bool check_virt_map_params(initium_loader_t *loader, initium_itag_load_t *load) {
     if (load->virt_map_base % PAGE_SIZE || load->virt_map_size % PAGE_SIZE) {
-        return false;
-    } else if (load->virt_map_base && !load->virt_map_size) {
-        return false;
-    } else if ((load->virt_map_base + load->virt_map_size - 1) < load->virt_map_base) {
-        return false;
-    }
+	    return false;
+	} else if (load->virt_map_base && !load->virt_map_size) {
+	    return false;
+	} else if ((load->virt_map_base + load->virt_map_size - 1) < load->virt_map_base) {
+	    return false;
+	}
 
     if (loader->mode == LOAD_MODE_32BIT) {
-        if (!load->virt_map_base && !load->virt_map_size) {
-            load->virt_map_size = 0x100000000ull;
-        } else if (load->virt_map_base + load->virt_map_size > 0x100000000ull) {
-            return false;
-        }
-    }
+	    if (!load->virt_map_base && !load->virt_map_size) {
+		    load->virt_map_size = 0x100000000ull;
+		} else if (load->virt_map_base + load->virt_map_size > 0x100000000ull) {
+		    return false;
+		}
+	}
 
     return true;
 }
@@ -275,33 +275,33 @@ static bool check_virt_map_params(initium_loader_t *loader, initium_itag_load_t 
  * @param loader        Loader internal data. */
 static void load_modules(initium_loader_t *loader) {
     list_foreach(&loader->modules, iter) {
-        initium_module_t *module = list_entry(iter, initium_module_t, header);
-        void *dest;
-        phys_ptr_t phys;
-        size_t size, name_size;
-        initium_tag_module_t *tag;
-        status_t ret;
+	initium_module_t *module = list_entry(iter, initium_module_t, header);
+	void *dest;
+	phys_ptr_t phys;
+	size_t size, name_size;
+	initium_tag_module_t *tag;
+	status_t ret;
 
-        /* Allocate a chunk of memory to load to. */
-        size = round_up(module->handle->size, PAGE_SIZE);
-        dest = memory_alloc(size, 0, 0, 0, MEMORY_TYPE_MODULES, MEMORY_ALLOC_HIGH, &phys);
+	/* Allocate a chunk of memory to load to. */
+	size = round_up(module->handle->size, PAGE_SIZE);
+	dest = memory_alloc(size, 0, 0, 0, MEMORY_TYPE_MODULES, MEMORY_ALLOC_HIGH, &phys);
 
-        dprintf(
-            "initium: loading module '%s' to 0x%" PRIxPHYS " (size: %" PRIu64 ")\n",
-            module->name, phys, module->handle->size);
+	dprintf(
+	    "initium: loading module '%s' to 0x%" PRIxPHYS " (size: %" PRIu64 ")\n",
+	    module->name, phys, module->handle->size);
 
-        ret = fs_read(module->handle, dest, module->handle->size, 0);
-        if (ret != STATUS_SUCCESS)
-            boot_error("Error %d reading module '%s'", ret, module->name);
+	ret = fs_read(module->handle, dest, module->handle->size, 0);
+	if (ret != STATUS_SUCCESS)
+	    boot_error("Error %d reading module '%s'", ret, module->name);
 
-        name_size = strlen(module->name) + 1;
+	name_size = strlen(module->name) + 1;
 
-        tag = initium_alloc_tag(loader, INITIUM_TAG_MODULE, round_up(sizeof(*tag), 8) + name_size);
-        tag->addr = phys;
-        tag->size = module->handle->size;
-        tag->name_size = name_size;
+	tag = initium_alloc_tag(loader, INITIUM_TAG_MODULE, round_up(sizeof(*tag), 8) + name_size);
+	tag->addr = phys;
+	tag->size = module->handle->size;
+	tag->name_size = name_size;
 
-        memcpy((char *)tag + round_up(sizeof(*tag), 8), module->name, name_size);
+	memcpy((char *)tag + round_up(sizeof(*tag), 8), module->name, name_size);
     }
 }
 
@@ -347,55 +347,58 @@ static void setup_trampoline(initium_loader_t *loader) {
     loader_phys = virt_to_phys(loader_start);
     mmu_map(loader->trampoline_mmu, loader_start, loader_phys, loader_size);
     mmu_map(loader->trampoline_mmu, loader->trampoline_virt, loader->trampoline_phys, PAGE_SIZE);
+
+    dprintf("initium: trampoline at physical 0x%" PRIxPHYS ", virtual 0x%" PRIxLOAD " \n",
+            loader->trampoline_phys, loader->trampoline_virt);
 }
 
 /** Pass options to the kernel.
  * @param loader        Loader internal data. */
 static void add_option_tags(initium_loader_t *loader) {
     initium_itag_foreach(loader, INITIUM_ITAG_OPTION, initium_itag_option_t, option) {
-        char *name = (char *)option + sizeof(*option);
-        value_t *value;
-        void *data;
-        size_t name_size, data_size, size;
-        initium_tag_option_t *tag;
+	char *name = (char *)option + sizeof(*option);
+	value_t *value;
+	void *data;
+	size_t name_size, data_size, size;
+	initium_tag_option_t *tag;
 
-        /* All options are added to the environment by config_cmd_initium(). */
-        value = environ_lookup(current_environ, name);
-        assert(value);
+	/* All options are added to the environment by config_cmd_initium(). */
+	value = environ_lookup(current_environ, name);
+	assert(value);
 
-        switch (option->type) {
-        case INITIUM_OPTION_BOOLEAN:
-            assert(value->type == VALUE_TYPE_BOOLEAN);
+	switch (option->type) {
+	    case INITIUM_OPTION_BOOLEAN:
+		assert(value->type == VALUE_TYPE_BOOLEAN);
 
-            data = &value->boolean;
-            data_size = sizeof(value->boolean);
-            break;
-        case INITIUM_OPTION_STRING:
-            assert(value->type == VALUE_TYPE_STRING);
+		data = &value->boolean;
+		data_size = sizeof(value->boolean);
+		break;
+	    case INITIUM_OPTION_STRING:
+		assert(value->type == VALUE_TYPE_STRING);
 
-            data = value->string;
-            data_size = strlen(value->string) + 1;
-            break;
-        case INITIUM_OPTION_INTEGER:
-            assert(value->type == VALUE_TYPE_STRING);
+		data = value->string;
+		data_size = strlen(value->string) + 1;
+		break;
+	    case INITIUM_OPTION_INTEGER:
+		assert(value->type == VALUE_TYPE_STRING);
 
-            data = &value->integer;
-            data_size = sizeof(value->integer);
-            break;
-        default:
-            unreachable();
-        }
+		data = &value->integer;
+		data_size = sizeof(value->integer);
+		break;
+	    default:
+		unreachable();
+	    }
 
-        name_size = strlen(name) + 1;
-        size = round_up(sizeof(*tag), 8) + round_up(name_size, 8) + data_size;
+	name_size = strlen(name) + 1;
+	size = round_up(sizeof(*tag), 8) + round_up(name_size, 8) + data_size;
 
-        tag = initium_alloc_tag(loader, INITIUM_TAG_OPTION, size);
-        tag->type = option->type;
-        tag->name_size = name_size;
-        tag->value_size = data_size;
+	tag = initium_alloc_tag(loader, INITIUM_TAG_OPTION, size);
+	tag->type = option->type;
+	tag->name_size = name_size;
+	tag->value_size = data_size;
 
-        memcpy((char *)tag + round_up(sizeof(*tag), 8), name, name_size);
-        memcpy((char *)tag + round_up(sizeof(*tag), 8) + round_up(name_size, 8), data, data_size);
+	memcpy((char *)tag + round_up(sizeof(*tag), 8), name, name_size);
+	memcpy((char *)tag + round_up(sizeof(*tag), 8) + round_up(name_size, 8), data, data_size);
     }
 }
 
@@ -412,11 +415,11 @@ static void add_fs_bootdev_tag(initium_loader_t *loader, const char *uuid) {
     tag->fs.flags = 0;
 
     if (uuid) {
-        strncpy((char *)tag->fs.uuid, uuid, sizeof(tag->fs.uuid));
-        tag->fs.uuid[sizeof(tag->fs.uuid) - 1] = 0;
-    } else {
-        tag->fs.uuid[0] = 0;
-    }
+	    strncpy((char *)tag->fs.uuid, uuid, sizeof(tag->fs.uuid));
+	    tag->fs.uuid[sizeof(tag->fs.uuid) - 1] = 0;
+	} else {
+	    tag->fs.uuid[0] = 0;
+	}
 }
 
 /** Add a tag for a device specifier string.
@@ -444,26 +447,26 @@ static void add_bootdev_tag(initium_loader_t *loader) {
 
     value = environ_lookup(current_environ, "root_device");
     if (value) {
-        assert(value->type == VALUE_TYPE_STRING);
+	    assert(value->type == VALUE_TYPE_STRING);
 
-        if (strncmp(value->string, "other:", 6) == 0) {
-            add_other_bootdev_tag(loader, &value->string[6]);
-            return;
-        } else if (strncmp(value->string, "uuid:", 5) == 0) {
-            add_fs_bootdev_tag(loader, &value->string[5]);
-            return;
-        }
+	    if (strncmp(value->string, "other:", 6) == 0) {
+		    add_other_bootdev_tag(loader, &value->string[6]);
+		    return;
+		} else if (strncmp(value->string, "uuid:", 5) == 0) {
+		    add_fs_bootdev_tag(loader, &value->string[5]);
+		    return;
+		}
 
-        device = device_lookup(value->string);
-        assert(device);
-    } else {
-        device = loader->handle->mount->device;
-    }
+	    device = device_lookup(value->string);
+	    assert(device);
+	} else {
+	    device = loader->handle->mount->device;
+	}
 
     if (device->mount && device->mount->uuid) {
-        add_fs_bootdev_tag(loader, device->mount->uuid);
-        return;
-    }
+	    add_fs_bootdev_tag(loader, device->mount->uuid);
+	    return;
+	}
 
     /* Nothing usable. TODO: network */
     tag = initium_alloc_tag(loader, INITIUM_TAG_BOOTDEV, sizeof(*tag));
@@ -484,12 +487,12 @@ static void add_memory_tags(initium_loader_t *loader) {
 
     /* Add tags for each range. */
     list_foreach(&memory_map, iter) {
-        memory_range_t *range = list_entry(iter, memory_range_t, header);
-        initium_tag_memory_t *tag = initium_alloc_tag(loader, INITIUM_TAG_MEMORY, sizeof(*tag));
+	memory_range_t *range = list_entry(iter, memory_range_t, header);
+	initium_tag_memory_t *tag = initium_alloc_tag(loader, INITIUM_TAG_MEMORY, sizeof(*tag));
 
-        tag->start = range->start;
-        tag->size = range->size;
-        tag->type = range->type;
+	tag->start = range->start;
+	tag->size = range->size;
+	tag->type = range->type;
     }
 }
 
@@ -499,14 +502,14 @@ static void add_vmem_tags(initium_loader_t *loader) {
     dprintf("initium: final virtual memory map:\n");
 
     list_foreach(&loader->mappings, iter) {
-        initium_mapping_t *mapping = list_entry(iter, initium_mapping_t, header);
-        initium_tag_vmem_t *tag = initium_alloc_tag(loader, INITIUM_TAG_VMEM, sizeof(*tag));
+	initium_mapping_t *mapping = list_entry(iter, initium_mapping_t, header);
+	initium_tag_vmem_t *tag = initium_alloc_tag(loader, INITIUM_TAG_VMEM, sizeof(*tag));
 
-        tag->start = mapping->start;
-        tag->size = mapping->size;
-        tag->phys = mapping->phys;
+	tag->start = mapping->start;
+	tag->size = mapping->size;
+	tag->phys = mapping->phys;
 
-        dprintf(" 0x%" PRIx64 "-0x%" PRIx64 " -> 0x%" PRIx64 "\n", tag->start, tag->start + tag->size, tag->phys);
+	dprintf(" 0x%" PRIx64 "-0x%" PRIx64 " -> 0x%" PRIx64 "\n", tag->start, tag->start + tag->size, tag->phys);
     }
 }
 
@@ -527,15 +530,15 @@ static __noreturn void initium_loader_load(void *_loader) {
     /* Validate load parameters. */
     loader->load = initium_find_itag(loader, INITIUM_ITAG_LOAD);
     if (loader->load) {
-        if (!check_alignment_params(loader->load))
-            boot_error("Invalid kernel alignment parameters");
-        if (!check_virt_map_params(loader, loader->load))
-            boot_error("Invalid kernel virtual map range");
-    } else {
-        /* No load tag, create one and initialize everything to zero. */
-        loader->load = malloc(sizeof(*loader->load));
-        memset(loader->load, 0, sizeof(*loader->load));
-    }
+	    if (!check_alignment_params(loader->load))
+		boot_error("Invalid kernel alignment parameters");
+	    if (!check_virt_map_params(loader, loader->load))
+		boot_error("Invalid kernel virtual map range");
+	} else {
+	    /* No load tag, create one and initialize everything to zero. */
+	    loader->load = malloc(sizeof(*loader->load));
+	    memset(loader->load, 0, sizeof(*loader->load));
+	}
 
     /* Have the architecture do its own validation and fill in defaults. */
     initium_arch_check_load_params(loader, loader->load);
@@ -552,11 +555,11 @@ static __noreturn void initium_loader_load(void *_loader) {
 
     /* Perform all mappings specified by the kernel image. */
     initium_itag_foreach(loader, INITIUM_ITAG_MAPPING, initium_itag_mapping_t, mapping) {
-        if (mapping->virt == ~(initium_vaddr_t)0) {
-            initium_alloc_virtual(loader, mapping->phys, mapping->size);
-        } else {
-            initium_map_virtual(loader, mapping->virt, mapping->phys, mapping->size);
-        }
+	if (mapping->virt == ~(initium_vaddr_t)0) {
+		initium_alloc_virtual(loader, mapping->phys, mapping->size);
+	    } else {
+		initium_map_virtual(loader, mapping->virt, mapping->phys, mapping->size);
+	    }
     }
 
     /* Perform architecture setup. */
@@ -567,7 +570,7 @@ static __noreturn void initium_loader_load(void *_loader) {
 
     /* Load additional sections if requested. */
     if (loader->image->flags & INITIUM_IMAGE_SECTIONS)
-        initium_elf_load_sections(loader);
+	initium_elf_load_sections(loader);
 
     /* Load modules. */
     load_modules(loader);
@@ -587,14 +590,19 @@ static __noreturn void initium_loader_load(void *_loader) {
     add_memory_tags(loader);
     add_vmem_tags(loader);
 
+    dprintf(
+        "initium: entry point at 0x%" PRIxLOAD " stack at 0x%" PRIx64 "\n",
+        loader->entry, loader->core->stack_base);
+
+    /* Perform platform setup. THis has to be done late, and we cannot perform
+     * any I/O afterwards, as for EFI we call ExitBootServices() here.
+     */
+    initium_platform_setup(loader);
+
     /* End the tag list. */
     initium_alloc_tag(loader, INITIUM_TAG_NONE, sizeof(initium_tag_t));
 
     /* Start the kernel. */
-    dprintf(
-        "initium: entering kernel at 0x%" PRIx64 " (trampoline_phys: 0x%" PRIxPHYS ", trampoline_virt: 0x%" PRIx64 ")\n",
-        loader->entry, loader->trampoline_phys, loader->trampoline_virt);
-
     initium_arch_enter(loader);
 }
 
@@ -612,16 +620,16 @@ static ui_window_t *initium_loader_configure(void *_loader, const char *title) {
 
     /* Add entries for each option. */
     initium_itag_foreach(loader, INITIUM_ITAG_OPTION, initium_itag_option_t, option) {
-        char *name = (char *)option + sizeof(*option);
-        char *desc = (char *)option + sizeof(*option) + option->name_size;
-        value_t *value;
-        ui_entry_t *entry;
+	char *name = (char *)option + sizeof(*option);
+	char *desc = (char *)option + sizeof(*option) + option->name_size;
+	value_t *value;
+	ui_entry_t *entry;
 
-        /* All entries should be added and the correct type at this point. */
-        value = environ_lookup(current_environ, name);
-        assert(value);
-        entry = ui_entry_create(desc, value);
-        ui_list_insert(window, entry, false);
+	/* All entries should be added and the correct type at this point. */
+	value = environ_lookup(current_environ, name);
+	assert(value);
+	entry = ui_entry_create(desc, value);
+	ui_list_insert(window, entry, false);
     }
 
     return window;
@@ -642,23 +650,23 @@ static loader_ops_t initium_loader_ops = {
  * @return              Whether arguments are valid. */
 static bool check_args(value_list_t *args) {
     if (args->count != 1 && args->count != 2)
-        return false;
+	return false;
 
     if (args->values[0].type != VALUE_TYPE_STRING)
-        return false;
+	return false;
 
     if (args->count == 2) {
-        if (args->values[1].type == VALUE_TYPE_LIST) {
-            value_list_t *list = args->values[1].list;
+	    if (args->values[1].type == VALUE_TYPE_LIST) {
+		    value_list_t *list = args->values[1].list;
 
-            for (size_t i = 0; i < list->count; i++) {
-                if (list->values[i].type != VALUE_TYPE_STRING)
-                    return false;
-            }
-        } else if (args->values[1].type != VALUE_TYPE_STRING) {
-            return false;
-        }
-    }
+		    for (size_t i = 0; i < list->count; i++) {
+			    if (list->values[i].type != VALUE_TYPE_STRING)
+				return false;
+			}
+		} else if (args->values[1].type != VALUE_TYPE_STRING) {
+		    return false;
+		}
+	}
 
     return true;
 }
@@ -676,38 +684,38 @@ static bool add_image_tag(initium_loader_t *loader, elf_note_t *note, void *desc
     loader->success = false;
 
     switch (note->n_type) {
-    case INITIUM_ITAG_IMAGE:
-        size = sizeof(initium_itag_image_t);
-        can_duplicate = false;
-        break;
-    case INITIUM_ITAG_LOAD:
-        size = sizeof(initium_itag_load_t);
-        can_duplicate = false;
-        break;
-    case INITIUM_ITAG_VIDEO:
-        size = sizeof(initium_itag_video_t);
-        can_duplicate = false;
-        break;
-    case INITIUM_ITAG_OPTION:
-        size = sizeof(initium_itag_option_t);
-        can_duplicate = true;
-        break;
-    case INITIUM_ITAG_MAPPING:
-        size = sizeof(initium_itag_mapping_t);
-        can_duplicate = true;
-        break;
-    default:
-        config_error("initium: '%s' has unrecognized image tag type %" PRIu32, loader->path, note->n_type);
-        return false;
-    }
+	case INITIUM_ITAG_IMAGE:
+	    size = sizeof(initium_itag_image_t);
+	    can_duplicate = false;
+	    break;
+	case INITIUM_ITAG_LOAD:
+	    size = sizeof(initium_itag_load_t);
+	    can_duplicate = false;
+	    break;
+	case INITIUM_ITAG_VIDEO:
+	    size = sizeof(initium_itag_video_t);
+	    can_duplicate = false;
+	    break;
+	case INITIUM_ITAG_OPTION:
+	    size = sizeof(initium_itag_option_t);
+	    can_duplicate = true;
+	    break;
+	case INITIUM_ITAG_MAPPING:
+	    size = sizeof(initium_itag_mapping_t);
+	    can_duplicate = true;
+	    break;
+	default:
+	    config_error("initium: '%s' has unrecognized image tag type %" PRIu32, loader->path, note->n_type);
+	    return false;
+	}
 
     if (note->n_descsz < size) {
-        config_error("initium: '%s' has undersized tag type %" PRIu32, loader->path, note->n_type);
-        return false;
-    } else if (!can_duplicate && initium_find_itag(loader, note->n_type)) {
-        config_error("initium: '%s' has multiple tags of type %" PRIu32, loader->path);
-        return false;
-    }
+	    config_error("initium: '%s' has undersized tag type %" PRIu32, loader->path, note->n_type);
+	    return false;
+	} else if (!can_duplicate && initium_find_itag(loader, note->n_type)) {
+	    config_error("initium: '%s' has multiple tags of type %" PRIu32, loader->path);
+	    return false;
+	}
 
     /* May be extra data following the tag header. */
     size = max(size, note->n_descsz);
@@ -728,39 +736,39 @@ static bool add_image_tag(initium_loader_t *loader, elf_note_t *note, void *desc
  * @return              Whether successful. */
 static bool add_options(initium_loader_t *loader) {
     initium_itag_foreach(loader, INITIUM_ITAG_OPTION, initium_itag_option_t, option) {
-        char *name = (char *)option + sizeof(*option);
-        void *initial = (char *)option + sizeof(*option) + option->name_size + option->desc_size;
-        const value_t *exist;
-        value_t value;
+	char *name = (char *)option + sizeof(*option);
+	void *initial = (char *)option + sizeof(*option) + option->name_size + option->desc_size;
+	const value_t *exist;
+	value_t value;
 
-        switch (option->type) {
-        case INITIUM_OPTION_BOOLEAN:
-            value.type = VALUE_TYPE_BOOLEAN;
-            value.boolean = *(bool *)initial;
-            break;
-        case INITIUM_OPTION_STRING:
-            value.type = VALUE_TYPE_STRING;
-            value.string = initial;
-            break;
-        case INITIUM_OPTION_INTEGER:
-            value.type = VALUE_TYPE_INTEGER;
-            value.integer = *(uint64_t *)initial;
-            break;
-        default:
-            config_error("initium: '%s' has invalid option type %" PRIu32 " ('%s')", loader->path, option->type, name);
-            return false;
-        }
+	switch (option->type) {
+	    case INITIUM_OPTION_BOOLEAN:
+		value.type = VALUE_TYPE_BOOLEAN;
+		value.boolean = *(bool *)initial;
+		break;
+	    case INITIUM_OPTION_STRING:
+		value.type = VALUE_TYPE_STRING;
+		value.string = initial;
+		break;
+	    case INITIUM_OPTION_INTEGER:
+		value.type = VALUE_TYPE_INTEGER;
+		value.integer = *(uint64_t *)initial;
+		break;
+	    default:
+		config_error("initium: '%s' has invalid option type %" PRIu32 " ('%s')", loader->path, option->type, name);
+		return false;
+	    }
 
-        /* Don't overwrite an existing value. */
-        exist = environ_lookup(current_environ, name);
-        if (exist) {
-            if (exist->type != value.type) {
-                config_error("initium: Invalid value type set for option '%s'", name);
-                return false;
-            }
-        } else {
-            environ_insert(current_environ, name, &value);
-        }
+	/* Don't overwrite an existing value. */
+	exist = environ_lookup(current_environ, name);
+	if (exist) {
+		if (exist->type != value.type) {
+			config_error("initium: Invalid value type set for option '%s'", name);
+			return false;
+		    }
+	    } else {
+		environ_insert(current_environ, name, &value);
+	    }
     }
 
     return true;
@@ -772,36 +780,36 @@ static bool add_options(initium_loader_t *loader) {
  * @return              Whether successful. */
 static bool add_module_list(initium_loader_t *loader, const value_list_t *list) {
     for (size_t i = 0; i < list->count; i++) {
-        const char *path = list->values[i].string;
-        initium_module_t *module;
-        char *name;
-        status_t ret;
+	    const char *path = list->values[i].string;
+	    initium_module_t *module;
+	    char *name;
+	    status_t ret;
 
-        module = malloc(sizeof(*module));
+	    module = malloc(sizeof(*module));
 
-        ret = fs_open(path, NULL, &module->handle);
-        if (ret != STATUS_SUCCESS) {
-            config_error("initium: Error %d opening module '%s'", ret, path);
-            free(module);
-            return false;
-        } else if (module->handle->directory) {
-            config_error("initium: '%s' is a directory", path);
-            fs_close(module->handle);
-            free(module);
-            return false;
-        }
+	    ret = fs_open(path, NULL, &module->handle);
+	    if (ret != STATUS_SUCCESS) {
+		    config_error("initium: Error %d opening module '%s'", ret, path);
+		    free(module);
+		    return false;
+		} else if (module->handle->directory) {
+		    config_error("initium: '%s' is a directory", path);
+		    fs_close(module->handle);
+		    free(module);
+		    return false;
+		}
 
-        name = strrchr(path, '/');
-        if (name) {
-            module->name = strdup(name + 1);
-        } else {
-            module->name = list->values[i].string;
-            list->values[i].string = NULL;
-        }
+	    name = strrchr(path, '/');
+	    if (name) {
+		    module->name = strdup(name + 1);
+		} else {
+		    module->name = list->values[i].string;
+		    list->values[i].string = NULL;
+		}
 
-        list_init(&module->header);
-        list_append(&loader->modules, &module->header);
-    }
+	    list_init(&module->header);
+	    list_append(&loader->modules, &module->header);
+	}
 
     return true;
 }
@@ -819,16 +827,16 @@ static bool add_module_dir_cb(const fs_entry_t *entry, void *_loader) {
 
     ret = fs_open_entry(entry, &module->handle);
     if (ret != STATUS_SUCCESS) {
-        config_error("initium: Error %d opening module '%s'", ret, entry->name);
-        free(module);
-        loader->success = false;
-        return false;
-    } else if (module->handle->directory) {
-        /* Ignore it. */
-        fs_close(module->handle);
-        free(module);
-        return true;
-    }
+	    config_error("initium: Error %d opening module '%s'", ret, entry->name);
+	    free(module);
+	    loader->success = false;
+	    return false;
+	} else if (module->handle->directory) {
+	    /* Ignore it. */
+	    fs_close(module->handle);
+	    free(module);
+	    return true;
+	}
 
     module->name = strdup(entry->name);
 
@@ -848,22 +856,22 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
 
     ret = fs_open(path, NULL, &handle);
     if (ret != STATUS_SUCCESS) {
-        config_error("initium: Error %d opening '%s'", ret, path);
-        return false;
-    } else if (!handle->directory) {
-        config_error("initium: '%s' is not a directory", path);
-        fs_close(handle);
-        return false;
-    }
+	    config_error("initium: Error %d opening '%s'", ret, path);
+	    return false;
+	} else if (!handle->directory) {
+	    config_error("initium: '%s' is not a directory", path);
+	    fs_close(handle);
+	    return false;
+	}
 
     loader->success = true;
 
     ret = fs_iterate(handle, add_module_dir_cb, loader);
     fs_close(handle);
     if (ret != STATUS_SUCCESS) {
-        config_error("initium: Error %d iterating '%s'", ret, path);
-        return false;
-    }
+	    config_error("initium: Error %d iterating '%s'", ret, path);
+	    return false;
+	}
 
     return loader->success;
 }
@@ -877,9 +885,9 @@ static bool config_cmd_initium(value_list_t *args) {
     status_t ret;
 
     if (!check_args(args)) {
-        config_error("initium: Invalid arguments");
-        return false;
-    }
+	    config_error("initium: Invalid arguments");
+	    return false;
+	}
 
     loader = malloc(sizeof(*loader));
     list_init(&loader->modules);
@@ -890,98 +898,98 @@ static bool config_cmd_initium(value_list_t *args) {
     /* Open the kernel image. */
     ret = fs_open(loader->path, NULL, &loader->handle);
     if (ret != STATUS_SUCCESS) {
-        config_error("initium: Error %d opening '%s'", ret, loader->path);
-        goto err_free;
-    } else if (loader->handle->directory) {
-        config_error("initium: '%s' is a directory", loader->path);
-        goto err_close;
-    }
+	    config_error("initium: Error %d opening '%s'", ret, loader->path);
+	    goto err_free;
+	} else if (loader->handle->directory) {
+	    config_error("initium: '%s' is a directory", loader->path);
+	    goto err_close;
+	}
 
     /* Check if the image is a valid ELF image. */
     ret = initium_elf_identify(loader);
     if (ret != STATUS_SUCCESS) {
-        if (ret == STATUS_UNKNOWN_IMAGE) {
-            config_error("initium: '%s' is not a supported ELF image", loader->path);
-        } else {
-            config_error("initium: Error %d reading '%s'", ret, loader->path);
-        }
+	    if (ret == STATUS_UNKNOWN_IMAGE) {
+		    config_error("initium: '%s' is not a supported ELF image", loader->path);
+		} else {
+		    config_error("initium: Error %d reading '%s'", ret, loader->path);
+		}
 
-        goto err_close;
-    }
+	    goto err_close;
+	}
 
     /* Search all image tags. */
     loader->success = true;
     ret = initium_elf_iterate_notes(loader, add_image_tag);
     if (ret != STATUS_SUCCESS) {
-        config_error("initium: Error %d while loading image tags from '%s'", ret, loader->path);
-        goto err_itags;
-    } else if (!loader->success) {
-        goto err_itags;
-    }
+	    config_error("initium: Error %d while loading image tags from '%s'", ret, loader->path);
+	    goto err_itags;
+	} else if (!loader->success) {
+	    goto err_itags;
+	}
 
     /* Check if we have a valid image tag. */
     loader->image = initium_find_itag(loader, INITIUM_ITAG_IMAGE);
     if (!loader->image) {
-        config_error("initium: '%s' is not a Initium kernel", loader->path);
-        goto err_itags;
-    } else if (loader->image->version != INITIUM_VERSION) {
-        config_error("initium: '%s' has unsupported KBoot version %" PRIu32, loader->path, loader->image->version);
-        goto err_itags;
-    }
+	    config_error("initium: '%s' is not a Initium kernel", loader->path);
+	    goto err_itags;
+	} else if (loader->image->version != INITIUM_VERSION) {
+	    config_error("initium: '%s' has unsupported KBoot version %" PRIu32, loader->path, loader->image->version);
+	    goto err_itags;
+	}
 
     /* Add options to the environment. */
     if (!add_options(loader))
-        goto err_itags;
+	goto err_itags;
 
     /* Look for a root device option. */
     value = environ_lookup(current_environ, "root_device");
     if (value) {
-        if (value->type != VALUE_TYPE_STRING) {
-            config_error("initium: 'root_device' option should be a string");
-            goto err_itags;
-        }
+	    if (value->type != VALUE_TYPE_STRING) {
+		    config_error("initium: 'root_device' option should be a string");
+		    goto err_itags;
+		}
 
-        /* We can pass a UUID to the kernel without knowing the actual device.
-         * TODO: Add label support as well? */
-        if (strncmp(value->string, "other:", 6) != 0 && strncmp(value->string, "uuid:", 5) != 0) {
-            if (!device_lookup(value->string)) {
-                config_error("initium: Root device '%s' not found", value->string);
-                goto err_itags;
-            }
-        }
-    }
+	    /* We can pass a UUID to the kernel without knowing the actual device.
+	     * TODO: Add label support as well? */
+	    if (strncmp(value->string, "other:", 6) != 0 && strncmp(value->string, "uuid:", 5) != 0) {
+		    if (!device_lookup(value->string)) {
+			    config_error("initium: Root device '%s' not found", value->string);
+			    goto err_itags;
+			}
+		}
+	}
 
     /* Open all specified modules. Argument types already checked here. */
     if (args->count >= 2) {
-        if (args->values[1].type == VALUE_TYPE_LIST) {
-            if (!add_module_list(loader, args->values[1].list))
-                goto err_modules;
-        } else {
-            if (!add_module_dir(loader, args->values[1].string))
-                goto err_modules;
-        }
-    }
+	    if (args->values[1].type == VALUE_TYPE_LIST) {
+		    if (!add_module_list(loader, args->values[1].list))
+			goto err_modules;
+		} else {
+		    if (!add_module_dir(loader, args->values[1].string))
+			goto err_modules;
+		}
+	}
 
     environ_set_loader(current_environ, &initium_loader_ops, loader);
     return true;
 
 err_modules:
     while (!list_empty(&loader->modules)) {
-        initium_module_t *module = list_first(&loader->modules, initium_module_t, header);
+	    initium_module_t *module = list_first(&loader->modules, initium_module_t, header);
 
-        list_remove(&module->header);
-        fs_close(module->handle);
-        free(module->name);
-        free(module);
-    }
+	    list_remove(&module->header);
+	    fs_close(module->handle);
+	    free(module->name);
+	    free(module);
+	}
 
 err_itags:
     while (!list_empty(&loader->itags)) {
-        initium_itag_t *itag = list_first(&loader->itags, initium_itag_t, header);
+	    initium_itag_t *itag = list_first(&loader->itags, initium_itag_t, header);
 
-        list_remove(&itag->header);
-        free(itag);
-    }
+	    list_remove(&itag->header);
+	    free(itag);
+	}
 
     free(loader->phdrs);
     free(loader->ehdr);

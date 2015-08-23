@@ -105,4 +105,6 @@
  extern void initium_arch_setup(initium_loader_t *loader);
  extern void initium_arch_enter(initium_loader_t *loader) __noreturn;
 
+ extern void initium_platform_setup(initium_loader_t *loader);
+
  #endif /* __LOADER_INITIUM_H */
