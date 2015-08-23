@@ -37,6 +37,7 @@ sources = FeatureSources(config, [
     'lib/qsort.c',
     'lib/string.c',
     'lib/charset.c',
+    'lib/line_editor.c',
 
     ('TARGET_HAS_INITIUM64', 'TARGET_HAS_INITIUM32', 'loader/initium.c'),
 
