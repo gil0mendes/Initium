@@ -848,15 +848,17 @@ static bool add_options(initium_loader_t *loader) {
 /** Initialize video settings.
  * @param loader        Loader internal data. */
 static void init_video(initium_loader_t *loader) {
-    initium_itag_video_t *video = initium_find_itag(loader, INITIUM_ITAG_VIDEO);
+    initium_itag_video_t *video;
     uint32_t types;
-    video_mode_t *def = NULL;
+    video_mode_t *def;
+
+    video = initium_find_itag(loader, INITIUM_ITAG_VIDEO);
 
     if (video) {
 	    types = video->types;
 
 	    /* If the kernel specifies a preferred mode, try to find it. */
-	    if (types & INITIUM_VIDEO_LFB && video->width && video->height) {
+	    if (types & INITIUM_VIDEO_LFB) {
 		    def = video_find_mode(VIDEO_MODE_LFB, video->width, video->height, video->bpp);
 		} else {
 		    def = NULL;
