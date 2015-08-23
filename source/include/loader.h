@@ -187,8 +187,6 @@ static inline __noreturn void target_exit(void) { target_reboot(); }
 extern void boot_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 extern void internal_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 
-extern void backtrace(int (*print)(const char *fmt, ...));
-
 extern void loader_register_preboot_hook(preboot_hook_t hook);
 extern void loader_preboot(void);
 

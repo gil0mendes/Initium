@@ -32,6 +32,7 @@ sources = FeatureSources(config, [
   'lib/string.c',
 
   'arch.c',
+  'backtrace.c',
   'descriptor.c',
   'entry.S',
   'exception.c',
