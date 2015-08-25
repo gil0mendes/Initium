@@ -774,15 +774,15 @@ static bool add_image_tag(initium_loader_t *loader, elf_note_t *note, void *desc
 	    can_duplicate = true;
 	    break;
 	default:
-	    config_error("initium: '%s' has unrecognized image tag type %" PRIu32, loader->path, note->n_type);
+	    config_error("'%s' has unrecognized image tag type %" PRIu32, loader->path, note->n_type);
 	    return false;
 	}
 
     if (note->n_descsz < size) {
-	    config_error("initium: '%s' has undersized tag type %" PRIu32, loader->path, note->n_type);
+	    config_error("'%s' has undersized tag type %" PRIu32, loader->path, note->n_type);
 	    return false;
 	} else if (!can_duplicate && initium_find_itag(loader, note->n_type)) {
-	    config_error("initium: '%s' has multiple tags of type %" PRIu32, loader->path);
+	    config_error("'%s' has multiple tags of type %" PRIu32, loader->path);
 	    return false;
 	}
 
@@ -824,7 +824,7 @@ static bool add_options(initium_loader_t *loader) {
 		value.integer = *(uint64_t *)initial;
 		break;
 	    default:
-		config_error("initium: '%s' has invalid option type %" PRIu32 " ('%s')", loader->path, option->type, name);
+		config_error("'%s' has invalid option type %" PRIu32 " ('%s')", loader->path, option->type, name);
 		return false;
 	    }
 
@@ -832,7 +832,7 @@ static bool add_options(initium_loader_t *loader) {
 	exist = environ_lookup(current_environ, name);
 	if (exist) {
 		if (exist->type != value.type) {
-			config_error("initium: Invalid value type set for option '%s'", name);
+			config_error("Invalid value type set for option '%s'", name);
 			return false;
 		    }
 	    } else {
@@ -896,11 +896,11 @@ static bool add_module_list(initium_loader_t *loader, const value_list_t *list) 
 
 	    ret = fs_open(path, NULL, &module->handle);
 	    if (ret != STATUS_SUCCESS) {
-		    config_error("initium: Error %d opening module '%s'", ret, path);
+		    config_error("Error %d opening module '%s'", ret, path);
 		    free(module);
 		    return false;
 		} else if (module->handle->directory) {
-		    config_error("initium: '%s' is a directory", path);
+		    config_error("'%s' is a directory", path);
 		    fs_close(module->handle);
 		    free(module);
 		    return false;
@@ -934,7 +934,7 @@ static bool add_module_dir_cb(const fs_entry_t *entry, void *_loader) {
 
     ret = fs_open_entry(entry, &module->handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("initium: Error %d opening module '%s'", ret, entry->name);
+	    config_error("Error %d opening module '%s'", ret, entry->name);
 	    free(module);
 	    loader->success = false;
 	    return false;
@@ -963,10 +963,10 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
 
     ret = fs_open(path, NULL, &handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("initium: Error %d opening '%s'", ret, path);
+	    config_error("Error %d opening '%s'", ret, path);
 	    return false;
 	} else if (!handle->directory) {
-	    config_error("initium: '%s' is not a directory", path);
+	    config_error("'%s' is not a directory", path);
 	    fs_close(handle);
 	    return false;
 	}
@@ -976,7 +976,7 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
     ret = fs_iterate(handle, add_module_dir_cb, loader);
     fs_close(handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("initium: Error %d iterating '%s'", ret, path);
+	    config_error("Error %d iterating '%s'", ret, path);
 	    return false;
 	}
 
@@ -992,7 +992,7 @@ static bool config_cmd_initium(value_list_t *args) {
     status_t ret;
 
     if (!check_args(args)) {
-	    config_error("initium: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
@@ -1005,10 +1005,10 @@ static bool config_cmd_initium(value_list_t *args) {
     /* Open the kernel image. */
     ret = fs_open(loader->path, NULL, &loader->handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("initium: Error %d opening '%s'", ret, loader->path);
+	    config_error("Error %d opening '%s'", ret, loader->path);
 	    goto err_free;
 	} else if (loader->handle->directory) {
-	    config_error("initium: '%s' is a directory", loader->path);
+	    config_error("'%s' is a directory", loader->path);
 	    goto err_close;
 	}
 
@@ -1016,9 +1016,9 @@ static bool config_cmd_initium(value_list_t *args) {
     ret = initium_elf_identify(loader);
     if (ret != STATUS_SUCCESS) {
 	    if (ret == STATUS_UNKNOWN_IMAGE) {
-		    config_error("initium: '%s' is not a supported ELF image", loader->path);
+		    config_error("'%s' is not a supported ELF image", loader->path);
 		} else {
-		    config_error("initium: Error %d reading '%s'", ret, loader->path);
+		    config_error("Error %d reading '%s'", ret, loader->path);
 		}
 
 	    goto err_close;
@@ -1028,7 +1028,7 @@ static bool config_cmd_initium(value_list_t *args) {
     loader->success = true;
     ret = initium_elf_iterate_notes(loader, add_image_tag);
     if (ret != STATUS_SUCCESS) {
-	    config_error("initium: Error %d while loading image tags from '%s'", ret, loader->path);
+	    config_error("Error %d while loading image tags from '%s'", ret, loader->path);
 	    goto err_itags;
 	} else if (!loader->success) {
 	    goto err_itags;
@@ -1037,10 +1037,10 @@ static bool config_cmd_initium(value_list_t *args) {
     /* Check if we have a valid image tag. */
     loader->image = initium_find_itag(loader, INITIUM_ITAG_IMAGE);
     if (!loader->image) {
-	    config_error("initium: '%s' is not a Initium kernel", loader->path);
+	    config_error("'%s' is not a Initium kernel", loader->path);
 	    goto err_itags;
 	} else if (loader->image->version != INITIUM_VERSION) {
-	    config_error("initium: '%s' has unsupported Initium version %" PRIu32, loader->path, loader->image->version);
+	    config_error("'%s' has unsupported Initium version %" PRIu32, loader->path, loader->image->version);
 	    goto err_itags;
 	}
 
@@ -1052,7 +1052,7 @@ static bool config_cmd_initium(value_list_t *args) {
     value = environ_lookup(current_environ, "root_device");
     if (value) {
 	    if (value->type != VALUE_TYPE_STRING) {
-		    config_error("initium: 'root_device' option should be a string");
+		    config_error("'root_device' option should be a string");
 		    goto err_itags;
 		}
 
@@ -1060,7 +1060,7 @@ static bool config_cmd_initium(value_list_t *args) {
 	     * TODO: Add label support as well? */
 	    if (strncmp(value->string, "other:", 6) != 0 && strncmp(value->string, "uuid:", 5) != 0) {
 		    if (!device_lookup(value->string)) {
-			    config_error("initium: Root device '%s' not found", value->string);
+			    config_error("Root device '%s' not found", value->string);
 			    goto err_itags;
 			}
 		}

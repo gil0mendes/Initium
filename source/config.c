@@ -108,8 +108,14 @@ static command_list_t *parse_command_list(void);
 static char temp_buf[TEMP_BUF_LEN];
 static size_t temp_buf_idx;
 
+/** Current error handler function. */
+static config_error_handler_t current_error_handler;
+
 /** Current read helper function. */
 static config_read_helper_t current_helper;
+
+/** Name of the currently executing command. */
+static const char *current_command;
 
 /** Current parser state. */
 static const char *current_path;        /**< Current configuration file path. */
@@ -126,10 +132,10 @@ static size_t current_file_size;        /**< Size of the current file. */
 /** Configuration file paths to try. */
 static const char *config_file_paths[] = {
     #ifdef CONFIG_PLATFORM_EFI
-    "/efi/boot/loader.cfg",
+    "efi/boot/loader.cfg",
     #endif
-    "/boot/loader.cfg",
-    "/loader.cfg",
+    "boot/loader.cfg",
+    "loader.cfg",
 };
 
 /** Reserved environment variable names. */
@@ -165,19 +171,41 @@ environ_t *current_environ;
  */
 void config_error(const char *fmt, ...) {
     va_list args;
+    const char *cmd;
 
     va_start(args, fmt);
 
-    if (shell_running) {
-	    console_vprintf(config_console, fmt, args);
-	    console_putc(config_console, '\n');
+    /* Set current_command to NULL so that it will not be set if the handler
+     * calls boot_error() and then the user goes into the shell. */
+    cmd = current_command;
+    current_command = NULL;
+
+    if (current_error_handler) {
+	    current_error_handler(cmd, fmt, args);
 	} else {
 	    vsnprintf(temp_buf, TEMP_BUF_LEN, fmt, args);
-	    boot_error("Error in configuration file %s:\n%s", current_path, temp_buf);
+
+	    if (cmd) {
+		    boot_error("%s: %s", cmd, temp_buf);
+		} else {
+		    boot_error("%s", temp_buf);
+		}
 	}
 
     va_end(args);
 }
+
+/** Set the configuration error handler.
+ * @param handler       Handler function.
+ * @return              Previous handler. */
+config_error_handler_t config_set_error_handler(config_error_handler_t handler) {
+    swap(current_error_handler, handler);
+    return handler;
+}
+
+/**
+ * Value functions.
+ */
 
 /** Initialize a value to a default (empty) value.
  * @param value         Value to initialize.
@@ -209,35 +237,6 @@ void value_init(value_t *value, value_type_t type) {
 	}
 }
 
-/** Destroy a command list.
- * @param list          List to destroy. */
-void command_list_destroy(command_list_t *list) {
-    list_foreach_safe(list, iter) {
-	command_list_entry_t *command = list_entry(iter, command_list_entry_t, header);
-
-	list_remove(&command->header);
-
-	/* Can be NULL on the cleanup path from parse_command_list(). */
-	if (command->args)
-	    value_list_destroy(command->args);
-
-	free(command->name);
-	free(command);
-    }
-
-    free(list);
-}
-
-/** Destroy an argument list.
- * @param list          List to destroy. */
-void value_list_destroy(value_list_t *list) {
-    for (size_t i = 0; i < list->count; i++)
-	value_destroy(&list->values[i]);
-
-    free(list->values);
-    free(list);
-}
-
 /** Destroy a value.
  * @param value         Value to destroy. */
 void value_destroy(value_t *value) {
@@ -260,53 +259,9 @@ void value_destroy(value_t *value) {
 	}
 }
 
-/** Copy a command list.
- * @param source        Source list.
- * @return              Pointer to destination list. */
-command_list_t *command_list_copy(const command_list_t *source) {
-    command_list_t *dest = malloc(sizeof(*dest));
-
-    list_init(dest);
-
-    list_foreach(source, iter) {
-	command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
-	command_list_entry_t *copy = malloc(sizeof(*copy));
-
-	list_init(&copy->header);
-	copy->name = strdup(entry->name);
-	copy->args = value_list_copy(entry->args);
-
-	list_append(dest, &copy->header);
-    }
-
-    return dest;
-}
-
-/** Copy a value list.
- * @param source        Source list.
- * @return              Pointer to destination list. */
-value_list_t *value_list_copy(const value_list_t *source) {
-    value_list_t *dest = malloc(sizeof(*dest));
-
-    dest->count = source->count;
-
-    if (source->count) {
-	    dest->values = malloc(sizeof(*dest->values) * source->count);
-	    for (size_t i = 0; i < source->count; i++)
-		value_copy(&source->values[i], &dest->values[i]);
-	} else {
-	    dest->values = NULL;
-	}
-
-    return dest;
-}
-
-/**
- * Copy the contents of one value to another.
- *
+/** Copy the contents of one value to another.
  * @param source        Source value.
- * @param dest          Destination value (should be uninitialized).
- */
+ * @param dest          Destination value (should be uninitialized). */
 void value_copy(const value_t *source, value_t *dest) {
     dest->type = source->type;
 
@@ -330,13 +285,10 @@ void value_copy(const value_t *source, value_t *dest) {
 	}
 }
 
-/**
- * Move the contents of one value to another.
- *
+/** Move the contents of one value to another.
  * @param source        Source value (will be invalidated, do not use except
- *                      for passing to value_destroy).
- * @param dest           (should be uninitialized).
- */
+ *                      for passing to value_destroy()).
+ * @param dest          Destination value (should be uninitialized). */
 void value_move(value_t *source, value_t *dest) {
     dest->type = source->type;
 
@@ -363,13 +315,10 @@ void value_move(value_t *source, value_t *dest) {
 	}
 }
 
-/**
- * Check if two values are equal.
- *
- * @param  value    First value.
- * @param  other    Second value.
- * @return          Whether the value are equal.
- */
+/** Check if two values are equal.
+ * @param value         First value.
+ * @param other         Second value.
+ * @return              Whether the values are equal. */
 bool value_equals(const value_t *value, const value_t *other) {
     if (value->type == other->type) {
 	    switch (value->type) {
@@ -377,6 +326,7 @@ bool value_equals(const value_t *value, const value_t *other) {
 		    return value->integer == other->integer;
 		case VALUE_TYPE_BOOLEAN:
 		    return value->boolean == other->boolean;
+		    break;
 		case VALUE_TYPE_STRING:
 		case VALUE_TYPE_REFERENCE:
 		    return strcmp(value->string, other->string) == 0;
@@ -390,149 +340,81 @@ bool value_equals(const value_t *value, const value_t *other) {
 }
 
 /**
- * Command execution/environment management.
+ * Value list functions.
  */
 
-/** Create a new environment.
- * @param parent        Parent environment.
- * @return              Pointer to created environment. */
-environ_t *environ_create(environ_t *parent) {
-    environ_t *env = malloc(sizeof(*env));
+/** Destroy an argument list.
+ * @param list          List to destroy. */
+void value_list_destroy(value_list_t *list) {
+    for (size_t i = 0; i < list->count; i++)
+	value_destroy(&list->values[i]);
 
-    list_init(&env->entries);
-    env->loader = NULL;
-    env->loader_private = NULL;
+    free(list->values);
+    free(list);
+}
 
-    if (parent) {
-	    env->device = parent->device;
+/** Copy a value list.
+ * @param source        Source list.
+ * @return              Pointer to destination list. */
+value_list_t *value_list_copy(const value_list_t *source) {
+    value_list_t *dest = malloc(sizeof(*dest));
 
-	    env->directory = parent->directory;
-	    if (env->directory) {
-		    fs_retain(env->directory);
-		}
+    dest->count = source->count;
 
-	    list_foreach(&parent->entries, iter) {
-		const environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-		environ_entry_t *clone = malloc(sizeof(*clone));
-
-		list_init(&clone->header);
-		clone->name = strdup(entry->name);
-		value_copy(&entry->value, &clone->value);
-		list_append(&env->entries, &clone->header);
-	    }
+    if (source->count) {
+	    dest->values = malloc(sizeof(*dest->values) * source->count);
+	    for (size_t i = 0; i < source->count; i++)
+		value_copy(&source->values[i], &dest->values[i]);
 	} else {
-	    env->device = NULL;
-	    env->directory = NULL;
+	    dest->values = NULL;
 	}
 
-    return env;
-}
-
-/** Destroy an environment.
- * @param env           Environment to destroy. */
-void environ_destroy(environ_t *env) {
-    list_foreach_safe(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-
-	list_remove(&entry->header);
-	free(entry->name);
-	value_destroy(&entry->value);
-	free(entry);
-    }
-
-    free(env);
-}
-
-/** Look up an entry in an environment.
- * @param env           Environment to look up in.
- * @param name          Name of entry to look up.
- * @return              Pointer to value if found, NULL if not. */
-value_t *environ_lookup(environ_t *env, const char *name) {
-    list_foreach(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-
-	if (strcmp(entry->name, name) == 0)
-	    return &entry->value;
-    }
-
-    return NULL;
-}
-
-/** Insert an entry into an environment.
- * @param env           Environment to insert into.
- * @param name          Name of entry to look up.
- * @param value         Value to insert. Will be copied.
- * @return              Pointer to inserted value. */
-value_t *environ_insert(environ_t *env, const char *name, const value_t *value) {
-    environ_entry_t *entry;
-
-    /* Look for an existing entry with the same name. */
-    list_foreach(&env->entries, iter) {
-	entry = list_entry(iter, environ_entry_t, header);
-
-	if (strcmp(entry->name, name) == 0) {
-		value_destroy(&entry->value);
-		value_copy(value, &entry->value);
-		return &entry->value;
-	    }
-    }
-
-    /* Create a new entry. */
-    entry = malloc(sizeof(*entry));
-    list_init(&entry->header);
-    entry->name = strdup(name);
-    value_copy(value, &entry->value);
-    list_append(&env->entries, &entry->header);
-
-    return &entry->value;
-}
-
-/** Remove an entry from an environment.
- * @param env           Environment to remove from.
- * @param name          Name of entry to remove. */
-void environ_remove(environ_t *env, const char *name) {
-    list_foreach(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-
-	if (strcmp(entry->name, name) == 0) {
-		list_remove(&entry->header);
-		value_destroy(&entry->value);
-		free(entry->name);
-		free(entry);
-		return;
-	    }
-    }
+    return dest;
 }
 
 /**
- * Set the loader for an environment.
- *
- * Sets the loader for an environment. After this is called, no more commands
- * can be executed on the environment, which guarantees that the environment
- * cannot be further modified.
- *
- * @param env           Environment to set in.
- * @param ops           Loader operations.
- * @param private       Private data for the loader.
+ * Command list functions.
  */
-void environ_set_loader(environ_t *env, loader_ops_t *ops, void *private) {
-    assert(!env->loader);
 
-    env->loader = ops;
-    env->loader_private = private;
+/** Destroy a command list.
+ * @param list          List to destroy. */
+void command_list_destroy(command_list_t *list) {
+    list_foreach_safe(list, iter) {
+	command_list_entry_t *command = list_entry(iter, command_list_entry_t, header);
+
+	list_remove(&command->header);
+
+	/* Can be NULL on the cleanup path from parse_command_list(). */
+	if (command->args)
+	    value_list_destroy(command->args);
+
+	free(command->name);
+	free(command);
+    }
+
+    free(list);
 }
 
-/**
- * Boot the OS specified by an environment.
- * @param env       Environement to boot.
- */
-void environ_boot(environ_t *env) {
-    /* Should be checked beforehand. */
-    assert(env->loader);
+/** Copy a command list.
+ * @param source        Source list.
+ * @return              Pointer to destination list. */
+command_list_t *command_list_copy(const command_list_t *source) {
+    command_list_t *dest = malloc(sizeof(*dest));
 
-    current_environ = env;
-    shell_enabled = false;
-    env->loader->load(env->loader_private);
+    list_init(dest);
+
+    list_foreach(source, iter) {
+	command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
+	command_list_entry_t *copy = malloc(sizeof(*copy));
+
+	list_init(&copy->header);
+	copy->name = strdup(entry->name);
+	copy->args = value_list_copy(entry->args);
+
+	list_append(dest, &copy->header);
+    }
+
+    return dest;
 }
 
 /** Substitute variable references in a value.
@@ -652,8 +534,15 @@ static bool command_exec(command_list_entry_t *entry) {
 	return false;
 
     builtin_foreach(BUILTIN_TYPE_COMMAND, command_t, command) {
-	if (strcmp(command->name, entry->name) == 0)
-	    return command->func(entry->args);
+	if (strcmp(command->name, entry->name) == 0) {
+		const char *prev = current_command;
+		bool ret;
+
+		current_command = command->name;
+		ret = command->func(entry->args);
+		current_command = prev;
+		return ret;
+	    }
     }
 
     config_error("Unknown command '%s'", entry->name);
@@ -675,10 +564,8 @@ bool command_list_exec(command_list_t *list, environ_t *env) {
     list_foreach(list, iter) {
 	command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
 
-	/*
-	 * Loader command must be the last command in the list, prevent any
-	 * other commands from being run if we have a loader set.
-	 */
+	/* Loader command must be the last command in the list, prevent any
+	 * other commands from being run if we have a loader set. */
 	if (current_environ->loader) {
 		config_error("Loader command must be final command");
 		return false;
@@ -697,6 +584,149 @@ bool command_list_exec(command_list_t *list, environ_t *env) {
 	current_environ = prev;
 
     return true;
+}
+
+/**
+ * Environment management.
+ */
+
+/** Create a new environment.
+ * @param parent        Parent environment.
+ * @return              Pointer to created environment. */
+environ_t *environ_create(environ_t *parent) {
+    environ_t *env = malloc(sizeof(*env));
+
+    list_init(&env->entries);
+    env->loader = NULL;
+    env->loader_private = NULL;
+
+    if (parent) {
+	    env->device = parent->device;
+
+	    env->directory = parent->directory;
+	    if (env->directory)
+		fs_retain(env->directory);
+
+	    list_foreach(&parent->entries, iter) {
+		const environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+		environ_entry_t *clone = malloc(sizeof(*clone));
+
+		list_init(&clone->header);
+		clone->name = strdup(entry->name);
+		value_copy(&entry->value, &clone->value);
+		list_append(&env->entries, &clone->header);
+	    }
+	} else {
+	    env->device = NULL;
+	    env->directory = NULL;
+	}
+
+    return env;
+}
+
+/** Destroy an environment.
+ * @param env           Environment to destroy. */
+void environ_destroy(environ_t *env) {
+    list_foreach_safe(&env->entries, iter) {
+	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+
+	list_remove(&entry->header);
+	free(entry->name);
+	value_destroy(&entry->value);
+	free(entry);
+    }
+
+    free(env);
+}
+
+/** Look up an entry in an environment.
+ * @param env           Environment to look up in.
+ * @param name          Name of entry to look up.
+ * @return              Pointer to value if found, NULL if not. */
+value_t *environ_lookup(environ_t *env, const char *name) {
+    list_foreach(&env->entries, iter) {
+	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+
+	if (strcmp(entry->name, name) == 0)
+	    return &entry->value;
+    }
+
+    return NULL;
+}
+
+/** Insert an entry into an environment.
+ * @param env           Environment to insert into.
+ * @param name          Name of entry to look up.
+ * @param value         Value to insert. Will be copied.
+ * @return              Pointer to inserted value. */
+value_t *environ_insert(environ_t *env, const char *name, const value_t *value) {
+    environ_entry_t *entry;
+
+    /* Look for an existing entry with the same name. */
+    list_foreach(&env->entries, iter) {
+	entry = list_entry(iter, environ_entry_t, header);
+
+	if (strcmp(entry->name, name) == 0) {
+		value_destroy(&entry->value);
+		value_copy(value, &entry->value);
+		return &entry->value;
+	    }
+    }
+
+    /* Create a new entry. */
+    entry = malloc(sizeof(*entry));
+    list_init(&entry->header);
+    entry->name = strdup(name);
+    value_copy(value, &entry->value);
+    list_append(&env->entries, &entry->header);
+
+    return &entry->value;
+}
+
+/** Remove an entry from an environment.
+ * @param env           Environment to remove from.
+ * @param name          Name of entry to remove. */
+void environ_remove(environ_t *env, const char *name) {
+    list_foreach(&env->entries, iter) {
+	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+
+	if (strcmp(entry->name, name) == 0) {
+		list_remove(&entry->header);
+		value_destroy(&entry->value);
+		free(entry->name);
+		free(entry);
+		return;
+	    }
+    }
+}
+
+/**
+ * Set the loader for an environment.
+ *
+ * Sets the loader for an environment. After this is called, no more commands
+ * can be executed on the environment, which guarantees that the environment
+ * cannot be further modified.
+ *
+ * @param env           Environment to set in.
+ * @param ops           Loader operations.
+ * @param private       Private data for the loader.
+ */
+void environ_set_loader(environ_t *env, loader_ops_t *ops, void *private) {
+    assert(!env->loader);
+
+    env->loader = ops;
+    env->loader_private = private;
+}
+
+/** Boot the OS specified by an environment.
+ * @param env           Environment to boot. */
+void environ_boot(environ_t *env) {
+    /* Should be checked beforehand. */
+    assert(env->loader);
+
+    current_environ = env;
+    shell_enabled = false;
+    env->loader->load(env->loader_private);
 }
 
 /**
@@ -744,8 +774,9 @@ static void return_char(int ch) {
 /** Error due to an unexpected character.
  * @param ch            Character that was unexpected. */
 static void unexpected_char(int ch) {
-    config_error("Line %d, column %d: Unexpected %s",
-                 current_line, current_col, (ch == EOF) ? "end of file" : "character");
+    config_error(
+        "%s:%d:%d: Unexpected %s",
+        current_path, current_line, current_col, (ch == EOF) ? "end of file" : "character");
 }
 
 /** Consume a character and check that it is the expected character.
@@ -1033,7 +1064,7 @@ command_list_t *config_parse(const char *path, config_read_helper_t helper) {
  * @return              Whether successful. */
 static bool config_cmd_env(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("env: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
@@ -1087,13 +1118,12 @@ static bool config_cmd_env(value_list_t *args) {
 BUILTIN_COMMAND("env", config_cmd_env);
 
 /** Check if a variable name is valid.
- * @param cmd           Command name used in error messages.
  * @param name          Name of environment variable.
  * @return              Whether the name was valid. */
-static bool variable_name_valid(const char *cmd, const char *name) {
+static bool variable_name_valid(const char *name) {
     for (size_t i = 0; name[i]; i++) {
 	    if (!isalnum(name[i]) && name[i] != '_') {
-		    config_error("%s: Invalid variable name '%s'", cmd, name);
+		    config_error("Invalid variable name '%s'", name);
 		    return false;
 		}
 	}
@@ -1101,7 +1131,7 @@ static bool variable_name_valid(const char *cmd, const char *name) {
     /* Check that the name is not reserved. */
     for (size_t i = 0; i < array_size(reserved_environ_names); i++) {
 	    if (strcmp(name, reserved_environ_names[i]) == 0) {
-		    config_error("%s: Variable name '%s' is reserved", cmd, name);
+		    config_error("Variable name '%s' is reserved", name);
 		    return false;
 		}
 	}
@@ -1116,13 +1146,13 @@ static bool config_cmd_set(value_list_t *args) {
     const char *name;
 
     if (args->count != 2 || args->values[0].type != VALUE_TYPE_STRING) {
-	    config_error("set: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
     /* Check whether the name is valid. */
     name = args->values[0].string;
-    if (!variable_name_valid("set", name))
+    if (!variable_name_valid(name))
 	return false;
 
     environ_insert(current_environ, name, &args->values[1]);
@@ -1138,13 +1168,13 @@ static bool config_cmd_unset(value_list_t *args) {
     const char *name;
 
     if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
-	    config_error("unset: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
     /* Check whether the name is valid. */
     name = args->values[0].string;
-    if (!variable_name_valid("unset", name))
+    if (!variable_name_valid(name))
 	return false;
 
     environ_remove(current_environ, name);
@@ -1153,14 +1183,12 @@ static bool config_cmd_unset(value_list_t *args) {
 
 BUILTIN_COMMAND("unset", config_cmd_unset);
 
-/**
- * Reboot the system.
- * @param  args         Argument list.
- * @return              Whether successful.
- */
+/** Reboot the system.
+ * @param args          Argument list.
+ * @return              Whether successful. */
 static bool config_cmd_reboot(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("reboot: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
@@ -1174,7 +1202,7 @@ BUILTIN_COMMAND("reboot", config_cmd_reboot);
  * @return              Whether successful. */
 static bool config_cmd_exit(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("exit: Invalid arguments");
+	    config_error("Invalid arguments");
 	    return false;
 	}
 
@@ -1218,11 +1246,13 @@ static bool load_config_file(const char *path) {
     if (ret != STATUS_SUCCESS || handle->directory)
 	return false;
 
+    dprintf("config: loading configuration file '%s'\n", path);
+
     current_file = malloc(handle->size + 1);
 
     ret = fs_read(handle, current_file, handle->size, 0);
     if (ret != STATUS_SUCCESS)
-	boot_error("Failed to read configuration %s (%d)", path, ret);
+	boot_error("Error %d reading configuration file '%s'", ret, path);
 
     current_file[handle->size] = 0;
 
@@ -1261,9 +1291,8 @@ void config_init(void) {
 /** Load the configuration. */
 void config_load(void) {
     if (config_file_override) {
-	    if (!load_config_file(config_file_override)) {
-		    boot_error("Specified configuration file does not exist");
-		}
+	    if (!load_config_file(config_file_override))
+		boot_error("Specified configuration file does not exist");
 	} else {
 	    /* Try the various paths. */
 	    for (size_t i = 0; i < array_size(config_file_paths); i++) {

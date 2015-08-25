@@ -40,8 +40,21 @@ static line_editor_t shell_line_editor;
 /** Whether the shell is currently enabled. */
 bool shell_enabled;
 
-/** Whether currently in the shell. */
-bool shell_running;
+/**
+ * Handler for configuration error in the shell.
+ *
+ * @param cmd  Name of the command than in the shell.
+ * @param fmt  Error format string.
+ * @param args Arguments to substitute into format.
+ */
+static void shell_error_handler(const char *cmd, const char *fmt, va_list args) {
+    if (cmd) {
+        config_printf("%s: ", cmd);
+    }
+
+    console_vprintf(config_console, fmt, args);
+    console_putc(config_console, '\n');
+}
 
 /** Input helper for the shell.
  * @param nest          Nesting count (unused).
@@ -86,9 +99,9 @@ static int shell_input_helper(unsigned nest) {
 
 /** Main function of the shell. */
 void shell_main(void) {
-    assert(shell_enabled);
+    config_error_handler_t prev_handler;
 
-    shell_running = true;
+    assert(shell_enabled);
 
     if (main_console.out && main_console.in) {
 	    config_console = &main_console;
@@ -99,6 +112,8 @@ void shell_main(void) {
 	}
 
     current_environ = root_environ;
+
+    prev_handler = config_set_error_handler(shell_error_handler);
 
     while (true) {
 	    command_list_t *list;
@@ -117,11 +132,10 @@ void shell_main(void) {
 
 		    /* If we now have a loader, load it. */
 		    if (current_environ->loader) {
-			    shell_running = false;
 			    environ_boot(current_environ);
 			}
 		}
 	}
 
-    shell_running = false;
+    config_set_error_handler(prev_handler);
 }
