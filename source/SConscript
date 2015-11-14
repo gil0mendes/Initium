@@ -22,7 +22,7 @@
 # SOFTWARE.
 #
 
-vars = ['config', 'defaults', 'env']
+vars = ['env', 'config', 'defaults']
 
 Import(*vars)
 from util import FeatureSources
@@ -62,34 +62,19 @@ sources = FeatureSources(config, [
 # Set the include search paths.
 env['CPPPATH'] = [
     Dir('include'),
-    Dir('arch/%s/include' % (config['ARCH'])),
+    Dir('arch/%s/include' % (config['BOOTARCH'])),
     Dir('platform/%s/include' % (config['PLATFORM'])),
 ]
 
-# Generate the configuration header.
-f = open('config.h', 'w')
-f.write('/* This file is automatically-generated, do not edit. */\n\n')
-for (k, v) in config.items():
-    if isinstance(v, str):
-        f.write("#define CONFIG_%s \"%s\"\n" % (k, v))
-    elif isinstance(v, bool):
-        if v:
-            f.write("#define CONFIG_%s 1\n" % (k))
-    elif isinstance(v, int):
-        f.write("#define CONFIG_%s %d\n" % (k, int(v)))
-    else:
-        raise Exception, "Unsupported type %s in config" % (type(v))
-f.close()
-
 # Include the generated configuration header.
-env['CCFLAGS'] += ['-include', 'build/%s/source/config.h' % (env['CONFIG'])]
-env['ASFLAGS'] += ['-include', 'build/%s/source/config.h' % (env['CONFIG'])]
+env['CCFLAGS'] += ['-include', 'build/%s-%s/config.h' % (config['ARCH'], config['PLATFORM'])]
+env['ASFLAGS'] += ['-include', 'build/%s-%s/config.h' % (config['ARCH'], config['PLATFORM'])]
 
 # Platform code needs the location of the loader binary.
 env['LOADER'] = File('loader.elf')
 
 # Get the list of source files from the architecture/platform.
-arch_sources = SConscript(dirs = ['arch/' + config['ARCH']], exports = vars)
+arch_sources = SConscript(dirs = ['arch/' + config['BOOTARCH']], exports = vars)
 platform_sources = SConscript(dirs = ['platform/' + config['PLATFORM']], exports = vars)
 drivers_sources = SConscript(dirs = ['drivers'], exports = vars)
 sources = arch_sources + platform_sources + drivers_sources + sources

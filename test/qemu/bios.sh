@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 # Define some path vars
-builddir=build/bios
+builddir=build/x86-bios
 isodir=${builddir}/iso
 
 # Make necessary directories

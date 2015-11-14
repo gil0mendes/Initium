@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2015 Gil Mendes <gil00mendes@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,35 @@
 # SOFTWARE.
 #
 
-include = {
-	'includes': ['arch/x86'],
-	'config': {
-		'32BIT': True,
-	},
-}
+config LITTLE_ENDIAN
+    bool
 
-# EOF
+config BIG_ENDIAN
+    bool
+
+config 32BIT
+    bool
+
+config 64BIT
+    bool
+
+choice
+    prompt "Architecture"
+    default ARCH_X86
+
+config ARCH_X86
+    bool "x86"
+    select LITTLE_ENDIAN
+    help
+        Target the build system to x86 CPUs (will support both 32- and 64-bit kernels).
+
+endchoice
+
+config ARCH
+    string
+    default "x86" if ARCH_X86
+
+# For compatibility with main Infinity OS build system.
+config BOOTARCH
+    string
+    default ARCH

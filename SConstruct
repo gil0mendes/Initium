@@ -58,39 +58,19 @@ target_flags = {
 # Build setup #
 ###############
 
-import os, sys
+import os, sys, SCons.Errors
 from subprocess import Popen, PIPE
 
 sys.path = [os.path.abspath(os.path.join('utilities', 'build'))] + sys.path
+from kconfig import ConfigParser
 import util
 
-# Configurable build options.
-opts = Variables('.options.cache')
-opts.AddVariables(
-    ('CONFIG', 'Target system configuration name.'),
-    ('CROSS_COMPILE', 'Cross compiler tool prefix (prepended to all tool names).', ''),
-)
+# Create the configuration parser
+config = ConfigParser('.config')
+Export('config')
 
 # Create the build environment.
-env = Environment(ENV = os.environ, variables = opts)
-opts.Save('.options.cache', env)
-
-# Get a list of known configurations.
-configs = SConscript('config/SConscript')
-
-# Generate help text.
-helptext  = 'To build Initium, a target system configuration must be specified on the command\n'
-helptext += 'line with the CONFIG option. The following configurations are available:\n'
-helptext += '\n'
-for name in sorted(configs.iterkeys()):
-    helptext += '  %-12s - %s\n' % (name, configs[name]['description'])
-helptext += '\n'
-helptext += 'The following build options can be set on the command line. These will be saved\n'
-helptext += 'for later invocations of SCons, so you do not need to specify them every time:\n'
-helptext += opts.GenerateHelpText(env)
-helptext += '\n'
-helptext += 'For information on how to build Initium, please refer to docs/README.md.\n'
-Help(helptext)
+env = Environment(ENV = os.environ)
 
 # Make the output nice.
 verbose = ARGUMENTS.get('V') == '1'
@@ -134,27 +114,30 @@ else:
         host_env[k] += v
 
 # Build host system utilities.
-#SConscript('utilities/SConscript',
-#    variant_dir = os.path.join('build', 'host'),
-#    exports = {'env': host_env})
+SConscript('utilities/SConscript',
+    variant_dir = os.path.join('build', 'host'),
+    exports = {'env': host_env})
+
+# Add target to run the configuration interface.
+Alias('config', host_env.ConfigMenu('__config', ['Kconfig']))
+
+# Only do the rest of the build if the configuration exists.
+if not config.configured() or 'config' in COMMAND_LINE_TARGETS:
+    if GetOption('help') or 'config' in COMMAND_LINE_TARGETS:
+        Return()
+    else:
+        raise SCons.Errors.StopError(
+            "Configuration missing or out date. Please update using 'config' target.")
 
 ##################################
 # Target build environment setup #
 ##################################
 
-# Check if the configuration specified is invalid.
-if not env.has_key('CONFIG'):
-    util.StopError("No target system configuration specified. See 'scons -h'.")
-elif not env['CONFIG'] in configs:
-    util.StopError("Unknown configuration '%s'." % (env['CONFIG']))
-
-config = configs[env['CONFIG']]['config']
-
 # Detect which compiler to use.
 compilers = ['cc', 'gcc', 'clang']
 compiler = None
 for name in compilers:
-    path = env['CROSS_COMPILE'] + name
+    path = config['CROSS_COMPILER'] + name
     if util.which(path):
         compiler = path
         break
@@ -168,15 +151,15 @@ if os.environ.has_key('CC') and os.path.basename(os.environ['CC']) == 'ccc-analy
     env['ENV']['CCC_CC'] = compiler
 else:
     env['CC'] = compiler
-env['AS']      = env['CROSS_COMPILE'] + 'as'
-env['OBJDUMP'] = env['CROSS_COMPILE'] + 'objdump'
-env['READELF'] = env['CROSS_COMPILE'] + 'readelf'
-env['NM']      = env['CROSS_COMPILE'] + 'nm'
-env['STRIP']   = env['CROSS_COMPILE'] + 'strip'
-env['AR']      = env['CROSS_COMPILE'] + 'ar'
-env['RANLIB']  = env['CROSS_COMPILE'] + 'ranlib'
-env['OBJCOPY'] = env['CROSS_COMPILE'] + 'objcopy'
-env['LD']      = env['CROSS_COMPILE'] + 'ld'
+env['AS']      = config['CROSS_COMPILER'] + 'as'
+env['OBJDUMP'] = config['CROSS_COMPILER'] + 'objdump'
+env['READELF'] = config['CROSS_COMPILER'] + 'readelf'
+env['NM']      = config['CROSS_COMPILER'] + 'nm'
+env['STRIP']   = config['CROSS_COMPILER'] + 'strip'
+env['AR']      = config['CROSS_COMPILER'] + 'ar'
+env['RANLIB']  = config['CROSS_COMPILER'] + 'ranlib'
+env['OBJCOPY'] = config['CROSS_COMPILER'] + 'objcopy'
+env['LD']      = config['CROSS_COMPILER'] + 'ld'
 
 # Override default assembler - it uses as directly, we want to use GCC.
 env['ASCOM'] = '$CC $_CCCOMCOM $ASFLAGS -c -o $TARGET $SOURCES'
@@ -204,15 +187,15 @@ env['ASFLAGS'] += ['-isystem', incdir]
 Decider('MD5-timestamp')
 
 # We place the final output binaries in a single directory.
-env['OUTDIR'] = Dir('build/%s/bin' % (env['CONFIG']))
+env['OUTDIR'] = Dir('build/%s-%s/bin' % (config['ARCH'], config['PLATFORM']))
 
 # Don't use the Default function within the sub-SConscripts for compatibility
 # with the main InfinityOS build system.
 defaults = []
 
-SConscript('source/SConscript',
-    variant_dir = os.path.join('build', env['CONFIG'], 'source'),
-    exports = ['config', 'defaults', 'env'])
+SConscript('SConscript',
+    variant_dir = os.path.join('build', '%s-%s' % (config['ARCH'], config['PLATFORM'])),
+    exports = {'env': env, 'dirs': ['source'], 'defaults': defaults})
 
 Default(defaults)
 
@@ -221,10 +204,10 @@ Default(defaults)
 ################
 
 SConscript('test/SConscript',
-    variant_dir = os.path.join('build', env['CONFIG'], 'test'),
+    variant_dir = os.path.join('build', '%s-%s' % (config['ARCH'], config['PLATFORM']), 'test'),
     exports = ['config', 'defaults', 'env'])
 
 # Add a target to run the test script for this configuration (if it exists).
-script = os.path.join('test', 'qemu', '%s.sh' % (env['CONFIG']))
+script = os.path.join('test', 'qemu', '%s.sh' % (config['PLATFORM']))
 if os.path.exists(script):
     Alias('qemu', env.Command('__qemu', defaults + ['test'], Action(script, None)))

@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-builddir=build/efi-amd64
+builddir=build/x86-efi
 fsdir=${builddir}/testfs
 
 mkdir ${fsdir}

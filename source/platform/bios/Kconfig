@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2015 Gil Mendes <gil00mendes@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,26 @@
 # SOFTWARE.
 #
 
-config = {
-	'description': 'x86 PCs with legacy BIOS',
-	'includes': ['arch/ia32', 'platform/bios'],
-	'config' : {
-		'FS_ISO9660': True,
-		'UI': True,
-		'DEBUG_LEVEL': 2
-	}
-}
+config FS_ISO9660
+    def_bool y
 
-# EOF
+config TARGET_HAS_DISK
+    def_bool y
+
+config TARGET_HAS_VIDEO
+    def_bool y
+
+config TARGET_HAS_UI
+    def_bool y
+
+config X86_TSC
+    def_bool y
+
+config DRIVER_SERIAL_NS16550
+    def_bool y
+
+config TARGET_NS16550_IO
+    def_bool y
+
+config DRIVER_VIDEO_VGA
+    def_bool y

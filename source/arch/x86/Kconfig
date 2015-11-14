@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gil Mendes <gil00mendes@gmail>
+# Copyright (c) 2015 Gil Mendes <gil00mendes@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,8 @@
 # SOFTWARE.
 #
 
-config = {
-  'description': 'x86 PCs with 64-bit UEFI firmware',
-  'includes': ['arch/amd64', 'platform/efi'],
-  'config': {
-    'EFI_ARCH': 'amd64',
-    'EFI_ARCH_AMD64': True,
-    'DEBUG_LEVEL': 2,
-    'DRIVER_SERIAL_NS16550': True,
-    'TARGET_NS16550_IO': True
-  },
-}
+config TARGET_HAS_INITIUM32
+    def_bool y
+
+config TARGET_HAS_INITIUM64
+    def_bool y
