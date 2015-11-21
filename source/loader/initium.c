@@ -44,7 +44,7 @@
 #include "initium_elf.h"
 
 /** Size to use for tag list area. */
-#define INITIUM_TAGS_SIZE       8192
+#define INITIUM_TAGS_SIZE       12288
 
 /**
  * Helper functions.
