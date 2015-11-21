@@ -71,7 +71,7 @@ void target_reboot(void) {
 /**
  * Main function of the BIOS loader
  */
-void bios_main(void)
+__noreturn void bios_main(void)
 {
     // Initialize the console and video
     bios_console_init();

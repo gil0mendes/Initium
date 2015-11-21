@@ -57,10 +57,8 @@ efi_boot_services_t *efi_boot_services;
  *
  * @param image_handle  Handle to the loader image.
  * @param system_table  Pointer to EFI system table.
- *
- * @return   EFI Status code
  */
-efi_status_t efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
+__noreturn void efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
     efi_status_t ret;
 
     // Save image handler
@@ -96,8 +94,6 @@ efi_status_t efi_init(efi_handle_t image_handle, efi_system_table_t *system_tabl
 
     // Call loader main function
     loader_main();
-
-    return EFI_SUCCESS;
 }
 
 /**

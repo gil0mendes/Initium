@@ -76,7 +76,7 @@ FUNCTION_START(loader_entry)
 	mov	%ax, %ss
 
 	/* Jump to the common startup code. */
-	jmp	__common_entry
+	jmp	common_entry
 FUNCTION_END(loader_entry)
 
 /** Test whether the A20 line is enabled.
@@ -193,10 +193,10 @@ multiboot_header:
 	.long __start + MULTIBOOT_LOAD_OFFSET
 	.long __data_end + MULTIBOOT_LOAD_OFFSET
 	.long __end + MULTIBOOT_LOAD_OFFSET
-	.long __multiboot_entry + MULTIBOOT_LOAD_OFFSET
+	.long multiboot_entry + MULTIBOOT_LOAD_OFFSET
 
 /** Multiboot startup function. */
-PRIVATE_FUNCTION_START(__multiboot_entry)
+PRIVATE_FUNCTION_START(multiboot_entry)
 .code32
 	cli
 
@@ -275,11 +275,11 @@ PRIVATE_FUNCTION_START(__multiboot_entry)
 	mov	%ax, %ss
 
 	/* Jump to the common startup code. */
-	jmp	__common_entry
-FUNCTION_END(__multiboot_entry)
+	jmp	common_entry
+FUNCTION_END(multiboot_entry)
 
 /** Common startup function. */
-PRIVATE_FUNCTION_START(__common_entry)
+PRIVATE_FUNCTION_START(common_entry)
 	/* Set the stack pointer to the physical location of our stack and
 	 * clear the stack frame/EFLAGS. */
 	movl	$loader_stack + PAGE_SIZE, %esp
@@ -299,7 +299,7 @@ PRIVATE_FUNCTION_START(__common_entry)
 
 1:
     jmp     1b
-FUNCTION_END(__common_entry)
+FUNCTION_END(common_entry)
 
 .section .init.data, "aw", @progbits
 
