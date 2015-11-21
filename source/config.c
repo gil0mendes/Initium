@@ -181,16 +181,16 @@ void config_error(const char *fmt, ...) {
     current_command = NULL;
 
     if (current_error_handler) {
-	    current_error_handler(cmd, fmt, args);
-	} else {
-	    vsnprintf(temp_buf, TEMP_BUF_LEN, fmt, args);
+        current_error_handler(cmd, fmt, args);
+    } else {
+        vsnprintf(temp_buf, TEMP_BUF_LEN, fmt, args);
 
-	    if (cmd) {
-		    boot_error("%s: %s", cmd, temp_buf);
-		} else {
-		    boot_error("%s", temp_buf);
-		}
-	}
+        if (cmd) {
+            boot_error("Error in command '%s':\n%s", cmd, temp_buf);
+        } else {
+            boot_error("Error in configuration file '%s':\n%s", current_path, temp_buf);
+        }
+    }
 
     va_end(args);
 }
@@ -214,27 +214,27 @@ void value_init(value_t *value, value_type_t type) {
     value->type = type;
 
     switch (type) {
-	case VALUE_TYPE_INTEGER:
-	    value->integer = 0;
-	    break;
-	case VALUE_TYPE_BOOLEAN:
-	    value->boolean = false;
-	    break;
-	case VALUE_TYPE_STRING:
-	    value->string = strdup("");
-	    break;
-	case VALUE_TYPE_LIST:
-	    value->list = malloc(sizeof(*value->list));
-	    value->list->values = NULL;
-	    value->list->count = 0;
-	    break;
-	case VALUE_TYPE_COMMAND_LIST:
-	    value->cmds = malloc(sizeof(*value->cmds));
-	    list_init(value->cmds);
-	    break;
-	default:
-	    assert(0 && "Setting invalid value type");
-	}
+    case VALUE_TYPE_INTEGER:
+        value->integer = 0;
+        break;
+    case VALUE_TYPE_BOOLEAN:
+        value->boolean = false;
+        break;
+    case VALUE_TYPE_STRING:
+        value->string = strdup("");
+        break;
+    case VALUE_TYPE_LIST:
+        value->list = malloc(sizeof(*value->list));
+        value->list->values = NULL;
+        value->list->count = 0;
+        break;
+    case VALUE_TYPE_COMMAND_LIST:
+        value->cmds = malloc(sizeof(*value->cmds));
+        list_init(value->cmds);
+        break;
+    default:
+        assert(0 && "Setting invalid value type");
+    }
 }
 
 /** Destroy a value.
@@ -242,21 +242,21 @@ void value_init(value_t *value, value_type_t type) {
 void value_destroy(value_t *value) {
     /* Pointers can be NULL on cleanup path from parse_value_list(). */
     switch (value->type) {
-	case VALUE_TYPE_STRING:
-	case VALUE_TYPE_REFERENCE:
-	    free(value->string);
-	    break;
-	case VALUE_TYPE_LIST:
-	    if (value->list)
-		value_list_destroy(value->list);
-	    break;
-	case VALUE_TYPE_COMMAND_LIST:
-	    if (value->cmds)
-		command_list_destroy(value->cmds);
-	    break;
-	default:
-	    break;
-	}
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_REFERENCE:
+        free(value->string);
+        break;
+    case VALUE_TYPE_LIST:
+        if (value->list)
+            value_list_destroy(value->list);
+        break;
+    case VALUE_TYPE_COMMAND_LIST:
+        if (value->cmds)
+            command_list_destroy(value->cmds);
+        break;
+    default:
+        break;
+    }
 }
 
 /** Copy the contents of one value to another.
@@ -266,23 +266,23 @@ void value_copy(const value_t *source, value_t *dest) {
     dest->type = source->type;
 
     switch (dest->type) {
-	case VALUE_TYPE_INTEGER:
-	    dest->integer = source->integer;
-	    break;
-	case VALUE_TYPE_BOOLEAN:
-	    dest->boolean = source->boolean;
-	    break;
-	case VALUE_TYPE_STRING:
-	case VALUE_TYPE_REFERENCE:
-	    dest->string = strdup(source->string);
-	    break;
-	case VALUE_TYPE_LIST:
-	    dest->list = value_list_copy(source->list);
-	    break;
-	case VALUE_TYPE_COMMAND_LIST:
-	    dest->cmds = command_list_copy(source->cmds);
-	    break;
-	}
+    case VALUE_TYPE_INTEGER:
+        dest->integer = source->integer;
+        break;
+    case VALUE_TYPE_BOOLEAN:
+        dest->boolean = source->boolean;
+        break;
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_REFERENCE:
+        dest->string = strdup(source->string);
+        break;
+    case VALUE_TYPE_LIST:
+        dest->list = value_list_copy(source->list);
+        break;
+    case VALUE_TYPE_COMMAND_LIST:
+        dest->cmds = command_list_copy(source->cmds);
+        break;
+    }
 }
 
 /** Move the contents of one value to another.
@@ -293,26 +293,26 @@ void value_move(value_t *source, value_t *dest) {
     dest->type = source->type;
 
     switch (dest->type) {
-	case VALUE_TYPE_INTEGER:
-	    dest->integer = source->integer;
-	    break;
-	case VALUE_TYPE_BOOLEAN:
-	    dest->boolean = source->boolean;
-	    break;
-	case VALUE_TYPE_STRING:
-	case VALUE_TYPE_REFERENCE:
-	    dest->string = source->string;
-	    source->string = NULL;
-	    break;
-	case VALUE_TYPE_LIST:
-	    dest->list = source->list;
-	    source->list = NULL;
-	    break;
-	case VALUE_TYPE_COMMAND_LIST:
-	    dest->cmds = source->cmds;
-	    source->cmds = NULL;
-	    break;
-	}
+    case VALUE_TYPE_INTEGER:
+        dest->integer = source->integer;
+        break;
+    case VALUE_TYPE_BOOLEAN:
+        dest->boolean = source->boolean;
+        break;
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_REFERENCE:
+        dest->string = source->string;
+        source->string = NULL;
+        break;
+    case VALUE_TYPE_LIST:
+        dest->list = source->list;
+        source->list = NULL;
+        break;
+    case VALUE_TYPE_COMMAND_LIST:
+        dest->cmds = source->cmds;
+        source->cmds = NULL;
+        break;
+    }
 }
 
 /** Check if two values are equal.
@@ -321,22 +321,144 @@ void value_move(value_t *source, value_t *dest) {
  * @return              Whether the values are equal. */
 bool value_equals(const value_t *value, const value_t *other) {
     if (value->type == other->type) {
-	    switch (value->type) {
-		case VALUE_TYPE_INTEGER:
-		    return value->integer == other->integer;
-		case VALUE_TYPE_BOOLEAN:
-		    return value->boolean == other->boolean;
-		    break;
-		case VALUE_TYPE_STRING:
-		case VALUE_TYPE_REFERENCE:
-		    return strcmp(value->string, other->string) == 0;
-		default:
-		    assert(0 && "Comparison not implemented for lists");
-		    break;
-		}
-	}
+        switch (value->type) {
+        case VALUE_TYPE_INTEGER:
+            return value->integer == other->integer;
+        case VALUE_TYPE_BOOLEAN:
+            return value->boolean == other->boolean;
+            break;
+        case VALUE_TYPE_STRING:
+        case VALUE_TYPE_REFERENCE:
+            return strcmp(value->string, other->string) == 0;
+        default:
+            assert(0 && "Comparison not implemented for lists");
+            break;
+        }
+    }
 
     return false;
+}
+
+/**
+ * Substitute variable references in a value.
+ *
+ * Substitutes variable references in a value (entirely replaces reference
+ * values, and substitutes variables within strings). If the value is a list,
+ * will recurse onto the values contained within the list. If an error occurs
+ * while substituting variables, the error will be raised with config_error()
+ * and the function will return false. For strings/references, if an error
+ * occurs, the value will not be changed.
+ *
+ * @param value         Value to substitute in.
+ * @param env           Environment to take variables from.
+ *
+ * @return              Whether variables were successfully substituted.
+ */
+bool value_substitute(value_t *value, environ_t *env) {
+    const value_t *target;
+    char *str;
+    size_t i, start;
+
+    switch (value->type) {
+    case VALUE_TYPE_REFERENCE:
+        /* Non-string variable reference, replace the whole value. */
+        target = environ_lookup(env, value->string);
+        if (!target) {
+            config_error("Variable '%s' not found", value->string);
+            return false;
+        }
+
+        free(value->string);
+        value_copy(target, value);
+        break;
+    case VALUE_TYPE_STRING:
+        /* Search for in-string variable references, which we substitute in the
+         * string for a string representation of the variable. */
+        str = strdup(value->string);
+        i = 0;
+        start = 0;
+        while (str[i]) {
+            if (start) {
+                if (isalnum(str[i]) || str[i] == '_') {
+                    i++;
+                } else if (str[i] == '}') {
+                    const char *name;
+                    char *subst;
+                    size_t prefix_len, var_len, len;
+
+                    str[start - 2] = 0;
+                    str[i] = 0;
+
+                    /* We have a whole reference. */
+                    name = &str[start];
+                    target = environ_lookup(env, name);
+                    if (!target) {
+                        config_error("Variable '%s' not found", name);
+                        free(str);
+                        return false;
+                    }
+
+                    /* Stringify the target into the temporary buffer. */
+                    switch (target->type) {
+                    case VALUE_TYPE_INTEGER:
+                        snprintf(temp_buf, TEMP_BUF_LEN, "%llu", target->integer);
+                        break;
+                    case VALUE_TYPE_BOOLEAN:
+                        snprintf(temp_buf, TEMP_BUF_LEN, (target->boolean) ? "true" : "false");
+                        break;
+                    case VALUE_TYPE_STRING:
+                        snprintf(temp_buf, TEMP_BUF_LEN, "%s", target->string);
+                        break;
+                    default:
+                        config_error("Variable '%s' cannot be converted to string", name);
+                        free(str);
+                        return false;
+                    }
+
+                    /* Now allocate a new string. The start and end characters
+                     * of the reference have been replaced with null terminators
+                     * effectively splitting up the string into 3 parts. */
+                    prefix_len = strlen(str);
+                    var_len = strlen(temp_buf);
+                    len = prefix_len + var_len + strlen(&str[i + 1]) + 1;
+                    subst = malloc(len);
+                    snprintf(subst, len, "%s%s%s", str, temp_buf, &str[i + 1]);
+
+                    /* Replace the string and continue after the substituted
+                     * portion. */
+                    free(str);
+                    str = subst;
+                    i = prefix_len + var_len;
+                    start = 0;
+                } else {
+                    start = 0;
+                    i++;
+                }
+            } else {
+                if (str[i] == '$' && str[i + 1] == '{') {
+                    i += 2;
+                    start = i;
+                } else {
+                    i++;
+                }
+            }
+        }
+
+        free(value->string);
+        value->string = str;
+        break;
+    case VALUE_TYPE_LIST:
+        for (i = 0; i < value->list->count; i++) {
+            if (!value_substitute(&value->list->values[i], env))
+                return false;
+        }
+
+        break;
+    default:
+        break;
+    }
+
+    return true;
 }
 
 /**
@@ -347,7 +469,7 @@ bool value_equals(const value_t *value, const value_t *other) {
  * @param list          List to destroy. */
 void value_list_destroy(value_list_t *list) {
     for (size_t i = 0; i < list->count; i++)
-	value_destroy(&list->values[i]);
+        value_destroy(&list->values[i]);
 
     free(list->values);
     free(list);
@@ -362,12 +484,12 @@ value_list_t *value_list_copy(const value_list_t *source) {
     dest->count = source->count;
 
     if (source->count) {
-	    dest->values = malloc(sizeof(*dest->values) * source->count);
-	    for (size_t i = 0; i < source->count; i++)
-		value_copy(&source->values[i], &dest->values[i]);
-	} else {
-	    dest->values = NULL;
-	}
+        dest->values = malloc(sizeof(*dest->values) * source->count);
+        for (size_t i = 0; i < source->count; i++)
+            value_copy(&source->values[i], &dest->values[i]);
+    } else {
+        dest->values = NULL;
+    }
 
     return dest;
 }
@@ -380,16 +502,16 @@ value_list_t *value_list_copy(const value_list_t *source) {
  * @param list          List to destroy. */
 void command_list_destroy(command_list_t *list) {
     list_foreach_safe(list, iter) {
-	command_list_entry_t *command = list_entry(iter, command_list_entry_t, header);
+        command_list_entry_t *command = list_entry(iter, command_list_entry_t, header);
 
-	list_remove(&command->header);
+        list_remove(&command->header);
 
-	/* Can be NULL on the cleanup path from parse_command_list(). */
-	if (command->args)
-	    value_list_destroy(command->args);
+        /* Can be NULL on the cleanup path from parse_command_list(). */
+        if (command->args)
+            value_list_destroy(command->args);
 
-	free(command->name);
-	free(command);
+        free(command->name);
+        free(command);
     }
 
     free(list);
@@ -404,121 +526,17 @@ command_list_t *command_list_copy(const command_list_t *source) {
     list_init(dest);
 
     list_foreach(source, iter) {
-	command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
-	command_list_entry_t *copy = malloc(sizeof(*copy));
+        command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
+        command_list_entry_t *copy = malloc(sizeof(*copy));
 
-	list_init(&copy->header);
-	copy->name = strdup(entry->name);
-	copy->args = value_list_copy(entry->args);
+        list_init(&copy->header);
+        copy->name = strdup(entry->name);
+        copy->args = value_list_copy(entry->args);
 
-	list_append(dest, &copy->header);
+        list_append(dest, &copy->header);
     }
 
     return dest;
-}
-
-/** Substitute variable references in a value.
- * @param value         Value to substitute in.
- * @return              Whether variable substitution succeeded. */
-static bool substitute_variables(value_t *value) {
-    const value_t *target;
-    size_t i, start;
-
-    switch (value->type) {
-	case VALUE_TYPE_REFERENCE:
-	    /* Non-string variable reference, replace the whole value. */
-	    target = environ_lookup(current_environ, value->string);
-	    if (!target) {
-		    config_error("Variable '%s' not found", value->string);
-		    return false;
-		}
-
-	    free(value->string);
-	    value_copy(target, value);
-	    break;
-	case VALUE_TYPE_STRING:
-	    /* Search for in-string variable references, which we substitute in the
-	     * string for a string representation of the variable. */
-	    i = 0;
-	    start = 0;
-	    while (value->string[i]) {
-		    if (start) {
-			    if (isalnum(value->string[i]) || value->string[i] == '_') {
-				    i++;
-				} else if (value->string[i] == '}') {
-				    const char *name;
-				    char *str;
-				    size_t prefix_len, var_len, len;
-
-				    value->string[start - 2] = 0;
-				    value->string[i] = 0;
-
-				    /* We have a whole reference. */
-				    name = &value->string[start];
-				    target = environ_lookup(current_environ, name);
-				    if (!target) {
-					    config_error("Variable '%s' not found", name);
-					    return false;
-					}
-
-				    /* Stringify the target into the temporary buffer. */
-				    switch (target->type) {
-					case VALUE_TYPE_INTEGER:
-					    snprintf(temp_buf, TEMP_BUF_LEN, "%llu", target->integer);
-					    break;
-					case VALUE_TYPE_BOOLEAN:
-					    snprintf(temp_buf, TEMP_BUF_LEN, (target->boolean) ? "true" : "false");
-					    break;
-					case VALUE_TYPE_STRING:
-					    snprintf(temp_buf, TEMP_BUF_LEN, "%s", target->string);
-					    break;
-					default:
-					    config_error("Variable '%s' cannot be converted to string", name);
-					    return false;
-					}
-
-				    /* Now allocate a new string. The start and end characters
-				     * of the reference have been replaced with null terminators
-				     * effectively splitting up the string into 3 parts. */
-				    prefix_len = strlen(value->string);
-				    var_len = strlen(temp_buf);
-				    len = prefix_len + var_len + strlen(&value->string[i + 1]) + 1;
-				    str = malloc(len);
-				    snprintf(str, len, "%s%s%s", value->string, temp_buf, &value->string[i + 1]);
-
-				    /* Replace the string and continue after the substituted
-				     * portion. */
-				    free(value->string);
-				    value->string = str;
-				    i = prefix_len + var_len;
-				    start = 0;
-				} else {
-				    start = 0;
-				    i++;
-				}
-			} else {
-			    if (value->string[i] == '$' && value->string[i + 1] == '{') {
-				    i += 2;
-				    start = i;
-				} else {
-				    i++;
-				}
-			}
-		}
-
-	    break;
-	case VALUE_TYPE_LIST:
-	    for (i = 0; i < value->list->count; i++) {
-		    if (!substitute_variables(&value->list->values[i]))
-			return false;
-		}
-
-	    break;
-	default:
-	    break;
-	}
-
-    return true;
 }
 
 /** Execute a single command from a command list.
@@ -530,19 +548,19 @@ static bool command_exec(command_list_entry_t *entry) {
     /* Recursively substitute variable references in the argument list. */
     args.type = VALUE_TYPE_LIST;
     args.list = entry->args;
-    if (!substitute_variables(&args))
-	return false;
+    if (!value_substitute(&args, current_environ))
+        return false;
 
     builtin_foreach(BUILTIN_TYPE_COMMAND, command_t, command) {
-	if (strcmp(command->name, entry->name) == 0) {
-		const char *prev = current_command;
-		bool ret;
+        if (strcmp(command->name, entry->name) == 0) {
+            const char *prev = current_command;
+            bool ret;
 
-		current_command = command->name;
-		ret = command->func(entry->args);
-		current_command = prev;
-		return ret;
-	    }
+            current_command = command->name;
+            ret = command->func(entry->args);
+            current_command = prev;
+            return ret;
+        }
     }
 
     config_error("Unknown command '%s'", entry->name);
@@ -562,26 +580,26 @@ bool command_list_exec(command_list_t *list, environ_t *env) {
 
     /* Execute each command. */
     list_foreach(list, iter) {
-	command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
+        command_list_entry_t *entry = list_entry(iter, command_list_entry_t, header);
 
-	/* Loader command must be the last command in the list, prevent any
-	 * other commands from being run if we have a loader set. */
-	if (current_environ->loader) {
-		config_error("Loader command must be final command");
-		return false;
-	    }
+        /* Loader command must be the last command in the list, prevent any
+         * other commands from being run if we have a loader set. */
+        if (current_environ->loader) {
+            config_error("Loader command must be final command");
+            return false;
+        }
 
-	if (!command_exec(entry)) {
-		current_environ = prev;
-		return false;
-	    }
+        if (!command_exec(entry)) {
+            current_environ = prev;
+            return false;
+        }
     }
 
     /* Restore the previous environment if not NULL. This has the effect of
      * keeping current_environ set to the root environment when we finish
      * executing the top level configuration. */
     if (prev)
-	current_environ = prev;
+        current_environ = prev;
 
     return true;
 }
@@ -601,25 +619,25 @@ environ_t *environ_create(environ_t *parent) {
     env->loader_private = NULL;
 
     if (parent) {
-	    env->device = parent->device;
+        env->device = parent->device;
 
-	    env->directory = parent->directory;
-	    if (env->directory)
-		fs_retain(env->directory);
+        env->directory = parent->directory;
+        if (env->directory)
+            fs_retain(env->directory);
 
-	    list_foreach(&parent->entries, iter) {
-		const environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-		environ_entry_t *clone = malloc(sizeof(*clone));
+        list_foreach(&parent->entries, iter) {
+            const environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+            environ_entry_t *clone = malloc(sizeof(*clone));
 
-		list_init(&clone->header);
-		clone->name = strdup(entry->name);
-		value_copy(&entry->value, &clone->value);
-		list_append(&env->entries, &clone->header);
-	    }
-	} else {
-	    env->device = NULL;
-	    env->directory = NULL;
-	}
+            list_init(&clone->header);
+            clone->name = strdup(entry->name);
+            value_copy(&entry->value, &clone->value);
+            list_append(&env->entries, &clone->header);
+        }
+    } else {
+        env->device = NULL;
+        env->directory = NULL;
+    }
 
     return env;
 }
@@ -628,12 +646,12 @@ environ_t *environ_create(environ_t *parent) {
  * @param env           Environment to destroy. */
 void environ_destroy(environ_t *env) {
     list_foreach_safe(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+        environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
 
-	list_remove(&entry->header);
-	free(entry->name);
-	value_destroy(&entry->value);
-	free(entry);
+        list_remove(&entry->header);
+        free(entry->name);
+        value_destroy(&entry->value);
+        free(entry);
     }
 
     free(env);
@@ -645,10 +663,10 @@ void environ_destroy(environ_t *env) {
  * @return              Pointer to value if found, NULL if not. */
 value_t *environ_lookup(environ_t *env, const char *name) {
     list_foreach(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+        environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
 
-	if (strcmp(entry->name, name) == 0)
-	    return &entry->value;
+        if (strcmp(entry->name, name) == 0)
+            return &entry->value;
     }
 
     return NULL;
@@ -664,13 +682,13 @@ value_t *environ_insert(environ_t *env, const char *name, const value_t *value) 
 
     /* Look for an existing entry with the same name. */
     list_foreach(&env->entries, iter) {
-	entry = list_entry(iter, environ_entry_t, header);
+        entry = list_entry(iter, environ_entry_t, header);
 
-	if (strcmp(entry->name, name) == 0) {
-		value_destroy(&entry->value);
-		value_copy(value, &entry->value);
-		return &entry->value;
-	    }
+        if (strcmp(entry->name, name) == 0) {
+            value_destroy(&entry->value);
+            value_copy(value, &entry->value);
+            return &entry->value;
+        }
     }
 
     /* Create a new entry. */
@@ -688,15 +706,15 @@ value_t *environ_insert(environ_t *env, const char *name, const value_t *value) 
  * @param name          Name of entry to remove. */
 void environ_remove(environ_t *env, const char *name) {
     list_foreach(&env->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+        environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
 
-	if (strcmp(entry->name, name) == 0) {
-		list_remove(&entry->header);
-		value_destroy(&entry->value);
-		free(entry->name);
-		free(entry);
-		return;
-	    }
+        if (strcmp(entry->name, name) == 0) {
+            list_remove(&entry->header);
+            value_destroy(&entry->value);
+            free(entry->name);
+            free(entry);
+            return;
+        }
     }
 }
 
@@ -739,20 +757,20 @@ static int read_char(void) {
     int ch;
 
     if (returned_char) {
-	    ch = returned_char;
-	    returned_char = 0;
-	} else {
-	    ch = current_helper(current_nest_count);
-	}
+        ch = returned_char;
+        returned_char = 0;
+    } else {
+        ch = current_helper(current_nest_count);
+    }
 
     if (ch == '\n') {
-	    current_line++;
-	    current_col = 0;
-	} else if (ch == '\t') {
-	    current_col += 8 - (current_col % 8);
-	} else {
-	    current_col++;
-	}
+        current_line++;
+        current_col = 0;
+    } else if (ch == '\t') {
+        current_col += 8 - (current_col % 8);
+    } else {
+        current_col++;
+    }
 
     return ch;
 }
@@ -765,18 +783,18 @@ static void return_char(int ch) {
     returned_char = ch;
 
     if (current_col > 0) {
-	    current_col--;
-	} else if (current_line > 1) {
-	    current_line--;
-	}
+        current_col--;
+    } else if (current_line > 1) {
+        current_line--;
+    }
 }
 
 /** Error due to an unexpected character.
  * @param ch            Character that was unexpected. */
 static void unexpected_char(int ch) {
     config_error(
-        "%s:%d:%d: Unexpected %s",
-        current_path, current_line, current_col, (ch == EOF) ? "end of file" : "character");
+        "Line %d, column %d: Unexpected %s",
+        current_line, current_col, (ch == EOF) ? "end of file" : "character");
 }
 
 /** Consume a character and check that it is the expected character.
@@ -786,11 +804,11 @@ static bool expect_char(int expect) {
     int ch = read_char();
 
     if (ch != expect) {
-	    unexpected_char(ch);
-	    return false;
-	} else {
-	    return true;
-	}
+        unexpected_char(ch);
+        return false;
+    } else {
+        return true;
+    }
 }
 
 /** Parse an integer.
@@ -798,19 +816,19 @@ static bool expect_char(int expect) {
  * @return              Integer parsed. */
 static uint64_t parse_integer(int ch) {
     while (true) {
-	    if (isxdigit(ch) || ch == 'x') {
-		    temp_buf[temp_buf_idx++] = ch;
-		} else {
-		    /* This is not part of the digit, the caller should see this. */
-		    return_char(ch);
+        if (isxdigit(ch) || ch == 'x') {
+            temp_buf[temp_buf_idx++] = ch;
+        } else {
+            /* This is not part of the digit, the caller should see this. */
+            return_char(ch);
 
-		    temp_buf[temp_buf_idx] = 0;
-		    temp_buf_idx = 0;
-		    return strtoull(temp_buf, NULL, 0);
-		}
+            temp_buf[temp_buf_idx] = 0;
+            temp_buf_idx = 0;
+            return strtoull(temp_buf, NULL, 0);
+        }
 
-	    ch = read_char();
-	}
+        ch = read_char();
+    }
 }
 
 /** Parse a string.
@@ -819,47 +837,47 @@ static char *parse_string(void) {
     bool escaped = false;
 
     while (true) {
-	    int ch = read_char();
+        int ch = read_char();
 
-	    if (ch == EOF) {
-		    unexpected_char(ch);
-		    temp_buf_idx = 0;
-		    return NULL;
-		} else if (!escaped && ch == '"') {
-		    temp_buf[temp_buf_idx] = 0;
-		    temp_buf_idx = 0;
-		    return strdup(temp_buf);
-		} else {
-		    if (ch == '\\' && !escaped) {
-			    escaped = true;
-			} else {
-			    temp_buf[temp_buf_idx++] = ch;
-			    escaped = false;
-			}
-		}
-	}
+        if (ch == EOF) {
+            unexpected_char(ch);
+            temp_buf_idx = 0;
+            return NULL;
+        } else if (!escaped && ch == '"') {
+            temp_buf[temp_buf_idx] = 0;
+            temp_buf_idx = 0;
+            return strdup(temp_buf);
+        } else {
+            if (ch == '\\' && !escaped) {
+                escaped = true;
+            } else {
+                temp_buf[temp_buf_idx++] = ch;
+                escaped = false;
+            }
+        }
+    }
 }
 
 /** Parse a variable name.
  * @return              Pointer to name string on success, NULL on failure. */
 static char *parse_variable_name(void) {
     while (true) {
-	    int ch = read_char();
+        int ch = read_char();
 
-	    if (!isalnum(ch) && ch != '_') {
-		    if (!temp_buf_idx) {
-			    unexpected_char(ch);
-			    return NULL;
-			}
+        if (!isalnum(ch) && ch != '_') {
+            if (!temp_buf_idx) {
+                unexpected_char(ch);
+                return NULL;
+            }
 
-		    return_char(ch);
-		    temp_buf[temp_buf_idx] = 0;
-		    temp_buf_idx = 0;
-		    return strdup(temp_buf);
-		} else {
-		    temp_buf[temp_buf_idx++] = ch;
-		}
-	}
+            return_char(ch);
+            temp_buf[temp_buf_idx] = 0;
+            temp_buf_idx = 0;
+            return strdup(temp_buf);
+        } else {
+            temp_buf[temp_buf_idx++] = ch;
+        }
+    }
 }
 
 /** Parse an value list.
@@ -876,99 +894,99 @@ static value_list_t *parse_value_list(bool command) {
     escaped = false;
     need_space = false;
     while (true) {
-	    int ch;
-	    value_t *value;
+        int ch;
+        value_t *value;
 
-	    ch = read_char();
+        ch = read_char();
 
-	    if (!escaped) {
-		    if (ch == '\\') {
-			    escaped = true;
-			    continue;
-			} else if (ch == '\n' && command) {
-			    return list;
-			}
-		}
+        if (!escaped) {
+            if (ch == '\\') {
+                escaped = true;
+                continue;
+            } else if (ch == '\n' && command) {
+                return list;
+            }
+        }
 
-	    escaped = false;
+        escaped = false;
 
-	    if (command && ch == '}') {
-		    return_char(ch);
-		    return list;
-		} else if (!command && ch == ']') {
-		    return list;
-		} else if (isspace(ch)) {
-		    need_space = false;
-		    continue;
-		} else if (need_space) {
-		    unexpected_char(ch);
-		    break;
-		}
+        if (command && ch == '}') {
+            return_char(ch);
+            return list;
+        } else if (!command && ch == ']') {
+            return list;
+        } else if (isspace(ch)) {
+            need_space = false;
+            continue;
+        } else if (need_space) {
+            unexpected_char(ch);
+            break;
+        }
 
-	    /* Start of a new value. */
-	    list->values = realloc(list->values, sizeof(*list->values) * (list->count + 1));
-	    value = &list->values[list->count];
+        /* Start of a new value. */
+        list->values = realloc(list->values, sizeof(*list->values) * (list->count + 1));
+        value = &list->values[list->count];
 
-	    if (isdigit(ch)) {
-		    value->type = VALUE_TYPE_INTEGER;
-		    value->integer = parse_integer(ch);
-		} else if (ch == 't') {
-		    value->type = VALUE_TYPE_BOOLEAN;
-		    value->boolean = true;
+        if (isdigit(ch)) {
+            value->type = VALUE_TYPE_INTEGER;
+            value->integer = parse_integer(ch);
+        } else if (ch == 't') {
+            value->type = VALUE_TYPE_BOOLEAN;
+            value->boolean = true;
 
-		    if (!expect_char('r') || !expect_char('u') || !expect_char('e'))
-			break;
-		} else if (ch == 'f') {
-		    value->type = VALUE_TYPE_BOOLEAN;
-		    value->boolean = false;
+            if (!expect_char('r') || !expect_char('u') || !expect_char('e'))
+                break;
+        } else if (ch == 'f') {
+            value->type = VALUE_TYPE_BOOLEAN;
+            value->boolean = false;
 
-		    if (!expect_char('a') || !expect_char('l') || !expect_char('s') || !expect_char('e'))
-			break;
-		} else if (ch == '"') {
-		    value->type = VALUE_TYPE_STRING;
+            if (!expect_char('a') || !expect_char('l') || !expect_char('s') || !expect_char('e'))
+                break;
+        } else if (ch == '"') {
+            value->type = VALUE_TYPE_STRING;
 
-		    current_nest_count++;
-		    value->string = parse_string();
-		    current_nest_count--;
+            current_nest_count++;
+            value->string = parse_string();
+            current_nest_count--;
 
-		    if (!value->string)
-			break;
-		} else if (ch == '[') {
-		    value->type = VALUE_TYPE_LIST;
+            if (!value->string)
+                break;
+        } else if (ch == '[') {
+            value->type = VALUE_TYPE_LIST;
 
-		    current_nest_count++;
-		    value->list = parse_value_list(false);
-		    current_nest_count--;
+            current_nest_count++;
+            value->list = parse_value_list(false);
+            current_nest_count--;
 
-		    if (!value->list)
-			break;
-		} else if (ch == '{') {
-		    value->type = VALUE_TYPE_COMMAND_LIST;
+            if (!value->list)
+                break;
+        } else if (ch == '{') {
+            value->type = VALUE_TYPE_COMMAND_LIST;
 
-		    current_nest_count++;
-		    value->cmds = parse_command_list();
-		    current_nest_count--;
+            current_nest_count++;
+            value->cmds = parse_command_list();
+            current_nest_count--;
 
-		    if (!value->cmds)
-			break;
-		} else if (ch == '$') {
-		    value->type = VALUE_TYPE_REFERENCE;
-		    value->string = parse_variable_name();
+            if (!value->cmds)
+                break;
+        } else if (ch == '$') {
+            value->type = VALUE_TYPE_REFERENCE;
+            value->string = parse_variable_name();
 
-		    if (!value->string)
-			break;
-		} else {
-		    unexpected_char(ch);
-		    break;
-		}
+            if (!value->string)
+                break;
+        } else {
+            unexpected_char(ch);
+            break;
+        }
 
-	    /* Increment count only upon success, so value_list_destroy() does not
-	     * attempt to clean up the failed entry. */
-	    list->count++;
+        /* Increment count only upon success, so value_list_destroy() does not
+         * attempt to clean up the failed entry. */
+        list->count++;
 
-	    /* At least one space is required after each value. */
-	    need_space = true;
-	}
+        /* At least one space is required after each value. */
+        need_space = true;
+    }
 
     value_list_destroy(list);
     return NULL;
@@ -987,50 +1005,50 @@ static command_list_t *parse_command_list(void) {
     endch = (current_nest_count) ? '}' : EOF;
     in_comment = false;
     while (true) {
-	    int ch = read_char();
+        int ch = read_char();
 
-	    if (in_comment) {
-		    if (ch == '\n')
-			in_comment = false;
-		} else if (ch == endch || isspace(ch)) {
-		    command_list_entry_t *command;
+        if (in_comment) {
+            if (ch == '\n')
+                in_comment = false;
+        } else if (ch == endch || isspace(ch)) {
+            command_list_entry_t *command;
 
-		    if (temp_buf_idx == 0) {
-			    if (ch == endch) {
-				    return list;
-				} else {
-				    continue;
-				}
-			}
+            if (temp_buf_idx == 0) {
+                if (ch == endch) {
+                    return list;
+                } else {
+                    continue;
+                }
+            }
 
-		    temp_buf[temp_buf_idx] = 0;
-		    temp_buf_idx = 0;
+            temp_buf[temp_buf_idx] = 0;
+            temp_buf_idx = 0;
 
-		    if (temp_buf[0] == '#' && ch != '\n') {
-			    in_comment = true;
-			    continue;
-			}
+            if (temp_buf[0] == '#' && ch != '\n') {
+                in_comment = true;
+                continue;
+            }
 
-		    /* End of command name, push it onto the list. */
-		    command = malloc(sizeof(*command));
-		    list_init(&command->header);
-		    command->name = strdup(temp_buf);
-		    list_append(list, &command->header);
+            /* End of command name, push it onto the list. */
+            command = malloc(sizeof(*command));
+            list_init(&command->header);
+            command->name = strdup(temp_buf);
+            list_append(list, &command->header);
 
-		    return_char(ch);
+            return_char(ch);
 
-		    /* Do not increase the nest count here as we are not expecting a ']'. */
-		    command->args = parse_value_list(true);
-		    if (!command->args)
-			break;
-		} else if (ch == EOF) {
-		    unexpected_char(ch);
-		    break;
-		} else {
-		    temp_buf[temp_buf_idx++] = ch;
-		    continue;
-		}
-	}
+            /* Do not increase the nest count here as we are not expecting a ']'. */
+            command->args = parse_value_list(true);
+            if (!command->args)
+                break;
+        } else if (ch == EOF) {
+            unexpected_char(ch);
+            break;
+        } else {
+            temp_buf[temp_buf_idx++] = ch;
+            continue;
+        }
+    }
 
     command_list_destroy(list);
     return NULL;
@@ -1064,52 +1082,52 @@ command_list_t *config_parse(const char *path, config_read_helper_t helper) {
  * @return              Whether successful. */
 static bool config_cmd_env(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("Invalid arguments");
-	    return false;
-	}
+        config_error("Invalid arguments");
+        return false;
+    }
 
     list_foreach(&current_environ->entries, iter) {
-	environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
-	const char *type;
+        environ_entry_t *entry = list_entry(iter, environ_entry_t, header);
+        const char *type;
 
-	switch (entry->value.type) {
-	    case VALUE_TYPE_INTEGER:
-		type = "integer";
-		break;
-	    case VALUE_TYPE_BOOLEAN:
-		type = "boolean";
-		break;
-	    case VALUE_TYPE_STRING:
-		type = "string";
-		break;
-	    case VALUE_TYPE_LIST:
-		type = "list";
-		break;
-	    case VALUE_TYPE_COMMAND_LIST:
-		type = "command list";
-		break;
-	    case VALUE_TYPE_REFERENCE:
-		type = "reference";
-		break;
-	    }
+        switch (entry->value.type) {
+        case VALUE_TYPE_INTEGER:
+            type = "integer";
+            break;
+        case VALUE_TYPE_BOOLEAN:
+            type = "boolean";
+            break;
+        case VALUE_TYPE_STRING:
+            type = "string";
+            break;
+        case VALUE_TYPE_LIST:
+            type = "list";
+            break;
+        case VALUE_TYPE_COMMAND_LIST:
+            type = "command list";
+            break;
+        case VALUE_TYPE_REFERENCE:
+            type = "reference";
+            break;
+        }
 
-	switch (entry->value.type) {
-	    case VALUE_TYPE_INTEGER:
-		snprintf(temp_buf, TEMP_BUF_LEN, "%llu", entry->value.integer);
-		break;
-	    case VALUE_TYPE_BOOLEAN:
-		snprintf(temp_buf, TEMP_BUF_LEN, (entry->value.boolean) ? "true" : "false");
-		break;
-	    case VALUE_TYPE_STRING:
-		snprintf(temp_buf, TEMP_BUF_LEN, "\"%s\"", entry->value.string);
-		break;
-	    default:
-		/* TODO: other types. */
-		temp_buf[0] = 0;
-		break;
-	    }
+        switch (entry->value.type) {
+        case VALUE_TYPE_INTEGER:
+            snprintf(temp_buf, TEMP_BUF_LEN, "%llu", entry->value.integer);
+            break;
+        case VALUE_TYPE_BOOLEAN:
+            snprintf(temp_buf, TEMP_BUF_LEN, (entry->value.boolean) ? "true" : "false");
+            break;
+        case VALUE_TYPE_STRING:
+            snprintf(temp_buf, TEMP_BUF_LEN, "\"%s\"", entry->value.string);
+            break;
+        default:
+            /* TODO: other types. */
+            temp_buf[0] = 0;
+            break;
+        }
 
-	config_printf("%s = (%s) %s\n", entry->name, type, temp_buf);
+        config_printf("%s = (%s) %s\n", entry->name, type, temp_buf);
     }
 
     return true;
@@ -1122,19 +1140,19 @@ BUILTIN_COMMAND("env", config_cmd_env);
  * @return              Whether the name was valid. */
 static bool variable_name_valid(const char *name) {
     for (size_t i = 0; name[i]; i++) {
-	    if (!isalnum(name[i]) && name[i] != '_') {
-		    config_error("Invalid variable name '%s'", name);
-		    return false;
-		}
-	}
+        if (!isalnum(name[i]) && name[i] != '_') {
+            config_error("Invalid variable name '%s'", name);
+            return false;
+        }
+    }
 
     /* Check that the name is not reserved. */
     for (size_t i = 0; i < array_size(reserved_environ_names); i++) {
-	    if (strcmp(name, reserved_environ_names[i]) == 0) {
-		    config_error("Variable name '%s' is reserved", name);
-		    return false;
-		}
-	}
+        if (strcmp(name, reserved_environ_names[i]) == 0) {
+            config_error("Variable name '%s' is reserved", name);
+            return false;
+        }
+    }
 
     return true;
 }
@@ -1146,14 +1164,14 @@ static bool config_cmd_set(value_list_t *args) {
     const char *name;
 
     if (args->count != 2 || args->values[0].type != VALUE_TYPE_STRING) {
-	    config_error("Invalid arguments");
-	    return false;
-	}
+        config_error("Invalid arguments");
+        return false;
+    }
 
     /* Check whether the name is valid. */
     name = args->values[0].string;
     if (!variable_name_valid(name))
-	return false;
+        return false;
 
     environ_insert(current_environ, name, &args->values[1]);
     return true;
@@ -1168,14 +1186,14 @@ static bool config_cmd_unset(value_list_t *args) {
     const char *name;
 
     if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
-	    config_error("Invalid arguments");
-	    return false;
-	}
+        config_error("Invalid arguments");
+        return false;
+    }
 
     /* Check whether the name is valid. */
     name = args->values[0].string;
     if (!variable_name_valid(name))
-	return false;
+        return false;
 
     environ_remove(current_environ, name);
     return true;
@@ -1188,9 +1206,9 @@ BUILTIN_COMMAND("unset", config_cmd_unset);
  * @return              Whether successful. */
 static bool config_cmd_reboot(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("Invalid arguments");
-	    return false;
-	}
+        config_error("Invalid arguments");
+        return false;
+    }
 
     target_reboot();
 }
@@ -1202,9 +1220,9 @@ BUILTIN_COMMAND("reboot", config_cmd_reboot);
  * @return              Whether successful. */
 static bool config_cmd_exit(value_list_t *args) {
     if (args->count != 0) {
-	    config_error("Invalid arguments");
-	    return false;
-	}
+        config_error("Invalid arguments");
+        return false;
+    }
 
     target_exit();
 }
@@ -1220,18 +1238,18 @@ BUILTIN_COMMAND("exit", config_cmd_exit);
  * @return              Character read, or EOF on end of file. */
 static int load_read_helper(unsigned nest) {
     while (true) {
-	    if (current_file_offset < current_file_size) {
-		    char ch = current_file[current_file_offset++];
+        if (current_file_offset < current_file_size) {
+            char ch = current_file[current_file_offset++];
 
-		    /* Deal with CRLF line endings by just ignoring the CR. */
-		    if (ch == '\r')
-			continue;
+            /* Deal with CRLF line endings by just ignoring the CR. */
+            if (ch == '\r')
+                continue;
 
-		    return ch;
-		} else {
-		    return EOF;
-		}
-	}
+            return ch;
+        } else {
+            return EOF;
+        }
+    }
 }
 
 /** Attempt to load a configuration file.
@@ -1244,7 +1262,7 @@ static bool load_config_file(const char *path) {
 
     ret = fs_open(path, NULL, &handle);
     if (ret != STATUS_SUCCESS || handle->directory)
-	return false;
+        return false;
 
     dprintf("config: loading configuration file '%s'\n", path);
 
@@ -1252,7 +1270,7 @@ static bool load_config_file(const char *path) {
 
     ret = fs_read(handle, current_file, handle->size, 0);
     if (ret != STATUS_SUCCESS)
-	boot_error("Error %d reading configuration file '%s'", ret, path);
+        boot_error("Error %d reading configuration file '%s'", ret, path);
 
     current_file[handle->size] = 0;
 
@@ -1266,11 +1284,11 @@ static bool load_config_file(const char *path) {
     assert(list);
 
     if (!command_list_exec(list, root_environ)) {
-	    /* If commands throw an error they should call config_error(), but
-	     * safeguard in case they don't. FIXME: Can fail if this code is used
-	     * for include. */
-	    config_error("Command list execution failed");
-	}
+        /* If commands throw an error they should call config_error(), but
+         * safeguard in case they don't. FIXME: Can fail if this code is used
+         * for include. */
+        config_error("Command list execution failed");
+    }
 
     command_list_destroy(list);
     return true;
@@ -1291,15 +1309,15 @@ void config_init(void) {
 /** Load the configuration. */
 void config_load(void) {
     if (config_file_override) {
-	    if (!load_config_file(config_file_override))
-		boot_error("Specified configuration file does not exist");
-	} else {
-	    /* Try the various paths. */
-	    for (size_t i = 0; i < array_size(config_file_paths); i++) {
-		    if (load_config_file(config_file_paths[i]))
-			return;
-		}
+        if (!load_config_file(config_file_override))
+            boot_error("Specified configuration file does not exist");
+    } else {
+        /* Try the various paths. */
+        for (size_t i = 0; i < array_size(config_file_paths); i++) {
+            if (load_config_file(config_file_paths[i]))
+                return;
+        }
 
-	    boot_error("Could not find configuration file");
-	}
+        boot_error("Could not find configuration file");
+    }
 }

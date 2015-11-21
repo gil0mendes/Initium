@@ -35,10 +35,10 @@
 #include <assert.h>
 #include <loader.h>
 #include <memory.h>
-#include <ui.h>
 #include <time.h>
+#include <ui.h>
 
-/** Structure representing a list window. */
+/** Structure for a list window. */
 typedef struct ui_list {
     ui_window_t window;                 /**< Window header. */
 
@@ -49,14 +49,14 @@ typedef struct ui_list {
     size_t selected;                    /**< Index of selected entry. */
 } ui_list_t;
 
-/** Structure representing a link. */
+/** Structure for a link. */
 typedef struct ui_link {
     ui_entry_t entry;                   /**< Entry header. */
 
     ui_window_t *window;                /**< Window that this links to. */
 } ui_link_t;
 
-/** Structure representing a checkbox. */
+/** Structure for a checkbox. */
 typedef struct ui_checkbox {
     ui_entry_t entry;                   /**< Entry header. */
 
@@ -64,7 +64,7 @@ typedef struct ui_checkbox {
     value_t *value;                     /**< Value modified by the checkbox. */
 } ui_checkbox_t;
 
-/** Structure representing a textbox. */
+/** Structure for a textbox. */
 typedef struct ui_textbox {
     ui_entry_t entry;                   /**< Entry header. */
 
@@ -76,10 +76,7 @@ typedef struct ui_textbox {
 typedef struct ui_textbox_editor {
     ui_window_t window;                 /**< Window header. */
 
-    char *buf;                          /**< String being edited. */
-    size_t len;                         /**< Current string length. */
-    size_t offset;                      /**< Current string offset. */
-    bool update;                        /**< Whether to update textbox when the window closes. */
+    ui_textbox_t *box;                  /**< Textbox being edited. */
     line_editor_t editor;               /**< Line editor. */
 } ui_textbox_editor_t;
 
@@ -113,42 +110,60 @@ console_t *ui_console;
 #define CONTENT_WIDTH               (ui_console_width - 4)
 #define CONTENT_HEIGHT              (ui_console_height - 6)
 
+/** Destroy a window.
+ * @param window        Window to destroy. */
+void ui_window_destroy(ui_window_t *window) {
+    if (window->type->destroy)
+        window->type->destroy(window);
+
+    free(window);
+}
+
+/** Destroy a list entry.
+ * @param entry         Entry to destroy. */
+void ui_entry_destroy(ui_entry_t *entry) {
+    if (entry->type->destroy)
+        entry->type->destroy(entry);
+
+    free(entry);
+}
+
 /** Print an action (for help text).
  * @param key           Key for the action.
  * @param name          Name of the action. */
 void ui_print_action(uint16_t key, const char *name) {
     switch (key) {
-	case CONSOLE_KEY_UP:
-	    ui_printf("Up");
-	    break;
-	case CONSOLE_KEY_DOWN:
-	    ui_printf("Down");
-	    break;
-	case CONSOLE_KEY_LEFT:
-	    ui_printf("Left");
-	    break;
-	case CONSOLE_KEY_RIGHT:
-	    ui_printf("Right");
-	    break;
-	case CONSOLE_KEY_HOME:
-	    ui_printf("Home");
-	    break;
-	case CONSOLE_KEY_END:
-	    ui_printf("End");
-	    break;
-	case CONSOLE_KEY_F1 ... CONSOLE_KEY_F10:
-	    ui_printf("F%u", key + 1 - CONSOLE_KEY_F1);
-	    break;
-	case '\n':
-	    ui_printf("Enter");
-	    break;
-	case '\e':
-	    ui_printf("Esc");
-	    break;
-	default:
-	    ui_printf("%c", key & 0xFF);
-	    break;
-	}
+    case CONSOLE_KEY_UP:
+        ui_printf("Up");
+        break;
+    case CONSOLE_KEY_DOWN:
+        ui_printf("Down");
+        break;
+    case CONSOLE_KEY_LEFT:
+        ui_printf("Left");
+        break;
+    case CONSOLE_KEY_RIGHT:
+        ui_printf("Right");
+        break;
+    case CONSOLE_KEY_HOME:
+        ui_printf("Home");
+        break;
+    case CONSOLE_KEY_END:
+        ui_printf("End");
+        break;
+    case CONSOLE_KEY_F1 ... CONSOLE_KEY_F10:
+        ui_printf("F%u", key + 1 - CONSOLE_KEY_F1);
+        break;
+    case '\n':
+        ui_printf("Enter");
+        break;
+    case '\e':
+        ui_printf("Esc");
+        break;
+    default:
+        ui_printf("%c", key & 0xFF);
+        break;
+    }
 
     ui_printf(" = %s  ", name);
 }
@@ -181,6 +196,20 @@ static inline void set_help_region(void) {
     console_set_colour(ui_console, COLOUR_WHITE, COLOUR_BLACK);
 }
 
+/** Set the draw region to the error region. */
+static inline void set_error_region(void) {
+    draw_region_t region;
+
+    region.x = 2;
+    region.y = ui_console_height - 4;
+    region.width = ui_console_width - 4;
+    region.height = 1;
+    region.scrollable = false;
+
+    console_set_region(ui_console, &region);
+    console_set_colour(ui_console, COLOUR_YELLOW, COLOUR_BLACK);
+}
+
 /** Set the draw region to the content region. */
 static inline void set_content_region(void) {
     draw_region_t region;
@@ -206,29 +235,29 @@ static void render_help(ui_window_t *window, unsigned timeout, bool update) {
     bool visible;
 
     if (update) {
-	    console_get_region(ui_console, &region);
-	    console_get_cursor(ui_console, &x, &y, &visible);
-	}
+        console_get_region(ui_console, &region);
+        console_get_cursor(ui_console, &x, &y, &visible);
+    }
 
     set_help_region();
 
     /* Do not need to clear if this is not an update. */
     if (update)
-	console_clear(ui_console, 0, 0, 0, 0);
+        console_clear(ui_console, 0, 0, 0, 0);
 
     window->type->help(window);
 
     /* Only draw timeout if it is non-zero. */
     if (timeout) {
-	    console_set_cursor(ui_console, 0 - ((timeout >= 10) ? 12 : 11), 0, false);
-	    ui_printf("%u second(s)", timeout);
-	}
+        console_set_cursor(ui_console, 0 - ((timeout >= 10) ? 12 : 11), 0, false);
+        ui_printf("%u second(s)", timeout);
+    }
 
     if (update) {
-	    console_set_region(ui_console, &region);
-	    console_set_colour(ui_console, COLOUR_LIGHT_GREY, COLOUR_BLACK);
-	    console_set_cursor(ui_console, x, y, visible);
-	}
+        console_set_region(ui_console, &region);
+        console_set_colour(ui_console, COLOUR_LIGHT_GREY, COLOUR_BLACK);
+        console_set_cursor(ui_console, x, y, visible);
+    }
 }
 
 /** Render the contents of a window.
@@ -267,7 +296,7 @@ void ui_display(ui_window_t *window, console_t *console, unsigned timeout) {
     mstime_t msecs;
 
     if (!console->out || !console->in)
-	return;
+        return;
 
     ui_console = console;
     render_window(window, timeout);
@@ -275,50 +304,48 @@ void ui_display(ui_window_t *window, console_t *console, unsigned timeout) {
     /* Handle input until told to exit. */
     msecs = secs_to_msecs(timeout);
     while (true) {
-	    if (timeout) {
-		    if (console_poll(ui_console)) {
-			    timeout = 0;
-			    render_help(window, timeout, true);
-			} else {
-			    delay(10);
-			    msecs -= 10;
+        if (timeout) {
+            if (console_poll(ui_console)) {
+                timeout = 0;
+                render_help(window, timeout, true);
+            } else {
+                delay(10);
+                msecs -= 10;
 
-			    if (round_up(msecs, 1000) / 1000 < timeout) {
-				    timeout--;
-				    if (!timeout) {
-					    break;
-					}
+                if (round_up(msecs, 1000) / 1000 < timeout) {
+                    timeout--;
+                    if (!timeout)
+                        break;
 
-				    render_help(window, timeout, true);
-				}
-			}
-		} else {
-		    uint16_t key = console_getc(ui_console);
-		    input_result_t result = window->type->input(window, key);
-		    bool done = false;
+                    render_help(window, timeout, true);
+                }
+            }
+        } else {
+            uint16_t key = console_getc(ui_console);
+            input_result_t result = window->type->input(window, key);
+            bool done = false;
 
-		    switch (result) {
-			case INPUT_CLOSE:
-			    done = true;
-			    break;
-			case INPUT_RENDER_HELP:
-			    /* Doing a partial update, should preserve the draw region and the
-			     * cursor state within it. */
-			    render_help(window, timeout, true);
-			    break;
-			case INPUT_RENDER_WINDOW:
-			    render_window(window, timeout);
-			    break;
-			default:
-			    /* INPUT_RENDER_ENTRY is handled by ui_list_input(). */
-			    break;
-			}
+            switch (result) {
+            case INPUT_CLOSE:
+                done = true;
+                break;
+            case INPUT_RENDER_HELP:
+                /* Doing a partial update, should preserve the draw region and the
+                 * cursor state within it. */
+                render_help(window, timeout, true);
+                break;
+            case INPUT_RENDER_WINDOW:
+                render_window(window, timeout);
+                break;
+            default:
+                /* INPUT_RENDER_ENTRY is handled by ui_list_input(). */
+                break;
+            }
 
-		    if (done) {
-			    break;
-			}
-		}
-	}
+            if (done)
+                break;
+        }
+    }
 
     console_reset(ui_console);
 }
@@ -329,7 +356,7 @@ static void ui_list_destroy(ui_window_t *window) {
     ui_list_t *list = (ui_list_t *)window;
 
     for (size_t i = 0; i < list->count; i++)
-	ui_entry_destroy(list->entries[i]);
+        ui_entry_destroy(list->entries[i]);
 
     free(list->entries);
 }
@@ -352,8 +379,8 @@ static void render_entry(ui_entry_t *entry, size_t pos, bool selected) {
 
     /* Clear the area. If the entry is selected, it should be highlighted. */
     console_set_colour(ui_console,
-                       (selected) ? COLOUR_BLACK : COLOUR_LIGHT_GREY,
-                       (selected) ? COLOUR_LIGHT_GREY : COLOUR_BLACK);
+        (selected) ? COLOUR_BLACK : COLOUR_LIGHT_GREY,
+        (selected) ? COLOUR_LIGHT_GREY : COLOUR_BLACK);
     console_clear(ui_console, 0, 0, 0, 0);
 
     /* Render the entry. */
@@ -375,10 +402,10 @@ static void ui_list_render(ui_window_t *window) {
 
     /* Render the entries. */
     for (size_t i = list->offset; i < end; i++) {
-	    size_t pos = i - list->offset;
-	    bool selected = i == list->selected;
-	    render_entry(list->entries[i], pos, selected);
-	}
+        size_t pos = i - list->offset;
+        bool selected = i == list->selected;
+        render_entry(list->entries[i], pos, selected);
+    }
 }
 
 /** Write the help text for a list window.
@@ -387,15 +414,15 @@ static void ui_list_help(ui_window_t *window) {
     ui_list_t *list = (ui_list_t *)window;
 
     if (list->count) {
-	    ui_entry_t *selected = list->entries[list->selected];
+        ui_entry_t *selected = list->entries[list->selected];
 
-	    /* Print help for the selected entry. */
-	    if (selected->type->help)
-		selected->type->help(selected);
-	}
+        /* Print help for the selected entry. */
+        if (selected->type->help)
+            selected->type->help(selected);
+    }
 
     if (list->exitable)
-	ui_print_action('\e', "Back");
+        ui_print_action('\e', "Back");
 }
 
 /** Handle input on a list window.
@@ -408,63 +435,63 @@ static input_result_t ui_list_input(ui_window_t *window, uint16_t key) {
     input_result_t ret;
 
     switch (key) {
-	case CONSOLE_KEY_UP:
-	    if (list->selected == 0)
-		return INPUT_HANDLED;
+    case CONSOLE_KEY_UP:
+        if (list->selected == 0)
+            return INPUT_HANDLED;
 
-	    /* Redraw current entry as not selected. */
-	    entry = list->entries[list->selected];
-	    render_entry(entry, list->selected - list->offset, false);
+        /* Redraw current entry as not selected. */
+        entry = list->entries[list->selected];
+        render_entry(entry, list->selected - list->offset, false);
 
-	    /* If selected becomes less than the offset, must scroll up. */
-	    list->selected--;
-	    if (list->selected < list->offset) {
-		    list->offset--;
-		    console_scroll_up(ui_console);
-		}
+        /* If selected becomes less than the offset, must scroll up. */
+        list->selected--;
+        if (list->selected < list->offset) {
+            list->offset--;
+            console_scroll_up(ui_console);
+        }
 
-	    /* Draw the new entry highlighted. */
-	    entry = list->entries[list->selected];
-	    render_entry(entry, list->selected - list->offset, true);
+        /* Draw the new entry highlighted. */
+        entry = list->entries[list->selected];
+        render_entry(entry, list->selected - list->offset, true);
 
-	    /* Possible actions may have changed, re-render help. */
-	    return INPUT_RENDER_HELP;
-	case CONSOLE_KEY_DOWN:
-	    if (list->selected >= list->count - 1)
-		return INPUT_HANDLED;
+        /* Possible actions may have changed, re-render help. */
+        return INPUT_RENDER_HELP;
+    case CONSOLE_KEY_DOWN:
+        if (list->selected >= list->count - 1)
+            return INPUT_HANDLED;
 
-	    /* Redraw current entry as not selected. */
-	    entry = list->entries[list->selected];
-	    render_entry(entry, list->selected - list->offset, false);
+        /* Redraw current entry as not selected. */
+        entry = list->entries[list->selected];
+        render_entry(entry, list->selected - list->offset, false);
 
-	    /* If selected is now off screen, must scroll down. */
-	    list->selected++;
-	    if (list->selected >= list->offset + CONTENT_HEIGHT) {
-		    list->offset++;
-		    console_scroll_down(ui_console);
-		}
+        /* If selected is now off screen, must scroll down. */
+        list->selected++;
+        if (list->selected >= list->offset + CONTENT_HEIGHT) {
+            list->offset++;
+            console_scroll_down(ui_console);
+        }
 
-	    /* Draw the new entry highlighted. */
-	    entry = list->entries[list->selected];
-	    render_entry(entry, list->selected - list->offset, true);
+        /* Draw the new entry highlighted. */
+        entry = list->entries[list->selected];
+        render_entry(entry, list->selected - list->offset, true);
 
-	    /* Possible actions may have changed, re-render help. */
-	    return INPUT_RENDER_HELP;
-	case '\e':
-	    return (list->exitable) ? INPUT_CLOSE : INPUT_HANDLED;
-	default:
-	    /* Pass through to the selected entry. */
-	    entry = list->entries[list->selected];
-	    ret = entry->type->input(entry, key);
+        /* Possible actions may have changed, re-render help. */
+        return INPUT_RENDER_HELP;
+    case '\e':
+        return (list->exitable) ? INPUT_CLOSE : INPUT_HANDLED;
+    default:
+        /* Pass through to the selected entry. */
+        entry = list->entries[list->selected];
+        ret = entry->type->input(entry, key);
 
-	    /* Re-render the entry if requested. */
-	    if (ret == INPUT_RENDER_ENTRY) {
-		    render_entry(entry, list->selected - list->offset, true);
-		    ret = INPUT_HANDLED;
-		}
+        /* Re-render the entry if requested. */
+        if (ret == INPUT_RENDER_ENTRY) {
+            render_entry(entry, list->selected - list->offset, true);
+            ret = INPUT_HANDLED;
+        }
 
-	    return ret;
-	}
+        return ret;
+    }
 }
 
 /** List window type. */
@@ -506,10 +533,10 @@ void ui_list_insert(ui_window_t *window, ui_entry_t *entry, bool selected) {
     list->entries[pos] = entry;
 
     if (selected) {
-	    list->selected = pos;
-	    if (pos >= CONTENT_HEIGHT)
-		list->offset = (pos - CONTENT_HEIGHT) + 1;
-	}
+        list->selected = pos;
+        if (pos >= CONTENT_HEIGHT)
+            list->offset = (pos - CONTENT_HEIGHT) + 1;
+    }
 }
 
 /** Return whether a list is empty.
@@ -545,12 +572,12 @@ static input_result_t ui_link_input(ui_entry_t *entry, uint16_t key) {
     ui_link_t *link = (ui_link_t *)entry;
 
     switch (key) {
-	case '\n':
-	    ui_display(link->window, ui_console, 0);
-	    return INPUT_RENDER_WINDOW;
-	default:
-	    return INPUT_HANDLED;
-	}
+    case '\n':
+        ui_display(link->window, ui_console, 0);
+        return INPUT_RENDER_WINDOW;
+    default:
+        return INPUT_HANDLED;
+    }
 }
 
 /** Link entry type. */
@@ -578,14 +605,14 @@ ui_entry_t *ui_link_create(ui_window_t *window) {
  * @return              Pointer to created entry. */
 ui_entry_t *ui_entry_create(const char *label, value_t *value) {
     switch (value->type) {
-	case VALUE_TYPE_BOOLEAN:
-	    return ui_checkbox_create(label, value);
-	case VALUE_TYPE_STRING:
-	    return ui_textbox_create(label, value);
-	default:
-	    assert(0 && "Unhandled value type");
-	    return NULL;
-	}
+    case VALUE_TYPE_BOOLEAN:
+        return ui_checkbox_create(label, value);
+    case VALUE_TYPE_STRING:
+        return ui_textbox_create(label, value);
+    default:
+        assert(0 && "Unhandled value type");
+        return NULL;
+    }
 }
 
 /** Render a checkbox.
@@ -612,13 +639,13 @@ static input_result_t ui_checkbox_input(ui_entry_t *entry, uint16_t key) {
     ui_checkbox_t *box = (ui_checkbox_t *)entry;
 
     switch (key) {
-	case '\n':
-	case ' ':
-	    box->value->boolean = !box->value->boolean;
-	    return INPUT_RENDER_ENTRY;
-	default:
-	    return INPUT_HANDLED;
-	}
+    case '\n':
+    case ' ':
+        box->value->boolean = !box->value->boolean;
+        return INPUT_RENDER_ENTRY;
+    default:
+        return INPUT_HANDLED;
+    }
 }
 
 /** Checkbox entry type. */
@@ -660,22 +687,68 @@ static void ui_textbox_editor_help(ui_window_t *window) {
     ui_print_action('\e', "Cancel");
 }
 
+/** Variable substitution error handler.
+ * @param cmd           Name of the command that caused the error.
+ * @param fmt           Error format string.
+ * @param args          Arguments to substitute into format. */
+static void ui_textbox_editor_error_handler(const char *cmd, const char *fmt, va_list args) {
+    uint16_t x, y;
+
+    console_get_cursor(ui_console, &x, &y, NULL);
+    set_error_region();
+    console_clear(ui_console, 0, 0, 0, 0);
+
+    ui_vprintf(fmt, args);
+
+    set_content_region();
+    console_set_cursor(ui_console, x, y, true);
+}
+
 /** Handle input on a textbox editor window.
  * @param window        Window input was performed on.
  * @param key           Key that was pressed.
  * @return              Input handling result. */
 static input_result_t ui_textbox_editor_input(ui_window_t *window, uint16_t key) {
     ui_textbox_editor_t *editor = (ui_textbox_editor_t *)window;
+    value_t *value;
+    char *prev;
+    config_error_handler_t prev_handler;
+    input_result_t ret;
 
     switch (key) {
-	case '\n':
-	    editor->update = true;
-	case '\e':
-	    return INPUT_CLOSE;
-	default:
-	    line_editor_input(&editor->editor, key);
+    case '\n':
+        value = editor->box->value;
+
+        prev = value->string;
+        value->string = line_editor_finish(&editor->editor);
+
+        /* Handle errors that occur during variable substitution. */
+        prev_handler = config_set_error_handler(ui_textbox_editor_error_handler);
+
+        if (value_substitute(value, current_environ)) {
+            free(prev);
+            ret = INPUT_CLOSE;
+        } else {
+            size_t offset = editor->editor.offset;
+
+            line_editor_init(&editor->editor, ui_console, value->string);
+            editor->editor.offset = offset;
+
+            free(value->string);
+            value->string = prev;
+
+            ret = INPUT_HANDLED;
+        }
+
+        config_set_error_handler(prev_handler);
+        return ret;
+    case '\e':
+        line_editor_destroy(&editor->editor);
+        return INPUT_CLOSE;
+    default:
+        line_editor_input(&editor->editor, key);
         return INPUT_HANDLED;
-	}
+    }
 }
 
 /** Text box editor window type. */
@@ -697,14 +770,14 @@ static void ui_textbox_render(ui_entry_t *entry) {
     avail = CONTENT_WIDTH - strlen(box->label) - 3;
     len = strlen(box->value->string);
     if (len > avail) {
-	    ui_printf(" [");
-	    for (size_t i = 0; i < avail - 3; i++)
-		console_putc(ui_console, box->value->string[i]);
-	    ui_printf("...]");
-	} else {
-	    console_set_cursor(ui_console, 0 - len - 2, 0, false);
-	    ui_printf("[%s]", box->value->string);
-	}
+        ui_printf(" [");
+        for (size_t i = 0; i < avail - 3; i++)
+            console_putc(ui_console, box->value->string[i]);
+        ui_printf("...]");
+    } else {
+        console_set_cursor(ui_console, 0 - len - 2, 0, false);
+        ui_printf("[%s]", box->value->string);
+    }
 }
 
 /** Write the help text for a textbox.
@@ -721,34 +794,25 @@ static input_result_t ui_textbox_input(ui_entry_t *entry, uint16_t key) {
     ui_textbox_t *box = (ui_textbox_t *)entry;
 
     if (key == '\n') {
-	    ui_textbox_editor_t editor;
-	    size_t len;
-	    char *title __cleanup_free;
+        ui_textbox_editor_t editor;
+        size_t len;
+        char *title __cleanup_free;
 
-	    /* Determine the window title. */
-	    len = strlen(box->label) + 8;
-	    title = malloc(len);
-	    snprintf(title, len, "Edit '%s'", box->label);
+        /* Determine the window title. */
+        len = strlen(box->label) + 8;
+        title = malloc(len);
+        snprintf(title, len, "Edit '%s'", box->label);
 
-	    editor.window.type = &ui_textbox_editor_window_type;
-	    editor.window.title = title;
-	    editor.update = false;
+        editor.window.type = &ui_textbox_editor_window_type;
+        editor.window.title = title;
+        editor.box = box;
+        line_editor_init(&editor.editor, ui_console, box->value->string);
 
-	    line_editor_init(&editor.editor, ui_console, box->value->string);
-
-	    ui_display(&editor.window, ui_console, 0);
-
-	    if (editor.update) {
-		    free(box->value->string);
-		    box->value->string = line_editor_finish(&editor.editor, NULL);
-        } else {
-		    line_editor_destroy(&editor.editor);
-		}
-
-	    return INPUT_RENDER_WINDOW;
-	} else {
-	    return INPUT_HANDLED;
-	}
+        ui_display(&editor.window, ui_console, 0);
+        return INPUT_RENDER_WINDOW;
+    } else {
+        return INPUT_HANDLED;
+    }
 }
 
 /** Textbox entry type. */
@@ -794,35 +858,35 @@ static void ui_chooser_render(ui_entry_t *entry) {
     ui_printf("%s", chooser->label);
 
     if (chooser->selected->label) {
-	    snprintf(buf, sizeof(buf), "%s", chooser->selected->label);
-	} else {
-	    switch (chooser->value->type) {
-		case VALUE_TYPE_INTEGER:
-		    snprintf(buf, sizeof(buf), "%" PRIu64, chooser->value->integer);
-		    break;
-		case VALUE_TYPE_BOOLEAN:
-		    snprintf(buf, sizeof(buf), (chooser->value->boolean) ? "True" : "False");
-		    break;
-		case VALUE_TYPE_STRING:
-		    snprintf(buf, sizeof(buf), "%s", chooser->value->string);
-		    break;
-		default:
-		    unreachable();
-		}
-	}
+        snprintf(buf, sizeof(buf), "%s", chooser->selected->label);
+    } else {
+        switch (chooser->value->type) {
+        case VALUE_TYPE_INTEGER:
+            snprintf(buf, sizeof(buf), "%" PRIu64, chooser->value->integer);
+            break;
+        case VALUE_TYPE_BOOLEAN:
+            snprintf(buf, sizeof(buf), (chooser->value->boolean) ? "True" : "False");
+            break;
+        case VALUE_TYPE_STRING:
+            snprintf(buf, sizeof(buf), "%s", chooser->value->string);
+            break;
+        default:
+            unreachable();
+        }
+    }
 
     /* Work out the length available to put the string in. */
     avail = CONTENT_WIDTH - strlen(chooser->label) - 3;
     len = strlen(buf);
     if (len > avail) {
-	    ui_printf(" [");
-	    for (size_t i = 0; i < avail - 3; i++)
-		console_putc(ui_console, buf[i]);
-	    ui_printf("...]");
-	} else {
-	    console_set_cursor(ui_console, 0 - len - 2, 0, false);
-	    ui_printf("[%s]", buf);
-	}
+        ui_printf(" [");
+        for (size_t i = 0; i < avail - 3; i++)
+            console_putc(ui_console, buf[i]);
+        ui_printf("...]");
+    } else {
+        console_set_cursor(ui_console, 0 - len - 2, 0, false);
+        ui_printf("[%s]", buf);
+    }
 }
 
 /** Write the help text for a chooser.
@@ -839,11 +903,11 @@ static input_result_t ui_chooser_input(ui_entry_t *entry, uint16_t key) {
     ui_chooser_t *chooser = (ui_chooser_t *)entry;
 
     if (key == '\n') {
-	    ui_display(chooser->list, ui_console, 0);
-	    return INPUT_RENDER_WINDOW;
-	} else {
-	    return INPUT_HANDLED;
-	}
+        ui_display(chooser->list, ui_console, 0);
+        return INPUT_RENDER_WINDOW;
+    } else {
+        return INPUT_HANDLED;
+    }
 }
 
 /** Chooser entry type. */
@@ -872,14 +936,14 @@ ui_entry_t *ui_chooser_create(const char *label, value_t *value) {
     ui_chooser_t *chooser;
 
     switch (value->type) {
-	case VALUE_TYPE_INTEGER:
-	case VALUE_TYPE_BOOLEAN:
-	case VALUE_TYPE_STRING:
-	    break;
-	default:
-	    assert(0 && "Choice not implemented for this type");
-	    break;
-	}
+    case VALUE_TYPE_INTEGER:
+    case VALUE_TYPE_BOOLEAN:
+    case VALUE_TYPE_STRING:
+        break;
+    default:
+        assert(0 && "Choice not implemented for this type");
+        break;
+    }
 
     chooser = malloc(sizeof(*chooser));
     chooser->entry.type = &ui_chooser_entry_type;
@@ -905,22 +969,22 @@ static void ui_choice_render(ui_entry_t *entry) {
     ui_choice_t *choice = (ui_choice_t *)entry;
 
     if (choice->label) {
-	    ui_printf("%s", choice->label);
-	} else {
-	    switch (choice->value.type) {
-		case VALUE_TYPE_INTEGER:
-		    ui_printf("%" PRIu64, choice->value.integer);
-		    break;
-		case VALUE_TYPE_BOOLEAN:
-		    ui_printf((choice->value.boolean) ? "True" : "False");
-		    break;
-		case VALUE_TYPE_STRING:
-		    ui_printf("%s", choice->value.string);
-		    break;
-		default:
-		    unreachable();
-		}
-	}
+        ui_printf("%s", choice->label);
+    } else {
+        switch (choice->value.type) {
+        case VALUE_TYPE_INTEGER:
+            ui_printf("%" PRIu64, choice->value.integer);
+            break;
+        case VALUE_TYPE_BOOLEAN:
+            ui_printf((choice->value.boolean) ? "True" : "False");
+            break;
+        case VALUE_TYPE_STRING:
+            ui_printf("%s", choice->value.string);
+            break;
+        default:
+            unreachable();
+        }
+    }
 }
 
 /** Write the help text for a choice.
@@ -937,13 +1001,13 @@ static input_result_t ui_choice_input(ui_entry_t *entry, uint16_t key) {
     ui_choice_t *choice = (ui_choice_t *)entry;
 
     if (key == '\n') {
-	    choice->chooser->selected = choice;
-	    value_destroy(choice->chooser->value);
-	    value_copy(&choice->value, choice->chooser->value);
-	    return INPUT_CLOSE;
-	} else {
-	    return INPUT_HANDLED;
-	}
+        choice->chooser->selected = choice;
+        value_destroy(choice->chooser->value);
+        value_copy(&choice->value, choice->chooser->value);
+        return INPUT_CLOSE;
+    } else {
+        return INPUT_HANDLED;
+    }
 }
 
 /** Choice entry type. */
@@ -973,29 +1037,8 @@ void ui_chooser_insert(ui_entry_t *entry, const value_t *value, char *label) {
     value_copy(value, &choice->value);
 
     /* Mark as selected if it matches the current value. */
-    if (!chooser->selected && value_equals(chooser->value, &choice->value)) {
+    if (!chooser->selected && value_equals(chooser->value, &choice->value))
         chooser->selected = choice;
-    }
 
     ui_list_insert(chooser->list, &choice->entry, chooser->selected == choice);
-}
-
-/** Destroy a window.
- * @param window        Window to destroy. */
-void ui_window_destroy(ui_window_t *window) {
-    if (window->type->destroy) {
-        window->type->destroy(window);
-    }
-
-    free(window);
-}
-
-/** Destroy a list entry.
- * @param entry         Entry to destroy. */
-void ui_entry_destroy(ui_entry_t *entry) {
-    if (entry->type->destroy) {
-        entry->type->destroy(entry);
-    }
-
-    free(entry);
 }
