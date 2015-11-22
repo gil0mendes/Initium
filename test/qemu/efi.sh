@@ -19,10 +19,6 @@ entry "Test (32-bit)" {
 entry "Test (64-bit)" {
 	initium "/test-amd64.elf" ["/test-amd64.elf"]
 }
-
-entry "EFI Shell" {
-    efi "shellx64.efi"
-}
 EOF
 
 if [ ! -e ".ovmf-x86_64.bin" ]; then
