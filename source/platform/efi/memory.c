@@ -331,7 +331,7 @@ void memory_finalize(list_t *map) {
     /* Get the current memory map. */
     ret = efi_get_memory_map(&efi_map, &num_entries, &map_key);
     if (ret != EFI_SUCCESS)
-	internal_error("Failed to get memory map (0x%zx)", ret);
+	internal_error("Failed to get memory map: 0x%zx", ret);
 
     /* Add all free ranges to the memory map. */
     for (efi_uintn_t i = 0; i < num_entries; i++) {

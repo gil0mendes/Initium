@@ -329,7 +329,7 @@
      ret = device_read(mount->mount.device, &handle->inode, size, offset);
      if (ret != STATUS_SUCCESS)
      {
-         dprintf("ext2: failed to read inode %" PRIu32 ": %d\n", id, ret);
+         dprintf("ext2: failed to read inode %" PRIu32 ": %pS\n", id, ret);
          free(handle);
          return false;
      }

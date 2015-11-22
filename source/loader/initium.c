@@ -296,7 +296,7 @@ static void load_modules(initium_loader_t *loader) {
 
 	ret = fs_read(module->handle, dest, module->handle->size, 0);
 	if (ret != STATUS_SUCCESS)
-	    boot_error("Error %d reading module '%s'", ret, module->name);
+	    boot_error("Error reading module '%s': %pS", module->name, ret);
 
 	name_size = strlen(module->name) + 1;
 
@@ -575,7 +575,9 @@ static __noreturn void initium_loader_load(void *_loader) {
     initium_loader_t *loader = _loader;
     phys_ptr_t phys;
 
-    dprintf("initium: version %" PRIu32 " image, flags 0x%" PRIx32 "\n", loader->image->version, loader->image->flags);
+    dprintf(
+        "initium: version %" PRIu32 " image, flags 0x%" PRIx32 "\n",
+        loader->image->version, loader->image->flags);
 
     /* Check whether the kernel is supported (CPU feature requirements, etc). */
     initium_arch_check_kernel(loader);
@@ -896,7 +898,7 @@ static bool add_module_list(initium_loader_t *loader, const value_list_t *list) 
 
 	    ret = fs_open(path, NULL, FILE_TYPE_REGULAR, &module->handle);
 	    if (ret != STATUS_SUCCESS) {
-		    config_error("Error %d opening module '%s'", ret, path);
+		    config_error("Error opening module '%s': %pS", path, ret);
 		    free(module);
 		    return false;
 		}
@@ -929,7 +931,7 @@ static bool add_module_dir_cb(const fs_entry_t *entry, void *_loader) {
 
     ret = fs_open_entry(entry, FILE_TYPE_NONE, &module->handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("Error %d opening module '%s'", ret, entry->name);
+	    config_error("Error opening module '%s': %pS", entry->name, ret);
 	    free(module);
 	    loader->success = false;
 	    return false;
@@ -958,7 +960,7 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
 
     ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("Error %d opening '%s'", ret, path);
+	    config_error("Error opening '%s': %pS", path, ret);
 	    return false;
 	}
 
@@ -967,7 +969,7 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
     ret = fs_iterate(handle, add_module_dir_cb, loader);
     fs_close(handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("Error %d iterating '%s'", ret, path);
+	    config_error("Error iterating '%s': %pS", path, ret);
 	    return false;
 	}
 
@@ -996,7 +998,7 @@ static bool config_cmd_initium(value_list_t *args) {
     /* Open the kernel image. */
     ret = fs_open(loader->path, NULL, FILE_TYPE_REGULAR, &loader->handle);
     if (ret != STATUS_SUCCESS) {
-	    config_error("Error %d opening '%s'", ret, loader->path);
+	    config_error("Error opening '%s': %pS", loader->path, ret);
 	    goto err_free;
 	}
 
@@ -1006,7 +1008,7 @@ static bool config_cmd_initium(value_list_t *args) {
 	    if (ret == STATUS_UNKNOWN_IMAGE) {
 		    config_error("'%s' is not a supported ELF image", loader->path);
 		} else {
-		    config_error("Error %d reading '%s'", ret, loader->path);
+		    config_error("Error reading '%s': %pS", loader->path, ret);
 		}
 
 	    goto err_close;
@@ -1016,7 +1018,7 @@ static bool config_cmd_initium(value_list_t *args) {
     loader->success = true;
     ret = initium_elf_iterate_notes(loader, add_image_tag);
     if (ret != STATUS_SUCCESS) {
-	    config_error("Error %d while loading image tags from '%s'", ret, loader->path);
+	    config_error("Error loading image tags from '%s': %pS", loader->path, ret);
 	    goto err_itags;
 	} else if (!loader->success) {
 	    goto err_itags;

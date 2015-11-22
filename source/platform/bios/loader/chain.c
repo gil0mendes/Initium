@@ -65,7 +65,7 @@
      }
 
      if (ret != STATUS_SUCCESS) {
-         boot_error("Failed to read boot sector (%d)", ret);
+         boot_error("Failed to read boot sector: %pS", ret);
      } else if (mbr->signature != MBR_SIGNATURE) {
          boot_error("Boot sector has invalid signature");
      }
@@ -83,7 +83,7 @@
                  &parent->device, (void *)PARTITION_TABLE_ADDR,
                  sizeof(mbr->partitions), offsetof(mbr_t, partitions));
              if (ret != STATUS_SUCCESS)
-                 boot_error("Failed to read partition table (%d)", ret);
+                 boot_error("Failed to read partition table: %pS", ret);
 
              partition_addr = PARTITION_TABLE_ADDR + (disk->id * sizeof(mbr->partitions[0]));
          }
@@ -114,7 +114,7 @@
      if (args->count == 1) {
          status_t ret = fs_open(args->values[0].string, NULL, FILE_TYPE_REGULAR, &handle);
          if (ret != STATUS_SUCCESS) {
-             config_error("Error %d opening '%s'", ret, args->values[0].string);
+             config_error("Error opening '%s': %pS", args->values[0].string, ret);
              return false;
          }
 

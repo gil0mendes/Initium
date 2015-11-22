@@ -61,7 +61,7 @@ fs_mount_t *fs_probe(device_t *device) {
             /* End of file usually means no media. */
             break;
         default:
-            dprintf("fs: error %d while probing device %s\n", ret, device->name);
+            dprintf("fs: error while probing device %s: %pS\n", device->name, ret);
             return NULL;
         }
     }
@@ -343,14 +343,7 @@ static bool config_cmd_cd(value_list_t *args) {
     ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS)
     {
-        if (ret == STATUS_NOT_FOUND)
-        {
-            config_error("Directory '%s' not found", path);
-        } else
-        {
-            config_error("Error %d opening directory '%s'", ret, path);
-        }
-
+        config_error("Error opening directory '%s': %sS", path, ret);
         return false;
     } else if (handle->mount->device != current_environ->device)
     {
@@ -415,13 +408,7 @@ static bool config_cmd_ls(value_list_t *args) {
     ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS)
     {
-        if (ret == STATUS_NOT_FOUND)
-        {
-            config_error("Directory '%s' not found", path);
-        } else {
-            config_error("Error %d opening directory '%s'", ret, path);
-        }
-
+        config_error("Error opening directory '%s': %sS", path, ret);
         return false;
     }
 
@@ -431,7 +418,7 @@ static bool config_cmd_ls(value_list_t *args) {
     ret = fs_iterate(handle, config_cmd_ls_cb, NULL);
     if (ret != STATUS_SUCCESS)
     {
-        config_error("Error %d iterating directory '%s'", ret, path);
+        config_error("Error iterating directory '%s': %pS", path, ret);
         return false;
     }
 
@@ -477,14 +464,7 @@ static bool config_cmd_cat(value_list_t *args) {
         ret = fs_open(path, NULL, FILE_TYPE_REGULAR, &handle);
         if (ret != STATUS_SUCCESS)
         {
-            if (ret == STATUS_NOT_FOUND)
-            {
-                config_error("File '%s' not found", path);
-            } else
-            {
-                config_error("Error %d opening file '%s'", ret, path);
-            }
-
+            config_error("Error opening file '%s': %pS", path, ret);
             return false;
         }
 
@@ -496,7 +476,7 @@ static bool config_cmd_cat(value_list_t *args) {
             ret = fs_read(handle, buf, size, offset);
             if (ret != STATUS_SUCCESS)
             {
-                config_error("Error %d reading file '%s'", ret, path);
+                config_error("Error reading file '%s': %pS", path, ret);
                 return false;
             }
 
