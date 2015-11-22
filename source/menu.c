@@ -232,13 +232,8 @@ environ_t *menu_display(void) {
  */
 static void entry_error_handle(const char *cmd, const char *fmt, va_list args) {
     char *buf = malloc(256);
-    size_t count = 0;
 
-    if (cmd) {
-	    count = snprintf(buf + count, 256 - count, "%s: ", cmd);
-	}
-
-    vsnprintf(buf + count, 256 - count, fmt, args);
+    vsnprintf(buf, 256, fmt, args);
 
     assert(!executing_menu_entry->error);
     executing_menu_entry->error = buf;

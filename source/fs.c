@@ -343,7 +343,7 @@ static bool config_cmd_cd(value_list_t *args) {
     ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS)
     {
-        config_error("Error opening directory '%s': %sS", path, ret);
+        config_error("Error opening directory '%s': %pS", path, ret);
         return false;
     } else if (handle->mount->device != current_environ->device)
     {
@@ -408,7 +408,7 @@ static bool config_cmd_ls(value_list_t *args) {
     ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS)
     {
-        config_error("Error opening directory '%s': %sS", path, ret);
+        config_error("Error opening directory '%s': %pS", path, ret);
         return false;
     }
 
