@@ -27,7 +27,7 @@
  * @brief               Initium test kernel.
  */
 
-#include "test.h"
+#include <test.h>
 
 INITIUM_IMAGE(INITIUM_IMAGE_SECTIONS | INITIUM_IMAGE_LOG);
 INITIUM_VIDEO(INITIUM_VIDEO_LFB | INITIUM_VIDEO_VGA, 0, 0, 0);
@@ -398,14 +398,17 @@ static void dump_efi_tag(initium_tag_efi_t *tag) {
  * @param magic         Initium magic number.
  * @param tags          Tag list pointer. */
 void kmain(uint32_t magic, initium_tag_t *tags) {
+    debug_console_init();
+
     if (magic != INITIUM_MAGIC) {
-	    while (true)
-		arch_pause();
+        printf("Incorrect magic number 0x%x\n", magic);
+	    while (true) {
+            arch_pause();
+        }
 	}
 
-    console_init(tags);
-    log_init(tags);
     mm_init(tags);
+    console_init(tags);
 
     printf("Test kernel loaded: magic: 0x%x, tags: %p\n", magic, tags);
 

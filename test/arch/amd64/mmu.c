@@ -27,7 +27,7 @@
  * @brief               AMD64 MMU code.
  */
 
-#include "test.h"
+#include <test.h>
 
 /**
  * Initialize the MMU code.

@@ -49,7 +49,7 @@
 #   define PHYS_MAP_BASE        0xfffffffe00000000
 #   define PHYS_MAP_SIZE        0x100000000
 #   define VIRT_MAP_BASE        0xffffffff00000000
-#   define VIRT_MAP_SIZE        0x100000000
+#   define VIRT_MAP_SIZE        0x80000000
 #   define PHYS_MAX             0xffffffffffffffff
 #else
 #   define VIRT_MAP_BASE        0xc0000000
@@ -67,8 +67,8 @@ extern phys_ptr_t phys_alloc(phys_size_t size);
 extern int vprintf(const char *fmt, va_list args);
 extern int printf(const char *fmt, ...) __printf(1, 2);
 
+extern void debug_console_init(void);
 extern void console_init(initium_tag_t *tags);
-extern void log_init(initium_tag_t *tags);
 extern void mm_init(initium_tag_t *tags);
 extern void mmu_init(initium_tag_t *tags);
 
