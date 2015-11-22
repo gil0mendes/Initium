@@ -33,6 +33,8 @@
 
 #include <test.h>
 
+INITIUM_VIDEO(INITIUM_VIDEO_VGA | INITIUM_VIDEO_LFB, 0, 0, 0);
+
 /** Serial port definitions. */
 #define SERIAL_PORT         0x3f8
 #define SERIAL_CLOCK        1843200

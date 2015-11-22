@@ -30,7 +30,6 @@
 #include <test.h>
 
 INITIUM_IMAGE(INITIUM_IMAGE_SECTIONS | INITIUM_IMAGE_LOG);
-INITIUM_VIDEO(INITIUM_VIDEO_LFB | INITIUM_VIDEO_VGA, 0, 0, 0);
 INITIUM_BOOLEAN_OPTION("bool_option", "Boolean option", true);
 INITIUM_STRING_OPTION("string_option", "String option", "Default Value");
 
