@@ -89,6 +89,7 @@ typedef struct value {
 /** Structure describing a command. */
 typedef struct command {
     const char *name;                   /**< Name of the command. */
+    const char *description;            /**< Description of the command. */
 
     /** Execute the command.
      * @param args          List of arguments.
@@ -97,9 +98,10 @@ typedef struct command {
 } command_t;
 
 /** Define a builtin command. */
-#define BUILTIN_COMMAND(name, func) \
+#define BUILTIN_COMMAND(name, description, func) \
     static command_t __command_##func __used = { \
         name, \
+        description, \
         func \
     }; \
     DEFINE_BUILTIN(BUILTIN_TYPE_COMMAND, __command_##func)

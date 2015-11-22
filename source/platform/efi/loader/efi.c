@@ -203,9 +203,12 @@ static efi_device_path_t *convert_file_path(fs_handle_t *handle, const char *pat
     return &efi_path->header;
 }
 
-/** Load an EFI executable.
+/**
+ * Load an EFI application.
+ *
  * @param args          Argument list.
- * @return              Whether successful. */
+ * @return              Whether successful.
+ */
 static bool config_cmd_efi(value_list_t *args) {
     efi_loader_t *loader;
     const char *path;
@@ -249,4 +252,4 @@ err_free:
     return false;
 }
 
-BUILTIN_COMMAND("efi", config_cmd_efi);
+BUILTIN_COMMAND("efi", "Load an EFI application", config_cmd_efi);

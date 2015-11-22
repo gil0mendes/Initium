@@ -1102,4 +1102,4 @@ err_free:
     return false;
 }
 
-BUILTIN_COMMAND("initium", config_cmd_initium);
+BUILTIN_COMMAND("initium", "Load a Initium kernel", config_cmd_initium);

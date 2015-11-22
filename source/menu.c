@@ -291,4 +291,4 @@ static bool config_cmd_entry(value_list_t *args) {
     return true;
 }
 
-BUILTIN_COMMAND("entry", config_cmd_entry);
+BUILTIN_COMMAND("entry", NULL, config_cmd_entry);
