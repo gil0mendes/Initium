@@ -894,14 +894,9 @@ static bool add_module_list(initium_loader_t *loader, const value_list_t *list) 
 
 	    module = malloc(sizeof(*module));
 
-	    ret = fs_open(path, NULL, &module->handle);
+	    ret = fs_open(path, NULL, FILE_TYPE_REGULAR, &module->handle);
 	    if (ret != STATUS_SUCCESS) {
 		    config_error("Error %d opening module '%s'", ret, path);
-		    free(module);
-		    return false;
-		} else if (module->handle->directory) {
-		    config_error("'%s' is a directory", path);
-		    fs_close(module->handle);
 		    free(module);
 		    return false;
 		}
@@ -932,14 +927,14 @@ static bool add_module_dir_cb(const fs_entry_t *entry, void *_loader) {
 
     module = malloc(sizeof(*module));
 
-    ret = fs_open_entry(entry, &module->handle);
+    ret = fs_open_entry(entry, FILE_TYPE_NONE, &module->handle);
     if (ret != STATUS_SUCCESS) {
 	    config_error("Error %d opening module '%s'", ret, entry->name);
 	    free(module);
 	    loader->success = false;
 	    return false;
-	} else if (module->handle->directory) {
-	    /* Ignore it. */
+	} else if (module->handle->type == FILE_TYPE_DIR) {
+	    /* Ignore directories. */
 	    fs_close(module->handle);
 	    free(module);
 	    return true;
@@ -961,13 +956,9 @@ static bool add_module_dir(initium_loader_t *loader, const char *path) {
     fs_handle_t *handle;
     status_t ret;
 
-    ret = fs_open(path, NULL, &handle);
+    ret = fs_open(path, NULL, FILE_TYPE_DIR, &handle);
     if (ret != STATUS_SUCCESS) {
 	    config_error("Error %d opening '%s'", ret, path);
-	    return false;
-	} else if (!handle->directory) {
-	    config_error("'%s' is not a directory", path);
-	    fs_close(handle);
 	    return false;
 	}
 
@@ -1003,13 +994,10 @@ static bool config_cmd_initium(value_list_t *args) {
     loader->path = args->values[0].string;
 
     /* Open the kernel image. */
-    ret = fs_open(loader->path, NULL, &loader->handle);
+    ret = fs_open(loader->path, NULL, FILE_TYPE_REGULAR, &loader->handle);
     if (ret != STATUS_SUCCESS) {
 	    config_error("Error %d opening '%s'", ret, loader->path);
 	    goto err_free;
-	} else if (loader->handle->directory) {
-	    config_error("'%s' is a directory", loader->path);
-	    goto err_close;
 	}
 
     /* Check if the image is a valid ELF image. */

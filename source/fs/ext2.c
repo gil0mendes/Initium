@@ -291,13 +291,16 @@
      return STATUS_SUCCESS;
  }
 
- /** Open an inode from the filesystem.
+ /**
+  * Open an inode from the filesystem.
+  *
   * @param mount         Mount to read from.
   * @param id            ID of node. If the node is a symbolic link, the link
   *                      destination will be returned.
   * @param owner         Directory that the inode was found in.
   * @param _handle       Where to store pointer to handle.
-  * @return              Status code describing the result of the operation. */
+  * @return              Status code describing the result of the operation.
+  */
  static status_t open_inode(ext2_mount_t *mount, uint32_t id, ext2_handle_t *owner, fs_handle_t **_handle) {
      size_t group, size;
      offset_t offset;
@@ -307,7 +310,8 @@
 
      /* Get the group descriptor table containing the inode. */
      group = (id - 1) / mount->inodes_per_group;
-     if (group >= mount->block_groups) {
+     if (group >= mount->block_groups)
+     {
          dprintf("ext2: bad inode number %" PRIu32 "\n", id);
          return STATUS_CORRUPT_FS;
      }
@@ -323,21 +327,24 @@
          ((offset_t)((id - 1) % mount->inodes_per_group) * mount->inode_size);
 
      ret = device_read(mount->mount.device, &handle->inode, size, offset);
-     if (ret != STATUS_SUCCESS) {
+     if (ret != STATUS_SUCCESS)
+     {
          dprintf("ext2: failed to read inode %" PRIu32 ": %d\n", id, ret);
          free(handle);
          return false;
      }
 
      type = le16_to_cpu(handle->inode.i_mode) & EXT2_S_IFMT;
-     handle->handle.directory = type == EXT2_S_IFDIR;
+     handle->handle.type = (type == EXT2_S_IFDIR) ? FILE_TYPE_DIR : FILE_TYPE_REGULAR;
      handle->handle.size = le32_to_cpu(handle->inode.i_size);
-     if (type == EXT2_S_IFREG) {
+     if (type == EXT2_S_IFREG)
+     {
          handle->handle.size |= (offset_t)le32_to_cpu(handle->inode.i_size_high) << 32;
      }
 
      /* Check for a symbolic link. */
-     if (type == EXT2_S_IFLNK) {
+     if (type == EXT2_S_IFLNK)
+     {
          char *dest __cleanup_free;
 
          assert(owner);
@@ -345,11 +352,14 @@
          /* Read in the link and try to open that path. */
          dest = malloc(handle->handle.size + 1);
          dest[handle->handle.size] = 0;
-         if (le32_to_cpu(handle->inode.i_blocks) == 0) {
+         if (le32_to_cpu(handle->inode.i_blocks) == 0)
+         {
              memcpy(dest, handle->inode.i_block, handle->handle.size);
-         } else {
+         } else
+         {
              ret = ext2_read(&handle->handle, dest, handle->handle.size, 0);
-             if (ret != STATUS_SUCCESS) {
+             if (ret != STATUS_SUCCESS)
+             {
                  free(handle);
                  return ret;
              }
@@ -358,12 +368,15 @@
          free(handle);
 
          if (mount->symlink_count++ >= EXT2_SYMLINK_LIMIT)
+         {
              return STATUS_SYMLINK_LIMIT;
+         }
 
-         ret = fs_open(dest, &owner->handle, _handle);
+         ret = fs_open(dest, &owner->handle, FILE_TYPE_NONE, _handle);
          mount->symlink_count--;
          return ret;
-     } else if (type != EXT2_S_IFDIR && type != EXT2_S_IFREG) {
+     } else if (type != EXT2_S_IFDIR && type != EXT2_S_IFREG)
+     {
          /* Don't support reading other types here. */
          free(handle);
          return STATUS_NOT_SUPPORTED;

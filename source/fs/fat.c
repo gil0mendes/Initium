@@ -94,8 +94,9 @@ static status_t fat_read(fs_handle_t *_handle, void *buf, size_t count, offset_t
     uint32_t start_logical, current_logical, current_physical;
 
     /* Special case for root directory on FAT12/16. */
-    if (!handle->cluster) {
-        assert(handle->handle.directory);
+    if (!handle->cluster)
+    {
+        assert(handle->handle.type == FILE_TYPE_DIR);
         return device_read(mount->mount.device, buf, count, mount->root_offset + offset);
     }
 
@@ -105,12 +106,14 @@ static status_t fat_read(fs_handle_t *_handle, void *buf, size_t count, offset_t
     /* Traverse the cluster chain. */
     current_logical = 0;
     current_physical = handle->cluster;
-    while (count) {
+    while (count)
+    {
         offset_t fat_offset;
         uint32_t fat_entry;
         status_t ret;
 
-        if (current_logical >= start_logical) {
+        if (current_logical >= start_logical)
+        {
             uint32_t cluster_offset = offset % mount->cluster_size;
             uint32_t cluster_count = min(count, mount->cluster_size - cluster_offset);
             offset_t device_offset = mount->data_offset
@@ -120,7 +123,9 @@ static status_t fat_read(fs_handle_t *_handle, void *buf, size_t count, offset_t
             /* Read the required data from this cluster. */
             ret = device_read(mount->mount.device, buf, cluster_count, device_offset);
             if (ret != STATUS_SUCCESS)
+            {
                 return ret;
+            }
 
             buf += cluster_count;
             offset += cluster_count;
@@ -129,7 +134,9 @@ static status_t fat_read(fs_handle_t *_handle, void *buf, size_t count, offset_t
             /* Don't bother trying to find next cluster if we have nothing more
              * to read. */
             if (!count)
+            {
                 break;
+            }
         }
 
         /* Determine the offset in the FAT of the current entry. */
@@ -152,23 +159,31 @@ static status_t fat_read(fs_handle_t *_handle, void *buf, size_t count, offset_t
         fat_entry = 0;
         ret = device_read(mount->mount.device, &fat_entry, round_up(mount->fat_type, 8) / 8, fat_offset);
         if (ret != STATUS_SUCCESS)
+        {
             return ret;
+        }
 
         fat_entry = le32_to_cpu(fat_entry);
-        if (mount->fat_type == 12) {
+        if (mount->fat_type == 12)
+        {
             /* Handle non-byte-aligned entries. */
             if (current_physical & 1)
+            {
                 fat_entry >>= 4;
+            }
             fat_entry &= 0xfff;
-        } else if (mount->fat_type == 32) {
+        } else if (mount->fat_type == 32)
+        {
             fat_entry &= 0xfffffff;
         }
 
-        if (fat_entry >= mount->end_marker) {
+        if (fat_entry >= mount->end_marker)
+        {
             /* End of file reached (may get here for directories, which we do
              * not know the total size for). */
             return STATUS_END_OF_FILE;
-        } else if (fat_entry < 2 || fat_entry >= mount->total_clusters) {
+        } else if (fat_entry < 2 || fat_entry >= mount->total_clusters)
+        {
             fat_warn(handle, "invalid cluster number 0x%" PRIx32, fat_entry);
             return STATUS_CORRUPT_FS;
         }
@@ -186,10 +201,11 @@ static status_t fat_open_entry(const fs_entry_t *_entry, fs_handle_t **_handle) 
 
     handle = malloc(sizeof(*handle));
     handle->handle.mount = _entry->owner->mount;
-    handle->handle.directory = state->entry.attributes & FAT_ATTRIBUTE_DIRECTORY;
+    handle->handle.type =
+        (state->entry.attributes & FAT_ATTRIBUTE_DIRECTORY) ? FILE_TYPE_DIR : FILE_TYPE_REGULAR;
     handle->handle.size = le32_to_cpu(state->entry.file_size);
-    handle->cluster = (le16_to_cpu(state->entry.first_cluster_high) << 16)
-        | le16_to_cpu(state->entry.first_cluster_low);
+    handle->cluster =
+        (le16_to_cpu(state->entry.first_cluster_high) << 16) | le16_to_cpu(state->entry.first_cluster_low);
 
     *_handle = &handle->handle;
     return STATUS_SUCCESS;
@@ -542,7 +558,7 @@ static status_t fat_mount(device_t *device, fs_mount_t **_mount) {
      * it to 0 which fat_read() takes to refer to the root directory. */
     root = malloc(sizeof(*root));
     root->handle.mount = &mount->mount;
-    root->handle.directory = true;
+    root->handle.type = FILE_TYPE_DIR;
     root->handle.size = root_sectors * sector_size;
     root->cluster = (mount->fat_type == 32) ? le32_to_cpu(bpb.fat32.root_cluster) : 0;
     mount->mount.root = &root->handle;
