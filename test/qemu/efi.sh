@@ -6,7 +6,7 @@ fsdir=${builddir}/testfs
 mkdir ${fsdir}
 mkdir -p ${fsdir}/efi/boot
 
-cp ${builddir}/bin/bootx64.efi ${fsdir}/efi/boot/
+cp ${builddir}/bin/initiumx64.efi ${fsdir}/efi/boot/
 cp ${builddir}/test/test-ia32.elf ${builddir}/test/test-amd64.elf ${fsdir}/
 
 cat > ${fsdir}/loader.cfg << EOF

@@ -71,7 +71,7 @@ env['CCFLAGS'] += ['-include', 'build/%s-%s/config.h' % (config['ARCH'], config[
 env['ASFLAGS'] += ['-include', 'build/%s-%s/config.h' % (config['ARCH'], config['PLATFORM'])]
 
 # Platform code needs the location of the loader binary.
-env['LOADER'] = File('loader.elf')
+env['INITIUM'] = File('initium.elf')
 
 # Get the list of source files from the architecture/platform.
 arch_sources = SConscript(dirs = ['arch/' + config['BOOTARCH']], exports = vars)
@@ -82,7 +82,7 @@ objects = map(env.Object, sources)
 
 # Link the loader.
 linkflags = env['LINKFLAGS'] + ['-Wl,-T,$LDSCRIPT']
-target = env.Program('loader.elf', objects, LINKFLAGS = linkflags)
+target = env.Program('initium.elf', objects, LINKFLAGS = linkflags)
 Depends(target, env['LDSCRIPT'])
 
 # Generate various information files.
