@@ -52,9 +52,6 @@ fs_mount_t *fs_probe(device_t *device) {
             mount->ops = ops;
             mount->device = device;
 
-            if (mount->root)
-                mount->root->count = 1;
-
             return mount;
         case STATUS_UNKNOWN_FS:
         case STATUS_END_OF_FILE:
@@ -100,8 +97,6 @@ status_t fs_open_entry(const fs_entry_t *entry, file_type_t type, fs_handle_t **
     ret = entry->owner->mount->ops->open_entry(entry, &handle);
     if (ret != STATUS_SUCCESS)
         return ret;
-
-    handle->count = 1;
 
     if (type != FILE_TYPE_NONE && handle->type != type)
     {
@@ -209,8 +204,6 @@ status_t fs_open(const char *path, fs_handle_t *from, file_type_t type, fs_handl
         ret = mount->ops->open_path(mount, dup, from, &handle);
         if (ret != STATUS_SUCCESS)
             return ret;
-
-        handle->count = 1;
     } else {
         handle = from;
         fs_retain(handle);

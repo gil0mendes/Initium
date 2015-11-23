@@ -34,7 +34,7 @@ sources = FeatureSources(config, [
   'memory.c',
   'console.c',
   'platform.c',
-  #'multiboot.c',
+  'multiboot.c',
 ])
 
 # Set the linker script path.

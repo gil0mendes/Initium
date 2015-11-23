@@ -318,6 +318,7 @@
 
      handle = malloc(sizeof(*handle));
      handle->handle.mount = &mount->mount;
+     handle->handle.count = 1;
      handle->num = id;
 
      /* Get the size of the inode and its offset in the group's inode table. */
