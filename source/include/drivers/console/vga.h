@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,8 @@
  * @brief         VGA console implementation
  */
 
-#ifndef __DRIVERS_VIDEO_VGA_H
-#define __DRIVERS_VIDEO_VGA_H
+#ifndef __DRIVERS_CONSOLE_VGA_H
+#define __DRIVERS_CONSOLE_VGA_H
 
 #include <console.h>
 
@@ -36,6 +36,6 @@
 #define VGA_CRTC_INDEX		0x3d4
 #define VGA_CRTC_DATA		0x3d5
 
-extern console_out_ops_t vga_console_out_ops;
+extern console_out_t *vga_console_create(void);
 
-#endif /* __DRIVERS_VIDEO_VGA_H */
+#endif /* __DRIVERS_CONSOLE_VGA_H */

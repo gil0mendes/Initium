@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@
      }
 
      dprintf("chain: chainloading device %s (id: 0x%x)\n", disk->device.name, disk_id);
-     console_reset(&main_console);
+     console_reset(current_console);
      chain_loader_enter(disk_id, partition_addr);
  }
 

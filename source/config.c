@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -144,9 +144,6 @@ static const char *reserved_environ_names[] = {
     "device_label",
     "device_uuid",
 };
-
-/** Console to use for configuration command output. */
-console_t *config_console;
 
 /** Overridden configuration file path. */
 char *config_file_override;
@@ -1123,12 +1120,12 @@ static bool config_cmd_help(value_list_t *args) {
 
     qsort(commands, count, sizeof(*commands), command_sort_compare);
 
-    config_printf("Command       Description\n");
-    config_printf("-------       -----------\n");
+    printf("Command       Description\n");
+    printf("-------       -----------\n");
 
     for (size_t i = 0; i < count; i++)
     {
-        config_printf("%-12s  %s\n", commands[i].name, commands[i].description);
+        printf("%-12s  %s\n", commands[i].name, commands[i].description);
     }
 
     return true;
@@ -1186,7 +1183,7 @@ static bool config_cmd_env(value_list_t *args) {
             break;
         }
 
-        config_printf("%s = (%s) %s\n", entry->name, type, temp_buf);
+        printf("%s = (%s) %s\n", entry->name, type, temp_buf);
     }
 
     return true;
@@ -1360,8 +1357,6 @@ static bool load_config_file(const char *path) {
 
 /** Set up the configuration system. */
 void config_init(void) {
-    config_console = &debug_console;
-
     /* Create the root environment. */
     root_environ = environ_create(NULL);
     current_environ = root_environ;

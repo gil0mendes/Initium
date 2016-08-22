@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@
 #include <bios/disk.h>
 #include <bios/multiboot.h>
 
+#include <console.h>
 #include <device.h>
 #include <loader.h>
 #include <screen.h>
@@ -74,7 +75,7 @@ void target_reboot(void) {
 __noreturn void bios_main(void)
 {
     // Initialize the console and video
-    bios_console_init();
+    console_init();
     bios_video_init();
 
     // Initialize architecture code

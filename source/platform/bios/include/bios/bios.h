@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ static inline void bios_regs_init(bios_regs_t *regs) {
 }
 
 extern void bios_call(uint8_t num, bios_regs_t *regs);
-extern void bios_console_init(void);
+
 extern void bios_video_init(void);
 
 extern void bios_main(void) __noreturn;

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,6 @@
 
 #include <platform/loader.h>
 
-#include <console.h>
 #include <status.h>
 #include <types.h>
 
@@ -186,6 +185,11 @@ static inline __noreturn void target_exit(void) { target_reboot(); }
 
 extern void boot_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 extern void internal_error(const char *fmt, ...) __printf(1, 2) __noreturn;
+
+extern int vprintf(const char *fmt, va_list args);
+extern int printf(const char *fmt, ...) __printf(1, 2);
+extern int dvprintf(const char *fmt, va_list args);
+extern int dprintf(const char *fmt, ...) __printf(1, 2);
 
 extern void loader_register_preboot_hook(preboot_hook_t hook);
 extern void loader_preboot(void);

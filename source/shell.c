@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Gil Mendes
+ * Copyright (C) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -48,90 +48,85 @@ bool shell_enabled;
  * @param args Arguments to substitute into format.
  */
 static void shell_error_handler(const char *cmd, const char *fmt, va_list args) {
-    console_vprintf(config_console, fmt, args);
-    console_putc(config_console, '\n');
+  console_vprintf(current_console, fmt, args);
+  console_putc(current_console, '\n');
 }
 
 /** Input helper for the shell.
  * @param nest          Nesting count (unused).
  * @return              Character read, or EOF on end of file. */
 static int shell_input_helper(unsigned nest) {
-    if (shell_line_offset) {
-	    if (shell_line_offset < shell_line_len)
-		return shell_line[shell_line_offset++];
+  if (shell_line_offset) {
+    if (shell_line_offset < shell_line_len)
+      return shell_line[shell_line_offset++];
 
-	    free(shell_line);
-	    shell_line = NULL;
-	    shell_line_offset = shell_line_len = 0;
+    free(shell_line);
+    shell_line = NULL;
+    shell_line_offset = shell_line_len = 0;
 
-	    if (!nest) {
-		    /* Not expecting more input, return end. */
-		    return EOF;
-		} else {
-		    /* Expecting more input, get another line. */
-		    console_set_colour(config_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
-		    config_printf("> ");
-		    console_set_colour(config_console, CONSOLE_COLOUR_FG, CONSOLE_COLOUR_BG);
-		}
-	}
+    if (!nest) {
+      /* Not expecting more input, return end. */
+      return EOF;
+    } else {
+      /* Expecting more input, get another line. */
+      console_set_colour(current_console, COLOUR_WHITE, COLOUR_DEFAULT);
+      printf("> ");
+      console_set_colour(current_console, COLOUR_DEFAULT, COLOUR_DEFAULT);
+    }
+  }
 
-    line_editor_init(&shell_line_editor, config_console, NULL);
+  line_editor_init(&shell_line_editor, current_console, NULL);
 
-    /* Accumulate another line. */
-    while (true) {
-	    uint16_t key = console_getc(config_console);
+  /* Accumulate another line. */
+  while (true) {
+    uint16_t key = console_getc(current_console);
 
-	    /* Parser requires a new line at the end of the buffer to work properly,
-	     * so always add here. */
-	    line_editor_input(&shell_line_editor, key);
+    /* Parser requires a new line at the end of the buffer to work properly,
+     * so always add here. */
+    line_editor_input(&shell_line_editor, key);
 
-	    if (key == '\n') {
-		    assert(!shell_line);
-            shell_line_len = shell_line_editor.len;
-		    shell_line = line_editor_finish(&shell_line_editor);
-		    return shell_line[shell_line_offset++];
-		}
-	}
+    if (key == '\n') {
+      assert(!shell_line);
+      shell_line_len = shell_line_editor.len;
+      shell_line = line_editor_finish(&shell_line_editor);
+      return shell_line[shell_line_offset++];
+    }
+  }
 }
 
 /** Main function of the shell. */
 __noreturn void shell_main(void) {
-    config_error_handler_t prev_handler;
+  config_error_handler_t prev_handler;
 
-    assert(shell_enabled);
+  assert(shell_enabled);
 
-    // FIXME
-    if (main_console.out && main_console.in) {
-	    config_console = &main_console;
-	} else if (debug_console.out && debug_console.in) {
-	    config_console = &debug_console;
-	} else {
-	    target_reboot();
-	}
+  if (!console_has_caps(current_console, CONSOLE_CAP_OUT | CONSOLE_CAP_IN)) {
+    target_reboot();
+  }
 
-    current_environ = environ_create(root_environ);
+  current_environ = environ_create(root_environ);
 
-    prev_handler = config_set_error_handler(shell_error_handler);
+  prev_handler = config_set_error_handler(shell_error_handler);
 
-    while (true) {
-	    command_list_t *list;
+  while (true) {
+    command_list_t *list;
 
-	    console_set_colour(config_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
-	    config_printf("Initium> ");
-	    console_set_colour(config_console, CONSOLE_COLOUR_FG, CONSOLE_COLOUR_BG);
+    console_set_colour(current_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
+    printf("Initium> ");
+    console_set_colour(current_console, CONSOLE_COLOUR_FG, CONSOLE_COLOUR_BG);
 
-	    shell_line = NULL;
-	    shell_line_offset = shell_line_len = 0;
+    shell_line = NULL;
+    shell_line_offset = shell_line_len = 0;
 
-	    list = config_parse("<shell>", shell_input_helper);
-	    if (list) {
-		    command_list_exec(list, current_environ);
-		    command_list_destroy(list);
+    list = config_parse("<shell>", shell_input_helper);
+    if (list) {
+      command_list_exec(list, current_environ);
+      command_list_destroy(list);
 
-		    /* If we now have a loader, load it. */
-		    if (current_environ->loader) {
-			    environ_boot(current_environ);
-			}
-		}
-	}
+      /* If we now have a loader, load it. */
+      if (current_environ->loader) {
+        environ_boot(current_environ);
+      }
+    }
+  }
 }

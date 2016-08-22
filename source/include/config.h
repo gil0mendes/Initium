@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -123,13 +123,9 @@ typedef void (*config_error_handler_t)(const char *cmd, const char *fmt, va_list
  * @return              Character read, or EOF on end of file. */
 typedef int (*config_read_helper_t)(unsigned nest);
 
-extern console_t *config_console;
 extern char *config_file_override;
 extern environ_t *root_environ;
 extern environ_t *current_environ;
-
-#define config_vprintf(fmt, args) console_vprintf(config_console, fmt, args)
-#define config_printf(fmt...) console_printf(config_console, fmt)
 
 extern void config_error(const char *fmt, ...) __printf(1, 2);
 extern config_error_handler_t config_set_error_handler(config_error_handler_t handler);

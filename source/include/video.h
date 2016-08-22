@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Gil Mendes
+ * Copyright (C) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +27,7 @@
 #include <status.h>
 #include <types.h>
 
-struct console_out_ops;
+struct console_out;
 struct environ;
 
 /** Video mode types (defined to match Initium types). */
@@ -86,13 +86,22 @@ typedef struct video_ops {
          * @return              Status code describing the result of the operation.
          */
         void (*set_mode)(video_mode_t *mode);
+
+        /**
+         * Create a console for a mode (optional).
+         *
+         * @param mode          Mode to create for.
+         * @return              Pointer to create console.
+         */
+        struct console_out *(*create_console)(video_mode_t *mode);
 } video_ops_t;
+
+extern video_mode_t *current_video_mode;
 
 extern void video_set_mode(video_mode_t *mode, bool set_console);
 
 extern video_mode_t *video_find_mode(video_mode_type_t type, uint32_t width, uint32_t height, uint32_t bpp);
 extern video_mode_t *video_parse_and_find_mode(const char *str);
-extern video_mode_t *video_current_mode(void);
 
 extern void video_env_init(struct environ *env, const char *name, uint32_t types, video_mode_t *def);
 extern video_mode_t *video_env_set(struct environ *env, const char *name);

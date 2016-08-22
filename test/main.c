@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -407,7 +407,7 @@ void kmain(uint32_t magic, initium_tag_t *tags) {
 	}
 
     mm_init(tags);
-    console_init(tags);
+    primary_console_init(tags);
 
     printf("Test kernel loaded: magic: 0x%x, tags: %p\n", magic, tags);
 

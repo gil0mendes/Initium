@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,16 +56,16 @@
  * @param str           Initial string, or NULL for empty string.
  */
 void line_editor_init(line_editor_t *editor, console_t *console, const char *str) {
-    editor->console = console;
-    editor->len = (str) ? strlen(str) : 0;
-    editor->offset = editor->len;
+  editor->console = console;
+  editor->len = (str) ? strlen(str) : 0;
+  editor->offset = editor->len;
 
-    if (editor->len) {
-	    editor->buf = malloc(round_up(editor->len, LINE_EDITOR_CHUNK_SIZE));
-	    memcpy(editor->buf, str, editor->len);
-	} else {
-	    editor->buf = NULL;
-	}
+  if (editor->len) {
+    editor->buf = malloc(round_up(editor->len, LINE_EDITOR_CHUNK_SIZE));
+    memcpy(editor->buf, str, editor->len);
+  } else {
+    editor->buf = NULL;
+  }
 }
 
 /**
@@ -74,18 +74,16 @@ void line_editor_init(line_editor_t *editor, console_t *console, const char *str
  * @param editor        Line editor state.
  */
 void line_editor_output(line_editor_t *editor) {
-    uint16_t x, y;
-    bool visible;
+  size_t i;
 
-    for (size_t i = 0; i <= editor->len; i++) {
-	    if (i == editor->offset)
-		console_get_cursor(editor->console, &x, &y, &visible);
+  for (i = 0; i <= editor->len; i++) {
+    console_putc(editor->console, editor->buf[i]);
+  }
 
-	    if (i < editor->len)
-		console_putc(editor->console, editor->buf[i]);
-	}
-
-    console_set_cursor(editor->console, x, y, visible);
+  while (i > editor->offset) {
+    console_putc(editor->console, '\b');
+    i--;
+  }
 }
 
 /**
@@ -96,18 +94,18 @@ void line_editor_output(line_editor_t *editor) {
  *                      removing a character).
  */
 static void reprint_from_current(line_editor_t *editor, bool space) {
-    uint16_t x, y;
-    bool visible;
+  size_t i;
 
-    console_get_cursor(editor->console, &x, &y, &visible);
+  for (i = editor->offset; i < editor->len; i++) {
+    console_putc(editor->console, editor->buf[i]);
+  }
 
-    for (size_t i = editor->offset; i < editor->len; i++)
-	console_putc(editor->console, editor->buf[i]);
+  if (space) { console_putc(editor->console, '\b'); }
 
-    if (space)
-	console_putc(editor->console, ' ');
-
-    console_set_cursor(editor->console, x, y, visible);
+  while (i > editor->offset) {
+    console_putc(editor->console, '\b');
+    i--;
+  }
 }
 
 /**
@@ -117,23 +115,24 @@ static void reprint_from_current(line_editor_t *editor, bool space) {
  * @param ch            Character to insert.
  */
 static void insert_char(line_editor_t *editor, char ch) {
-    /* Resize the buffer if this will go over a chunk boundary. */
-    if (!(editor->len % LINE_EDITOR_CHUNK_SIZE))
-	editor->buf = realloc(editor->buf, editor->len + LINE_EDITOR_CHUNK_SIZE);
+  /* Resize the buffer if this will go over a chunk boundary. */
+  if (!(editor->len % LINE_EDITOR_CHUNK_SIZE)) {
+    editor->buf = realloc(editor->buf, editor->len + LINE_EDITOR_CHUNK_SIZE);
+  }
 
-    console_putc(editor->console, ch);
+  console_putc(editor->console, ch);
 
-    if (editor->offset == editor->len) {
-	    editor->buf[editor->len++] = ch;
-	    editor->offset++;
-	} else {
-	    memmove(&editor->buf[editor->offset + 1], &editor->buf[editor->offset], editor->len - editor->offset);
-	    editor->buf[editor->offset++] = ch;
-	    editor->len++;
+  if (editor->offset == editor->len) {
+    editor->buf[editor->len++] = ch;
+    editor->offset++;
+  } else {
+    memmove(&editor->buf[editor->offset + 1], &editor->buf[editor->offset], editor->len - editor->offset);
+    editor->buf[editor->offset++] = ch;
+    editor->len++;
 
-	    /* Reprint the character plus everything after. */
-	    reprint_from_current(editor, false);
-	}
+    /* Reprint the character plus everything after. */
+    reprint_from_current(editor, false);
+  }
 }
 
 /**
@@ -144,28 +143,28 @@ static void insert_char(line_editor_t *editor, char ch) {
  *                      position, else will erase the previous one.
  */
 static void erase_char(line_editor_t *editor, bool forward) {
-    if (forward) {
-	    if (editor->offset == editor->len)
-		return;
-	} else {
-	    if (!editor->offset) {
-		    return;
-		} else {
-		    /* Decrement position and fall through. */
-		    editor->offset--;
-		    console_putc(editor->console, '\b');
-		}
-	}
+  if (forward) {
+    if (editor->offset == editor->len)
+      return;
+  } else {
+    if (!editor->offset) {
+      return;
+    } else {
+      /* Decrement position and fall through. */
+      editor->offset--;
+      console_putc(editor->console, '\b');
+    }
+  }
 
-    editor->len--;
-    memmove(&editor->buf[editor->offset], &editor->buf[editor->offset + 1], editor->len - editor->offset);
+  editor->len--;
+  memmove(&editor->buf[editor->offset], &editor->buf[editor->offset + 1], editor->len - editor->offset);
 
-    /* If we're now on a chunk boundary, we can resize the buffer down a chunk. */
-    if (!(editor->len % LINE_EDITOR_CHUNK_SIZE))
-	editor->buf = realloc(editor->buf, editor->len);
+  /* If we're now on a chunk boundary, we can resize the buffer down a chunk. */
+  if (!(editor->len % LINE_EDITOR_CHUNK_SIZE))
+    editor->buf = realloc(editor->buf, editor->len);
 
-    /* Reprint everything. */
-    reprint_from_current(editor, true);
+  /* Reprint everything. */
+  reprint_from_current(editor, true);
 }
 
 /**
@@ -175,52 +174,52 @@ static void erase_char(line_editor_t *editor, bool forward) {
  * @param key           Key that was pressed.
  */
 void line_editor_input(line_editor_t *editor, uint16_t key) {
-    switch (key) {
-	case CONSOLE_KEY_LEFT:
-	    if (editor->offset) {
-		    console_putc(editor->console, '\b');
-		    editor->offset--;
-		}
+  switch (key) {
+  case CONSOLE_KEY_LEFT:
+    if (editor->offset) {
+      console_putc(editor->console, '\b');
+      editor->offset--;
+    }
 
-	    break;
-	case CONSOLE_KEY_RIGHT:
-	    if (editor->offset != editor->len) {
-		    console_putc(editor->console, editor->buf[editor->offset]);
-		    editor->offset++;
-		}
+    break;
+  case CONSOLE_KEY_RIGHT:
+    if (editor->offset != editor->len) {
+      console_putc(editor->console, editor->buf[editor->offset]);
+      editor->offset++;
+    }
 
-	    break;
-	case CONSOLE_KEY_HOME:
-	    while (editor->offset) {
-		    console_putc(editor->console, '\b');
-		    editor->offset--;
-		}
+    break;
+  case CONSOLE_KEY_HOME:
+    while (editor->offset) {
+      console_putc(editor->console, '\b');
+      editor->offset--;
+    }
 
-	    break;
-	case CONSOLE_KEY_END:
-	    while (editor->offset < editor->len) {
-		    console_putc(editor->console, editor->buf[editor->offset]);
-		    editor->offset++;
-		}
+    break;
+  case CONSOLE_KEY_END:
+    while (editor->offset < editor->len) {
+      console_putc(editor->console, editor->buf[editor->offset]);
+      editor->offset++;
+    }
 
-	    break;
-	case '\b':
-	    erase_char(editor, false);
-	    break;
-	case 0x7f:
-	    erase_char(editor, true);
-	    break;
-	case '\n':
-	    /* The shell code sends \n to place it at the end of the buffer. */
-	    editor->offset = editor->len;
-	    insert_char(editor, key);
-	    break;
-	default:
-	    if (isprint(key))
-		insert_char(editor, key);
+    break;
+  case '\b':
+    erase_char(editor, false);
+    break;
+  case 0x7f:
+    erase_char(editor, true);
+    break;
+  case '\n':
+    /* The shell code sends \n to place it at the end of the buffer. */
+    editor->offset = editor->len;
+    insert_char(editor, key);
+    break;
+  default:
+    if (isprint(key))
+      insert_char(editor, key);
 
-	    break;
-	}
+    break;
+  }
 }
 
 /**
@@ -236,20 +235,20 @@ void line_editor_input(line_editor_t *editor, uint16_t key) {
  * @return              Pointer to new string.
  */
 char *line_editor_finish(line_editor_t *editor) {
-    if (editor->len) {
-	    char *str;
+  if (editor->len) {
+    char *str;
 
-	    assert(editor->buf);
+    assert(editor->buf);
 
-	    str = realloc(editor->buf, editor->len + 1);
-	    str[editor->len] = 0;
+    str = realloc(editor->buf, editor->len + 1);
+    str[editor->len] = 0;
 
-	    editor->buf = NULL;
-	    return str;
-	} else {
-	    assert(!editor->buf);
-	    return strdup("");
-	}
+    editor->buf = NULL;
+    return str;
+  } else {
+    assert(!editor->buf);
+    return strdup("");
+  }
 }
 
 /**
@@ -258,5 +257,5 @@ char *line_editor_finish(line_editor_t *editor) {
  * @param editor        Line editor state.
  */
 void line_editor_destroy(line_editor_t *editor) {
-    free(editor->buf);
+  free(editor->buf);
 }

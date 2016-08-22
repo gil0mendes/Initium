@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014-2015 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -101,23 +101,21 @@ device_t *device_lookup(const char *name) {
     return NULL;
 }
 
-/** Register a device.
- * @param device        Device to register (details should be filled in).
- * @param name          Name to give the device (string will be duplicated). */
-void device_register(device_t *device, const char *name) {
-    if (device_lookup(name))
-        internal_error("Device named '%s' already exists", name);
-
-    device->name = strdup(name);
+/** 
+ * Register a device.
+ * 
+ * @param device    Device to register (details should be filled in).
+ * */
+void device_register(device_t *device) {
+    if (device_lookup(device->name)) {
+        internal_error("Device named '%s' already exists", device->name);
+    }
 
     list_init(&device->header);
     list_append(&device_list, &device->header);
 
     /* Probe for filesystems. */
-    if (!device->mount)
-    {
-        device->mount = fs_probe(device);
-    }
+    if (!device->mount) { device->mount = fs_probe(device); }
 }
 
 /**
@@ -132,7 +130,7 @@ static void set_environ_device(environ_t *env, device_t *device) {
     env->device = device;
 
     value.type = VALUE_TYPE_STRING;
-    value.string = device->name;
+    value.string = (char *)device->name;
     environ_insert(env, "device", &value);
 
     if (device->mount)
@@ -209,12 +207,15 @@ static void print_device_list(console_t *console, size_t indent) {
     }
 }
 
-/** Print a list of devices.
- * @param args          Argument list.
- * @return              Whether successful. */
-static bool config_cmd_lsdev(value_list_t *args) {
+/** 
+ * Print a list of devices.
+ * 
+ * @param args  Argument list.
+ * @return      Whether successful. 
+ */
+static bool config_cmd_lsdevice(value_list_t *args) {
     if (args->count == 0) {
-        print_device_list(config_console, 0);
+        print_device_list(current_console, 0);
         return true;
     } else if (args->count == 1 && args->values[0].type == VALUE_TYPE_STRING) {
         device_t *device;
@@ -226,7 +227,7 @@ static bool config_cmd_lsdev(value_list_t *args) {
             return false;
         }
 
-        config_printf("name       = %s\n", device->name);
+        printf("name       = %s\n", device->name);
 
         snprintf(buf, sizeof(buf), "Unknown");
 
@@ -234,23 +235,23 @@ static bool config_cmd_lsdev(value_list_t *args) {
             device->ops->identify(device, DEVICE_IDENTIFY_SHORT, buf, sizeof(buf));
         }
 
-        config_printf("identify   = %s\n", buf);
+        printf("identify   = %s\n", buf);
 
         buf[0] = 0;
         if (device->ops->identify) {
             device->ops->identify(device, DEVICE_IDENTIFY_LONG, buf, sizeof(buf));
-            config_printf("%s", buf);
+            printf("%s", buf);
         }
 
         if (device->mount) {
-            config_printf("fs         = %s\n", device->mount->ops->name);
+            printf("fs         = %s\n", device->mount->ops->name);
             if (device->mount->uuid)
             {
-                config_printf("uuid       = %s\n", device->mount->uuid);
+                printf("uuid       = %s\n", device->mount->uuid);
             }
             if (device->mount->label)
             {
-                config_printf("label      = %s\n", device->mount->label);
+                printf("label      = %s\n", device->mount->label);
             }
         }
 
@@ -261,7 +262,7 @@ static bool config_cmd_lsdev(value_list_t *args) {
     }
 }
 
-BUILTIN_COMMAND("lsdev", "List available devices", config_cmd_lsdev);
+BUILTIN_COMMAND("lsdevice", "List available devices", config_cmd_lsdevice);
 
 /** Initialize the device manager. */
 void device_init(void) {
@@ -269,7 +270,7 @@ void device_init(void) {
 
     /* Print out a list of all devices. */
     dprintf("device: detected devices:\n");
-    print_device_list(&debug_console, 1);
+    print_device_list(debug_console, 1);
 
     /* Set the device in the environment. */
     if (boot_device) {

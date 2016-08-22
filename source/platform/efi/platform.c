@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
  * @brief       EFI platform main functions.
  */
 
-#include <efi/console.h>
 #include <efi/disk.h>
 #include <efi/efi.h>
 #include <efi/memory.h>
@@ -38,6 +37,7 @@
 #include <device.h>
 #include <loader.h>
 #include <screen.h>
+#include <console.h>
 
 extern void loader_main(void);
 
@@ -58,7 +58,7 @@ efi_boot_services_t *efi_boot_services;
  * @param image_handle  Handle to the loader image.
  * @param system_table  Pointer to EFI system table.
  */
-__noreturn void efi_init(efi_handle_t image_handle, efi_system_table_t *system_table) {
+__noreturn void efi_main(efi_handle_t image_handle, efi_system_table_t *system_table) {
     efi_status_t ret;
 
     // Save image handler
@@ -77,7 +77,7 @@ __noreturn void efi_init(efi_handle_t image_handle, efi_system_table_t *system_t
     efi_call(efi_boot_services->set_watchdog_timer, 0, 0, 0, NULL);
 
     // Initialise console
-    efi_console_init();
+    console_init();
 
     // Initialise memory map
     efi_memory_init();

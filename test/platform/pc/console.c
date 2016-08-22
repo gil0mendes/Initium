@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,17 +38,10 @@ INITIUM_VIDEO(INITIUM_VIDEO_VGA | INITIUM_VIDEO_LFB, 0, 0, 0);
 /** Serial port definitions. */
 #define SERIAL_PORT         0x3f8
 #define SERIAL_CLOCK        1843200
-#define SERIAL_BAUD_RATE    115200
 
 /** Initialize the debug console. */
 void debug_console_init(void) {
-    uint8_t status;
+  serial_port_t *port = ns16550_register(SERIAL_PORT, 0, SERIAL_CLOCK);
 
-    /* Initialize the serial port as the debug console. TODO: Disable for
-     * non-debug builds? */
-    status = in8(SERIAL_PORT + 6);
-    if ((status & ((1 << 4) | (1 << 5))) && status != 0xff) {
-        ns16550_init(SERIAL_PORT);
-        ns16550_config(SERIAL_PORT, SERIAL_CLOCK, SERIAL_BAUD_RATE);
-    }
+  if (port) { debug_console = &port->console; }
 }

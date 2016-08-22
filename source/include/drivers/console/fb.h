@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Gil Mendes
+ * Copyright (C) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,16 +16,17 @@
 
 /**
  * @file
- * @brief               Console font.
+ * @brief               Framebuffer console implementation.
+ *
+ * Note: the framebuffer console must be initialized after memory detection is
+ * done as it uses the physical memory range manager to allocate a backbuffer.
  */
 
-#ifndef __DRIVERS_VIDEO_FONT_H
-#define __DRIVERS_VIDEO_FONT_H
+#ifndef __DRIVERS_CONSOLE_FB_H
+#define __DRIVERS_CONSOLE_FB_H
 
-/** Dimensions of the console font. */
-#define CONSOLE_FONT_WIDTH      8
-#define CONSOLE_FONT_HEIGHT     16
+#include <console.h>
 
-extern unsigned char console_font[];
+extern console_out_t *fb_console_create(void);
 
-#endif /* __DRIVERS_VIDEO_FONT_H */
+#endif // __DRIVERS_CONSOLE_FB_H
