@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ SECTIONS {
 	.gnu.hash : { *(.gnu.hash) }
 
 	. = ALIGN(PAGE_SIZE);
+  __text_start = .;
 	.text : {
 		*(.init.text)
 		*(.text)
@@ -53,6 +54,7 @@ SECTIONS {
 	.reloc : { *(.reloc) }
 
 	. = ALIGN(PAGE_SIZE);
+  __data_start = .;
 	.data : {
 		/* Roll the read-only data into the main data section. It would
 		 * not be write protected even if we put it separately, and PE
@@ -92,6 +94,7 @@ SECTIONS {
   .dynstr : { *(.dynstr) }
 
 	. = ALIGN(PAGE_SIZE);
+  __bss_start = .;
 	.bss : {
 		__bss_start = .;
 		*(.dynbss)

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,8 @@
 #include <efi/api.h>
 
 #include <status.h>
+
+extern char __text_start[], __data_start[], __bss_start[];
 
 extern efi_handle_t efi_image_handle;
 extern efi_loaded_image_t *efi_loaded_image;
