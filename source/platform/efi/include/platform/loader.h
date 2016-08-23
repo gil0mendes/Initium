@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,5 @@
 // Properties of the platform (functions we provide etc.)
 #define TARGET_HAS_MM               1
 #define TARGET_HAS_EXIT             1
-#define TARGET_HAS_DELAY            1
 
 #endif /* __PLATFORM_LOADER_H */

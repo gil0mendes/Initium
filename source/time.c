@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,11 @@
 
 /**
  * @file
- * @brief               Timming functions.
- */
-
-/**
- * @file
  * @brief               Timing functions.
  */
 
- #include <loader.h>
- #include <time.h>
-
- #ifndef TARGET_HAS_DELAY
+#include <loader.h>
+#include <time.h>
 
 /**
  * Delay for a number of milliseconds.
@@ -43,10 +36,8 @@
  * @param msecs         Milliseconds to delay for.
  */
 void delay(mstime_t msecs) {
-    mstime_t target = target_internal_time() + msecs;
+  mstime_t target = current_time() + msecs;
 
-    while (target_internal_time() < target)
-	arch_pause();
+  // wait until the target time are reached
+  while (current_time() < target) { arch_pause(); }
 }
-
- #endif /* TARGET_HAS_DELAY */

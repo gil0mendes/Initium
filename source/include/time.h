@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,7 @@
 
 #include <lib/utility.h>
 
-#ifndef TARGET_HAS_DELAY
-extern mstime_t target_internal_time(void);
-#endif
+extern mstime_t current_time(void);
 
 extern void delay(mstime_t time);
 
@@ -42,14 +40,14 @@ extern void delay(mstime_t time);
  * @param secs          Seconds value to convert.
  * @return              Equivalent time in milliseconds. */
 static inline mstime_t secs_to_msecs(unsigned secs) {
-        return (mstime_t)secs * 1000;
+  return (mstime_t)secs * 1000;
 }
 
 /** Convert milliseconds to seconds.
  * @param msecs         Milliseconds value to convert.
  * @return              Equivalent time in seconds (rounded up). */
 static inline unsigned msecs_to_secs(mstime_t msecs) {
-        return round_up(msecs, 1000) / 1000;
+  return round_up(msecs, 1000) / 1000;
 }
 
 #endif /* __TIME_H */

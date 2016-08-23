@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2015 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,30 +37,30 @@
  * Perform early architecture initialization
  */
 void arch_init(void) {
-    unsigned long flags;
+  unsigned long flags;
 
-    // check if CPUID is supported - if we can change EFLAGS.ID, it is.
-    flags = x86_read_flags();
-    x86_write_flags(flags ^ X86_FLAGS_ID);
-    if ((x86_read_flags() & X86_FLAGS_ID) == (flags & X86_FLAGS_ID)) {
-        boot_error("CPU does not support CPUID");
-    }
+  // check if CPUID is supported - if we can change EFLAGS.ID, it is.
+  flags = x86_read_flags();
+  x86_write_flags(flags ^ X86_FLAGS_ID);
+  if ((x86_read_flags() & X86_FLAGS_ID) == (flags & X86_FLAGS_ID)) {
+    boot_error("CPU does not support CPUID");
+  }
 
-    // Init descriptor table
-    x86_descriptor_init();
+  // Init descriptor table
+  x86_descriptor_init();
 
-    // Init timer
-    x86_time_init();
+  // Init timer
+  x86_time_init();
 }
 
 /**
  * Halt the system.
  */
 __noreturn void target_halt(void) {
-    while (true) {
-	    __asm__ __volatile__ (
-	        "cli\n"
-	        "hlt\n"
-	        );
-	}
+  while (true) {
+    __asm__ __volatile__ (
+      "cli\n"
+      "hlt\n"
+    );
+  }
 }

@@ -35,6 +35,7 @@
 #include <lib/string.h>
 #include <lib/utility.h>
 
+#include <time.h>
 #include <test.h>
 #include <video.h>
 #include <memory.h>
@@ -245,3 +246,5 @@ void primary_console_init(initium_tag_t *tags) {
 void console_register(console_t *console) {
   // nothing happens
 }
+
+mstime_t current_time(void) { return 0; }

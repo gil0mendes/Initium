@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,11 +34,6 @@
 
 #include <time.h>
 
-#ifdef CONFIG_X86_TSC
 extern void x86_time_init(void);
-#else
-static inline void x86_time_init(void) {
-}
-#endif
 
 #endif /* __X86_TIME_H */
