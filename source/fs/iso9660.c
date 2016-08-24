@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -293,11 +293,13 @@ static status_t iso9660_mount(device_t *device, fs_mount_t **_mount) {
         }
     }
 
-    /* Check whether a descriptor was found. */
-    if (!primary)
-        return STATUS_UNKNOWN_FS;
+    // Check whether a descriptor was found.
+    if (!primary) { return STATUS_UNKNOWN_FS; }
 
     mount = malloc(sizeof(*mount));
+
+    // if we don't have Joliet, names should not be case sensitive
+    mount->mount.case_insensitive = !joliet;
     mount->joliet_level = joliet;
 
     /* Store the filesystem label and UUID. */
