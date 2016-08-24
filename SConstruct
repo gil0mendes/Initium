@@ -208,7 +208,14 @@ SConscript('test/SConscript',
     variant_dir = os.path.join('build', '%s-%s' % (config['ARCH'], config['PLATFORM']), 'test'),
     exports = ['config', 'defaults', 'env'])
 
+# get QEMU script to run
+qemu = ARGUMENTS.get('QEMU', '')
+if len(qemu):
+    qemu = '%s-%s.sh' % (config['PLATFORM'], qemu)
+else:
+    qemu = '%s.sh' % config['PLATFORM']
+
 # Add a target to run the test script for this configuration (if it exists).
-script = os.path.join('test', 'qemu', '%s.sh' % (config['PLATFORM']))
+script = os.path.join('test', 'qemu', qemu)
 if os.path.exists(script):
     Alias('qemu', env.Command('__qemu', defaults + ['test'], Action(script, None)))

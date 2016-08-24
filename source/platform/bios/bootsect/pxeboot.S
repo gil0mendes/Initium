@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
 /**
 * @file
-* @brief			PXE loader wrapper
+* @brief			BIOS PXE boot sector
 */
 
 #include <platform/loader.h>
@@ -37,7 +37,7 @@
 // ============================================================================
 // Main function of the PXE boot sector
 FUNCTION_START(_start)
-	// Set the boot drive ID to 0x7F for PXE
+	// Set the boot drive ID to 0x7F, which indicates to the loader we booted
 	movb	$0x7F, %dl
 	xorl	%ebx, %ebx
 	xorl	%ecx, %ecx

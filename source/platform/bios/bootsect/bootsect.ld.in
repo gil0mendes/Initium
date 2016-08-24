@@ -21,7 +21,7 @@
 
 /**
  * @file
- * @brief		BIOS stage 1 loader linker script.
+ * @brief		BIOS bootsect linker script.
  */
 
 OUTPUT_FORMAT("elf32-i386")
