@@ -495,6 +495,12 @@ static bool config_cmd_console(value_list_t *args) {
     return false;
   }
 
+  // check if the console supports output
+  if (!console->out) {
+    config_error("Console '%s' does not support output", args->values[0].string);
+    return false;
+  }
+
   console_set_current(console);
   return true;
 }

@@ -346,7 +346,7 @@ BUILTIN_COMMAND("lsvideo", "List available video modes", config_cmd_lsvideo);
  * @return      Whether successful.
  */
 static bool config_cmd_video(value_list_t *args) {
-  video_mode_t *mode;
+  video_mode_t *mode, *prev;
 
   if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING)
   {
@@ -361,7 +361,22 @@ static bool config_cmd_video(value_list_t *args) {
     return false;
   }
 
+  // save the previous video mode in case of something goes wrong
+  prev = current_video_mode;
+
+  // try set the new video mode
   video_set_mode(mode, true);
+
+  // if currently outputting to this console, need output support
+  if (current_console == &primary_console && !current_console->out) {
+    // go to the previous video mode
+    video_set_mode(prev, true);
+
+    // print and error message
+    config_error("Mode '%s' does not support console output", args->values[0].string);
+    return false;
+  }
+  
   return true;
 }
 
