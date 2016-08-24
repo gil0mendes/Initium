@@ -29,7 +29,7 @@ config PLATFORM_BIOS
     bool "Standard PC"
     select 32BIT
     help
-        Traget Initium to run on standard PCs (nearly all x86 computers).
+        Target Initium to run on standard PCs (nearly all x86 computers).
 
 config PLATFORM_EFI
     bool "Modern UEFI PCs"
