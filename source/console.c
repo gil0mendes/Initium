@@ -244,7 +244,7 @@ void console_scroll_down(console_t *console) {
  * @return              Whether a character is available.
  */
 bool console_poll(console_t *console) {
-  assert(console->out->in_ui);
+  assert(console_has_caps(console, CONSOLE_CAP_IN));
   return console->in->ops->poll(console->in);
 }
 
@@ -255,7 +255,7 @@ bool console_poll(console_t *console) {
  * @return              Character read.
  */
 uint16_t console_getc(console_t *console) {
-  assert(console->out->in_ui);
+  assert(console_has_caps(console, CONSOLE_CAP_IN));
   return console->in->ops->getc(console->in);
 }
 

@@ -111,9 +111,9 @@ __noreturn void shell_main(void) {
   while (true) {
     command_list_t *list;
 
-    console_set_color(current_console, COLOR_WHITE, CONSOLE_COLOR_BG);
+    console_set_color(current_console, COLOR_WHITE, COLOR_DEFAULT);
     printf("Initium> ");
-    console_set_color(current_console, CONSOLE_COLOR_FG, CONSOLE_COLOR_BG);
+    console_set_color(current_console, COLOR_DEFAULT, COLOR_DEFAULT);
 
     shell_line = NULL;
     shell_line_offset = shell_line_len = 0;
