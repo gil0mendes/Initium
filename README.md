@@ -2,12 +2,14 @@
 
 ### Table of Contents
 
-	1 Introduction
-	2 Using Initium
-		2.1 Configure the Kernel
-		2.2 Build Initium
-			2.2.1 Options
+```text
+  1 Introduction
+  2 Using Initium
+    2.1 Configure the Kernel
+    2.2 Build Initium
+      2.2.1 Options
       2.2.2 Test
+```
 
 ## 1 Introduction
 
