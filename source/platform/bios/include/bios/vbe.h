@@ -74,7 +74,7 @@ typedef struct vbe_mode_info {
     uint8_t  num_image_pages;
     uint8_t  reserved1;
 
-    /* Direct colour fields */
+    /* Direct color fields */
     uint8_t  red_mask_size;
     uint8_t  red_field_position;
     uint8_t  green_mask_size;

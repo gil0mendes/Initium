@@ -142,7 +142,7 @@ void bios_video_init(void) {
             /* Not supported. */
             continue;
         } else if ((mode_info->mode_attributes & (1<<3)) == 0) {
-            /* Not colour. */
+            /* Not color. */
             continue;
         } else if ((mode_info->mode_attributes & (1<<4)) == 0) {
             /* Not a graphics mode. */

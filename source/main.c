@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014-2015 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,14 @@
  * @brief               Loader main function.
  */
 
+#include <lib/ctype.h>
+
+#include <menu.h>
+#include <shell.h>
 #include <config.h>
 #include <device.h>
 #include <loader.h>
 #include <memory.h>
-#include <menu.h>
-#include <shell.h>
 
 /** Main function of the loader. */
 void loader_main(void) {

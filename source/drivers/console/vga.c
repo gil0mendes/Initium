@@ -123,19 +123,19 @@ static void vga_console_get_region(console_out_t *console, draw_region_t *region
 }
 
 /**
- * Set the current colours.
+ * Set the current colors.
  *
  * @param console       Console output device.
- * @param fg            Foreground colour.
- * @param bg            Background colour.
+ * @param fg            Foreground color.
+ * @param bg            Background color.
  */
-static void vga_console_set_colour(console_out_t *console, colour_t fg, colour_t bg) {
+static void vga_console_set_color(console_out_t *console, color_t fg, color_t bg) {
     vga_console_out_t *vga = (vga_console_out_t *)console;
 
-    if (fg == COLOUR_DEFAULT) { fg = CONSOLE_COLOUR_FG; }
-    if (bg == COLOUR_DEFAULT) { bg = CONSOLE_COLOUR_BG; }
+    if (fg == COLOR_DEFAULT) { fg = CONSOLE_COLOR_FG; }
+    if (bg == COLOR_DEFAULT) { bg = CONSOLE_COLOR_BG; }
 
-    // Colour values are defined to be the same as VGA colours.
+    // Colour values are defined to be the same as VGA colors.
     vga->attrib = (fg << 8) | (bg << 12);
 }
 
@@ -180,7 +180,7 @@ static void vga_console_get_cursor(console_out_t *console, uint16_t *_x, uint16_
 }
 
 /**
- * Clear an area to the current background colour.
+ * Clear an area to the current background color.
  *
  * @param console       Console output device.
  * @param x             Start X position (relative to draw region).
@@ -308,25 +308,6 @@ static void vga_console_putc(console_out_t *console, char ch) {
     update_hw_cursor(vga);
 }
 
-/**
- * Reset the console to a default state.
- *
- * @param console   Console output device.
- */
-static void vga_console_reset(console_out_t *console) {
-    vga_console_out_t *vga = (vga_console_out_t *)console;
-
-    vga->cursor_visible = true;
-    vga->attrib = (CONSOLE_COLOUR_FG << 8) | (CONSOLE_COLOUR_BG << 12);
-    vga_console_set_region(console, NULL);
-
-    for (uint16_t i = 0; i < current_video_mode->height; i++) {
-        for (uint16_t j = 0; j < current_video_mode->width; j++) {
-            write_cell(vga, j, i, ' ' | vga->attrib);
-        }
-    }
-}
-
 /** 
  * Initialize the VGA console.
  * 
@@ -339,22 +320,24 @@ static void vga_console_init(console_out_t *console) {
 
     vga->mapping = (uint16_t *)current_video_mode->mem_virt;
 
-    // reset console to a initial state
-    vga_console_reset(console);
+    // reset console
+    vga->cursor_visible = true;
+    vga->attrib = (CONSOLE_COLOR_FG << 8) | (CONSOLE_COLOR_BG << 12);
+    vga_console_set_region(console, NULL);
+    vga_console_clear(console, 0, 0, 0, 0);
 }
 
 /** VGA console output operations. */
 console_out_ops_t vga_console_out_ops = {
     .set_region = vga_console_set_region,
     .get_region = vga_console_get_region,
-    .set_colour = vga_console_set_colour,
+    .set_color = vga_console_set_color,
     .set_cursor = vga_console_set_cursor,
     .get_cursor = vga_console_get_cursor,
     .clear = vga_console_clear,
     .scroll_up = vga_console_scroll_up,
     .scroll_down = vga_console_scroll_down,
     .putc = vga_console_putc,
-    .reset = vga_console_reset,
     .init = vga_console_init,
 };
 
@@ -365,6 +348,10 @@ console_out_ops_t vga_console_out_ops = {
  */
 console_out_t *vga_console_create(void) {
     vga_console_out_t *vga = malloc(sizeof(*vga));
+
+    // reset memory region
+    memset(vga, 0, sizeof(*vga));
+
     vga->console.ops = &vga_console_out_ops;
     return &vga->console;
 }

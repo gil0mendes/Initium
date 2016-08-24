@@ -69,9 +69,9 @@ static int shell_input_helper(unsigned nest) {
       return EOF;
     } else {
       /* Expecting more input, get another line. */
-      console_set_colour(current_console, COLOUR_WHITE, COLOUR_DEFAULT);
+      console_set_color(current_console, COLOR_WHITE, COLOR_DEFAULT);
       printf("> ");
-      console_set_colour(current_console, COLOUR_DEFAULT, COLOUR_DEFAULT);
+      console_set_color(current_console, COLOR_DEFAULT, COLOR_DEFAULT);
     }
   }
 
@@ -111,9 +111,9 @@ __noreturn void shell_main(void) {
   while (true) {
     command_list_t *list;
 
-    console_set_colour(current_console, COLOUR_WHITE, CONSOLE_COLOUR_BG);
+    console_set_color(current_console, COLOR_WHITE, CONSOLE_COLOR_BG);
     printf("Initium> ");
-    console_set_colour(current_console, CONSOLE_COLOUR_FG, CONSOLE_COLOUR_BG);
+    console_set_color(current_console, CONSOLE_COLOR_FG, CONSOLE_COLOR_BG);
 
     shell_line = NULL;
     shell_line_offset = shell_line_len = 0;

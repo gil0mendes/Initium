@@ -188,8 +188,18 @@ extern void internal_error(const char *fmt, ...) __printf(1, 2) __noreturn;
 
 extern int vprintf(const char *fmt, va_list args);
 extern int printf(const char *fmt, ...) __printf(1, 2);
+
+#ifndef __TEST
+
 extern int dvprintf(const char *fmt, va_list args);
 extern int dprintf(const char *fmt, ...) __printf(1, 2);
+
+#else
+
+#define dvprintf(fmt, args)
+#define dprintf(fmt...)
+
+#endif // __TEST
 
 extern void loader_register_preboot_hook(preboot_hook_t hook);
 extern void loader_preboot(void);

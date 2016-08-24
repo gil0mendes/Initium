@@ -90,7 +90,6 @@
      }
 
      dprintf("chain: chainloading device %s (id: 0x%x)\n", disk->device.name, disk_id);
-     console_reset(current_console);
      chain_loader_enter(disk_id, partition_addr);
  }
 

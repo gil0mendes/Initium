@@ -33,8 +33,8 @@
 /** Framebuffer character information. */
 typedef struct fb_char {
   char ch;                            /**< Character to display (0 == space). */
-  uint8_t fg;                         /**< Foreground colour. */
-  uint8_t bg;                         /**< Background colour. */
+  uint8_t fg;                         /**< Foreground color. */
+  uint8_t bg;                         /**< Background color. */
 } fb_char_t;
 
 /** Framebuffer console state. */
@@ -49,31 +49,31 @@ typedef struct fb_console_out {
   uint16_t rows;                      /**< Number of rows on the console. */
 
   draw_region_t region;               /**< Current draw region. */
-  colour_t fg_colour;                 /**< Current foreground colour. */
-  colour_t bg_colour;                 /**< Current background colour. */
+  color_t fg_color;                 /**< Current foreground color. */
+  color_t bg_color;                 /**< Current background color. */
   uint16_t cursor_x;                  /**< X position of the cursor. */
   uint16_t cursor_y;                  /**< Y position of the cursor. */
   bool cursor_visible;                /**< Whether the cursor is enabled. */
 } fb_console_out_t;
 
-/** Framebuffer console colour table. */
-static uint32_t fb_colour_table[] = {
-  [COLOUR_BLACK]         = 0x000000,
-  [COLOUR_BLUE]          = 0x0000aa,
-  [COLOUR_GREEN]         = 0x00aa00,
-  [COLOUR_CYAN]          = 0x00aaaa,
-  [COLOUR_RED]           = 0xaa0000,
-  [COLOUR_MAGENTA]       = 0xaa00aa,
-  [COLOUR_BROWN]         = 0xaa5500,
-  [COLOUR_LIGHT_GREY]    = 0xaaaaaa,
-  [COLOUR_GREY]          = 0x555555,
-  [COLOUR_LIGHT_BLUE]    = 0x5555ff,
-  [COLOUR_LIGHT_GREEN]   = 0x55ff55,
-  [COLOUR_LIGHT_CYAN]    = 0x55ffff,
-  [COLOUR_LIGHT_RED]     = 0xff5555,
-  [COLOUR_LIGHT_MAGENTA] = 0xff55ff,
-  [COLOUR_YELLOW]        = 0xffff55,
-  [COLOUR_WHITE]         = 0xffffff,
+/** Framebuffer console color table. */
+static uint32_t fb_color_table[] = {
+  [COLOR_BLACK]         = 0x000000,
+  [COLOR_BLUE]          = 0x0000aa,
+  [COLOR_GREEN]         = 0x00aa00,
+  [COLOR_CYAN]          = 0x00aaaa,
+  [COLOR_RED]           = 0xaa0000,
+  [COLOR_MAGENTA]       = 0xaa00aa,
+  [COLOR_BROWN]         = 0xaa5500,
+  [COLOR_LIGHT_GREY]    = 0xaaaaaa,
+  [COLOR_GREY]          = 0x555555,
+  [COLOR_LIGHT_BLUE]    = 0x5555ff,
+  [COLOR_LIGHT_GREEN]   = 0x55ff55,
+  [COLOR_LIGHT_CYAN]    = 0x55ffff,
+  [COLOR_LIGHT_RED]     = 0xff5555,
+  [COLOR_LIGHT_MAGENTA] = 0xff55ff,
+  [COLOR_YELLOW]        = 0xffff55,
+  [COLOR_WHITE]         = 0xffffff,
 };
 
 /** Get the byte offset of a pixel.
@@ -105,7 +105,7 @@ static inline uint32_t rgb888_to_fb(uint32_t rgb) {
  * @param fb            Framebuffer console.
  * @param x             X position.
  * @param y             Y position.
- * @param rgb           RGB colour to draw. */
+ * @param rgb           RGB color to draw. */
 static void fb_putpixel(fb_console_out_t *fb, uint16_t x, uint16_t y, uint32_t rgb) {
   size_t offset = fb_offset(x, y);
   void *main = fb->mapping + offset;
@@ -130,7 +130,7 @@ static void fb_putpixel(fb_console_out_t *fb, uint16_t x, uint16_t y, uint32_t r
   }
 }
 
-/** Draw a rectangle in a solid colour.
+/** Draw a rectangle in a solid color.
  * @param fb            Framebuffer console.
  * @param x             X position of rectangle.
  * @param y             Y position of rectangle.
@@ -195,14 +195,14 @@ static void draw_glyph(fb_console_out_t *fb, uint16_t x, uint16_t y) {
   uint32_t fg, bg;
 
   if (ch) {
-    fg = fb_colour_table[fb->chars[idx].fg];
-    bg = fb_colour_table[fb->chars[idx].bg];
+    fg = fb_color_table[fb->chars[idx].fg];
+    bg = fb_color_table[fb->chars[idx].bg];
   } else {
     /* Character is 0, this indicates that the character has not been
-     * written yet, so draw space with default colours. */
+     * written yet, so draw space with default colors. */
     ch = ' ';
-    fg = fb_colour_table[CONSOLE_COLOUR_FG];
-    bg = fb_colour_table[CONSOLE_COLOUR_BG];
+    fg = fb_color_table[CONSOLE_COLOR_FG];
+    bg = fb_color_table[CONSOLE_COLOR_BG];
   }
 
   /* Convert to a pixel position. */
@@ -228,17 +228,17 @@ static void toggle_cursor(fb_console_out_t *fb) {
     size_t idx = (fb->cursor_y * fb->cols) + fb->cursor_x;
 
     if (fb->chars[idx].ch) {
-      /* Invert the colours. */
+      /* Invert the colors. */
       swap(fb->chars[idx].fg, fb->chars[idx].bg);
     } else {
       /* Nothing has yet been writen, initialize the character. We must
-       * be enabling the cursor if this is the case, so invert colours. */
+       * be enabling the cursor if this is the case, so invert colors. */
       fb->chars[idx].ch = ' ';
-      fb->chars[idx].fg = CONSOLE_COLOUR_BG;
-      fb->chars[idx].bg = CONSOLE_COLOUR_FG;
+      fb->chars[idx].fg = CONSOLE_COLOR_BG;
+      fb->chars[idx].bg = CONSOLE_COLOR_FG;
     }
 
-    /* Redraw in new colours. */
+    /* Redraw in new colors. */
     draw_glyph(fb, fb->cursor_x, fb->cursor_y);
   }
 }
@@ -278,20 +278,20 @@ static void fb_console_get_region(console_out_t *console, draw_region_t *region)
   memcpy(region, &fb->region, sizeof(*region));
 }
 
-/** Set the current colours.
+/** Set the current colors.
  * @param console       Console output device.
- * @param fg            Foreground colour.
- * @param bg            Background colour. */
-static void fb_console_set_colour(console_out_t *console, colour_t fg, colour_t bg) {
+ * @param fg            Foreground color.
+ * @param bg            Background color. */
+static void fb_console_set_color(console_out_t *console, color_t fg, color_t bg) {
   fb_console_out_t *fb = (fb_console_out_t *)console;
 
-  if (fg == COLOUR_DEFAULT)
-    fg = CONSOLE_COLOUR_FG;
-  if (bg == COLOUR_DEFAULT)
-    bg = CONSOLE_COLOUR_BG;
+  if (fg == COLOR_DEFAULT)
+    fg = CONSOLE_COLOR_FG;
+  if (bg == COLOR_DEFAULT)
+    bg = CONSOLE_COLOR_BG;
 
-  fb->fg_colour = fg;
-  fb->bg_colour = bg;
+  fb->fg_color = fg;
+  fb->bg_color = bg;
 }
 
 /** Set the cursor properties.
@@ -332,7 +332,7 @@ static void fb_console_get_cursor(console_out_t *console, uint16_t *_x, uint16_t
     *_visible = fb->cursor_visible;
 }
 
-/** Clear an area to the current background colour.
+/** Clear an area to the current background color.
  * @param console       Console output device.
  * @param x             Start X position (relative to draw region).
  * @param y             Start Y position (relative to draw region).
@@ -356,8 +356,8 @@ static void fb_console_clear(console_out_t *console, uint16_t x, uint16_t y, uin
       size_t idx = (abs_y * fb->cols) + abs_x;
 
       fb->chars[idx].ch = ' ';
-      fb->chars[idx].fg = fb->fg_colour;
-      fb->chars[idx].bg = fb->bg_colour;
+      fb->chars[idx].fg = fb->fg_color;
+      fb->chars[idx].bg = fb->bg_color;
 
       if (fb->cursor_visible && abs_x == fb->cursor_x && abs_y == fb->cursor_y) {
         /* Avoid redrawing the glyph twice. */
@@ -394,7 +394,7 @@ static void fb_console_scroll_up(console_out_t *console) {
   fb_fillrect(fb,
               fb->region.x * CONSOLE_FONT_WIDTH, fb->region.y * CONSOLE_FONT_HEIGHT,
               fb->region.width * CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
-              fb_colour_table[CONSOLE_COLOUR_BG]);
+              fb_color_table[CONSOLE_COLOR_BG]);
 
   toggle_cursor(fb);
 }
@@ -422,7 +422,7 @@ static void scroll_down(fb_console_out_t *fb) {
   fb_fillrect(fb,
               fb->region.x * CONSOLE_FONT_WIDTH, (fb->region.y + fb->region.height - 1) * CONSOLE_FONT_HEIGHT,
               fb->region.width * CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
-              fb_colour_table[CONSOLE_COLOUR_BG]);
+              fb_color_table[CONSOLE_COLOR_BG]);
 }
 
 /** Scroll the draw region down (move contents up).
@@ -474,8 +474,8 @@ static void fb_console_putc(console_out_t *console, char ch) {
 
     idx = (fb->cursor_y * fb->cols) + fb->cursor_x;
     fb->chars[idx].ch = ch;
-    fb->chars[idx].fg = fb->fg_colour;
-    fb->chars[idx].bg = fb->bg_colour;
+    fb->chars[idx].fg = fb->fg_color;
+    fb->chars[idx].bg = fb->bg_color;
     draw_glyph(fb, fb->cursor_x, fb->cursor_y);
 
     fb->cursor_x++;
@@ -500,23 +500,6 @@ static void fb_console_putc(console_out_t *console, char ch) {
   toggle_cursor(fb);
 }
 
-/** Reset the console to a default state.
- * @param console       Console output device. */
-static void fb_console_reset(console_out_t *console) {
-  fb_console_out_t *fb = (fb_console_out_t *)console;
-
-  /* Reset state to defaults. */
-  fb->fg_colour = CONSOLE_COLOUR_FG;
-  fb->bg_colour = CONSOLE_COLOUR_BG;
-  fb->cursor_visible = true;
-  fb_console_set_region(console, NULL);
-
-  /* Clear the console. */
-  fb_fillrect(fb, 0, 0, current_video_mode->width, current_video_mode->height, fb_colour_table[CONSOLE_COLOUR_BG]);
-  memset(fb->chars, 0, fb->cols * fb->rows * sizeof(*fb->chars));
-  toggle_cursor(fb);
-}
-
 /** Initialize the console.
  * @param console       Console output device. */
 static void fb_console_init(console_out_t *console) {
@@ -535,7 +518,15 @@ static void fb_console_init(console_out_t *console) {
   size = round_up(fb->cols * fb->rows * sizeof(*fb->chars), PAGE_SIZE);
   fb->chars = memory_alloc(size, 0, 0, 0, MEMORY_TYPE_INTERNAL, MEMORY_ALLOC_HIGH, NULL);
 
-  fb_console_reset(console);
+  fb->fg_color = CONSOLE_COLOR_FG;
+  fb->bg_color = CONSOLE_COLOR_BG;
+  fb->cursor_visible = true;
+  fb_console_set_region(console, NULL);
+
+  // clear the console.
+  fb_fillrect(fb, 0, 0, current_video_mode->width, current_video_mode->height, fb_color_table[CONSOLE_COLOR_BG]);
+  memset(fb->chars, 0, fb->cols * fb->rows * sizeof(*fb->chars));
+  toggle_cursor(fb);
 }
 
 /** Deinitialize the console.
@@ -555,22 +546,26 @@ static void fb_console_deinit(console_out_t *console) {
 console_out_ops_t fb_console_out_ops = {
   .set_region = fb_console_set_region,
   .get_region = fb_console_get_region,
-  .set_colour = fb_console_set_colour,
+  .set_color = fb_console_set_color,
   .set_cursor = fb_console_set_cursor,
   .get_cursor = fb_console_get_cursor,
   .clear = fb_console_clear,
   .scroll_up = fb_console_scroll_up,
   .scroll_down = fb_console_scroll_down,
   .putc = fb_console_putc,
-  .reset = fb_console_reset,
   .init = fb_console_init,
   .deinit = fb_console_deinit,
 };
 
-/** Create a framebuffer console.
- * @return              Framebuffer console output device. */
+/** 
+ * Create a framebuffer console.
+ * 
+ * @return              Framebuffer console output device. 
+ */
 console_out_t *fb_console_create(void) {
   fb_console_out_t *fb = malloc(sizeof(*fb));
+
+  memset(fb, 0, sizeof(*fb));
   fb->console.ops = &fb_console_out_ops;
   return &fb->console;
 }

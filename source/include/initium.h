@@ -138,13 +138,13 @@ typedef struct initium_tag_module
         uint32_t name_size;     // Length of name string, including null terminator.
 } initium_tag_module_t;
 
-// Structure describing an RGB colour.
-typedef struct initium_colour
+// Structure describing an RGB color.
+typedef struct initium_color
 {
         uint8_t red;            // Red value.
         uint8_t green;          // Green value.
         uint8_t blue;           // Blue value.
-} initium_colour_t;
+} initium_color_t;
 
 // Tag containing video mode information.
 typedef struct initium_tag_video
@@ -187,10 +187,10 @@ typedef struct initium_tag_video
                         uint8_t green_pos; // Bit position of the green component of each pixel.
                         uint8_t blue_size; // Size of blue component of each pixel.
                         uint8_t blue_pos; // Bit position of the blue component of each pixel.
-                        uint16_t palette_size; // For indexed modes, length of the colour palette.
+                        uint16_t palette_size; // For indexed modes, length of the color palette.
 
-                        // For indexed modes, the colour palette set by the loader.
-                        initium_colour_t palette[0];
+                        // For indexed modes, the color palette set by the loader.
+                        initium_color_t palette[0];
                 } lfb;
         };
 } initium_tag_video_t;
@@ -200,8 +200,8 @@ typedef struct initium_tag_video
 #define INITIUM_VIDEO_LFB           (1<<1)  // Linear framebuffer.
 
 // Linear framebuffer flags.
-#define INITIUM_LFB_RGB         (1<<0)  // Direct RGB colour format.
-#define INITIUM_LFB_INDEXED     (1<<1)  // Indexed colour format.
+#define INITIUM_LFB_RGB         (1<<0)  // Direct RGB color format.
+#define INITIUM_LFB_INDEXED     (1<<1)  // Indexed color format.
 
 // Type used to store a MAC address.
 typedef uint8_t initium_mac_addr_t[16];

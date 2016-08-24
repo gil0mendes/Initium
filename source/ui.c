@@ -28,15 +28,15 @@
  */
 
 #include <lib/ctype.h>
-#include <lib/line_editor.h>
 #include <lib/string.h>
 #include <lib/utility.h>
+#include <lib/line_editor.h>
 
+#include <ui.h>
+#include <time.h>
 #include <assert.h>
 #include <loader.h>
 #include <memory.h>
-#include <time.h>
-#include <ui.h>
 
 /** Structure for a list window. */
 typedef struct ui_list {
@@ -121,6 +121,9 @@ typedef struct ui_textview
 static uint16_t ui_console_width;
 static uint16_t ui_console_height;
 
+/** UI nesting count (nested calls to ui_display()) */
+static unsigned ui_nest_count;
+
 /** Dimensions of the content area. */
 #define CONTENT_WIDTH               (ui_console_width - 4)
 #define CONTENT_HEIGHT              (ui_console_height - 6)
@@ -194,7 +197,7 @@ static inline void set_title_region(void) {
   region.scrollable = false;
 
   console_set_region(current_console, &region);
-  console_set_colour(current_console, COLOUR_WHITE, COLOUR_BLACK);
+  console_set_color(current_console, COLOR_WHITE, COLOR_BLACK);
 }
 
 /** Set the draw region to the help region. */
@@ -208,7 +211,7 @@ static inline void set_help_region(void) {
   region.scrollable = false;
 
   console_set_region(current_console, &region);
-  console_set_colour(current_console, COLOUR_WHITE, COLOUR_BLACK);
+  console_set_color(current_console, COLOR_WHITE, COLOR_BLACK);
 }
 
 /** Set the draw region to the error region. */
@@ -222,7 +225,7 @@ static inline void set_error_region(void) {
   region.scrollable = false;
 
   console_set_region(current_console, &region);
-  console_set_colour(current_console, COLOUR_YELLOW, COLOUR_BLACK);
+  console_set_color(current_console, COLOR_YELLOW, COLOR_BLACK);
 }
 
 /** Set the draw region to the content region. */
@@ -236,7 +239,7 @@ static inline void set_content_region(void) {
   region.scrollable = false;
 
   console_set_region(current_console, &region);
-  console_set_colour(current_console, COLOUR_LIGHT_GREY, COLOUR_BLACK);
+  console_set_color(current_console, COLOR_LIGHT_GREY, COLOR_BLACK);
 }
 
 /** Render help text for a window.
@@ -270,7 +273,7 @@ static void render_help(ui_window_t *window, unsigned timeout, bool update) {
 
   if (update) {
     console_set_region(current_console, &region);
-    console_set_colour(current_console, COLOUR_LIGHT_GREY, COLOUR_BLACK);
+    console_set_color(current_console, COLOR_LIGHT_GREY, COLOR_BLACK);
     console_set_cursor(current_console, x, y, visible);
   }
 }
@@ -281,11 +284,10 @@ static void render_help(ui_window_t *window, unsigned timeout, bool update) {
 static void render_window(ui_window_t *window, unsigned timeout) {
   draw_region_t region;
 
-  /* Clear the console and save its dimensions for convenient access. */
-  console_reset(current_console);
-  console_get_region(current_console, &region);
-  ui_console_width = region.width;
-  ui_console_height = region.height;
+  // Clear to the background color
+  console_set_region(current_console, NULL);
+  console_set_color(current_console, COLOR_LIGHT_GREY, COLOR_BLACK);
+  console_clear(current_console, 0, 0, 0, 0);
 
   /* Disable the cursor. */
   console_set_cursor(current_console, 0, 0, false);
@@ -312,9 +314,25 @@ static void render_window(ui_window_t *window, unsigned timeout) {
 void ui_display(ui_window_t *window, unsigned timeout) {
   mstime_t msecs;
 
-  if (!console_has_caps(current_console, CONSOLE_CAP_UI | CONSOLE_CAP_IN)) {
-    return;
+  // only enter here if the ui_nest_count is equals to zero
+  if (!ui_nest_count) {
+    draw_region_t region;
+
+    // check if the console support UI
+    if (!console_has_caps(current_console, CONSOLE_CAP_UI | CONSOLE_CAP_IN)) {
+      return;
+    }
+
+    // first entry into UI, begin UI mode on the console
+    console_begin_ui(current_console);
+
+    // save console dimensions for convenient access
+    console_get_region(current_console, &region);
+    ui_console_width = region.width;
+    ui_console_height = region.height;
   }
+
+  ui_nest_count++;
 
   render_window(window, timeout);
 
@@ -364,7 +382,10 @@ void ui_display(ui_window_t *window, unsigned timeout) {
     }
   }
 
-  console_reset(current_console);
+  ui_nest_count--;
+
+  // if the ui_nest_count is equals to zero end UI
+  if (!ui_nest_count) { console_end_ui(current_console); }
 }
 
 /** Destroy a list window.
@@ -395,17 +416,17 @@ static void render_entry(ui_entry_t *entry, size_t pos, bool selected) {
   console_set_region(current_console, &region);
 
   /* Clear the area. If the entry is selected, it should be highlighted. */
-  console_set_colour(current_console,
-                     (selected) ? COLOUR_BLACK : COLOUR_LIGHT_GREY,
-                     (selected) ? COLOUR_LIGHT_GREY : COLOUR_BLACK);
+  console_set_color(current_console,
+                    (selected) ? COLOR_BLACK : COLOR_LIGHT_GREY,
+                    (selected) ? COLOR_LIGHT_GREY : COLOR_BLACK);
   console_clear(current_console, 0, 0, 0, 0);
 
   /* Render the entry. */
   entry->type->render(entry);
 
-  /* Restore content region and colour. */
+  /* Restore content region and color. */
   console_set_region(current_console, &content);
-  console_set_colour(current_console, COLOUR_LIGHT_GREY, COLOUR_BLACK);
+  console_set_color(current_console, COLOR_LIGHT_GREY, COLOR_BLACK);
 }
 
 /** Render a list window.
