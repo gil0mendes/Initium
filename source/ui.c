@@ -282,8 +282,6 @@ static void render_help(ui_window_t *window, unsigned timeout, bool update) {
  * @param window        Window to render.
  * @param timeout       Seconds remaining. */
 static void render_window(ui_window_t *window, unsigned timeout) {
-  draw_region_t region;
-
   // Clear to the background color
   console_set_region(current_console, NULL);
   console_set_color(current_console, COLOR_LIGHT_GREY, COLOR_BLACK);

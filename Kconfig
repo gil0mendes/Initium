@@ -57,7 +57,7 @@ config DEBUG
     default y
     help
         Enable various sections of debugging code and extra checks. This will
-        increse the size f the loader binary, so don't enavle it unless
+        increase the size f the loader binary, so don't enable it unless
         necessary.
 
 source "source/Kconfig"

@@ -32,6 +32,9 @@
 
 #include <types.h>
 
+/** type of printf function */
+typedef int (*printf_t)(const char *, ...);
+
 /** Type for a do_printf() helper function. */
 typedef void (*printf_helper_t)(char, void *, int *);
 

@@ -27,8 +27,6 @@
  * @brief               Loader main function.
  */
 
-#include <lib/ctype.h>
-
 #include <menu.h>
 #include <shell.h>
 #include <config.h>
