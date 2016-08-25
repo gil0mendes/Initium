@@ -10,8 +10,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 
- /**
- * @file
- * @brief		BIOS platform main definitions.
- */
+/**
+* @file
+* @brief		BIOS platform main definitions.
+*/
 
 #ifndef __BIOS_BIOS_H
 #define __BIOS_BIOS_H
@@ -50,39 +50,40 @@
 
 /** Structure describing registers to pass to a BIOS interrupt. */
 typedef struct bios_regs {
-	union {
-		struct {
-			uint32_t eflags;
-			uint32_t eax;
-			uint32_t ebx;
-			uint32_t ecx;
-			uint32_t edx;
-			uint32_t edi;
-			uint32_t esi;
-			uint32_t ebp;
-			uint32_t _es;
-		};
-		struct {
-			uint16_t flags, _hflags;
-			uint16_t ax, _hax;
-			uint16_t bx, _hbx;
-			uint16_t cx, _hcx;
-			uint16_t dx, _hdx;
-			uint16_t di, _hdi;
-			uint16_t si, _hsi;
-			uint16_t bp, _hbp;
-			uint16_t es, _hes;
-		};
-	};
+  union {
+    struct {
+      uint32_t eflags;
+      uint32_t eax;
+      uint32_t ebx;
+      uint32_t ecx;
+      uint32_t edx;
+      uint32_t edi;
+      uint32_t esi;
+      uint32_t ebp;
+      uint32_t _es;
+    };
+    struct {
+      uint16_t flags, _hflags;
+      uint16_t ax, _hax;
+      uint16_t bx, _hbx;
+      uint16_t cx, _hcx;
+      uint16_t dx, _hdx;
+      uint16_t di, _hdi;
+      uint16_t si, _hsi;
+      uint16_t bp, _hbp;
+      uint16_t es, _hes;
+    };
+  };
 } bios_regs_t;
 
 /** Initialise a BIOS registers structure.
  * @param regs		Structure to initialise. */
 static inline void bios_regs_init(bios_regs_t *regs) {
-	memset(regs, 0, sizeof(bios_regs_t));
+  memset(regs, 0, sizeof(bios_regs_t));
 }
 
 extern void bios_call(uint8_t num, bios_regs_t *regs);
+extern uint16_t bios_pxe_call(uint16_t func, uint32_t segoff);
 
 extern void bios_video_init(void);
 

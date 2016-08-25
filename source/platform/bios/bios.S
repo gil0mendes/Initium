@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,8 +10,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -179,6 +179,43 @@ FUNCTION_START(bios_call)
 	pop	%ebp
 	ret
 FUNCTION_END(bios_call)
+
+/**
+ * Call a PXE function.
+ *
+ * @param func 		Function to call.
+ * @param segoff 	Linear address of data argument.
+ * @return 				Return code from call.
+ */
+FUNCTION_START(bios_pxe_call)
+	movl 		4(%esp), %ecx
+	movl 		8(%esp), %edx
+	push 		%ebp
+	movl 		pxe_entry_point, %ebx
+
+	// switch to real mode
+	PROT_TO_REAL
+
+	// enable interrupts across the call
+	sti
+
+	// call the entry point
+	pushl 		%ebx
+	pushl 		%edx
+	pushw 		%cx
+	movw 			%sp, %bx
+	lcall 		*%ss:6(%bx)
+	addw 			$10, %sp
+	movw 			%ax, %cx
+
+	// switch back to protected mode
+	REAL_TO_PROT
+
+	// save return code and return
+	movzwl 		%cx, %eax
+	pop 			%ebx
+	ret
+FUNCTION_END(bios_pxe_call)
 
 /** IDT pointer for the BIOS IVT. */
 SYMBOL(bios_idtp)

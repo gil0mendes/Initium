@@ -1,7 +1,7 @@
 /**
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Gil Mendes
+* Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,8 @@
  * @brief               BIOS disk interface definitions.
  */
 
-#ifndef __PC_DISK_H
-#define __PC_DISK_H
+#ifndef __BIOS_DISK_H
+#define __BIOS_DISK_H
 
 /** INT13 function definitions. */
 #define INT13_GET_DRIVE_PARAMETERS      0x800   /**< Get Drive Parameters. */
@@ -43,33 +43,33 @@
 
 /** Drive parameters structure. We only care about the EDD 1.x fields. */
 typedef struct drive_parameters {
-    uint16_t size;
-    uint16_t flags;
-    uint32_t cylinders;
-    uint32_t heads;
-    uint32_t spt;
-    uint64_t sector_count;
-    uint16_t sector_size;
+  uint16_t size;
+  uint16_t flags;
+  uint32_t cylinders;
+  uint32_t heads;
+  uint32_t spt;
+  uint64_t sector_count;
+  uint16_t sector_size;
 } __packed drive_parameters_t;
 
 /** Disk address packet structure. */
 typedef struct disk_address_packet {
-    uint8_t size;
-    uint8_t reserved1;
-    uint16_t block_count;
-    uint16_t buffer_offset;
-    uint16_t buffer_segment;
-    uint64_t start_lba;
+  uint8_t size;
+  uint8_t reserved1;
+  uint16_t block_count;
+  uint16_t buffer_offset;
+  uint16_t buffer_segment;
+  uint64_t start_lba;
 } __packed disk_address_packet_t;
 
 /** Bootable CD-ROM Specification Packet. */
 typedef struct specification_packet {
-    uint8_t size;
-    uint8_t media_type;
-    uint8_t drive_number;
-    uint8_t controller_num;
-    uint32_t image_lba;
-    uint16_t device_spec;
+  uint8_t size;
+  uint8_t media_type;
+  uint8_t drive_number;
+  uint8_t controller_num;
+  uint32_t image_lba;
+  uint16_t device_spec;
 } __packed specification_packet_t;
 
 extern uint8_t bios_boot_device;
@@ -79,5 +79,5 @@ extern uint8_t bios_disk_get_id(disk_device_t *disk);
 
 extern void bios_disk_init(void);
 
-#endif /* __ASM__ */
-#endif /* __PC_DISK_H */
+#endif // __ASM__
+#endif // __BIOS_DISK_H

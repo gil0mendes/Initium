@@ -68,7 +68,7 @@ typedef struct net_ops {
    * @param buf     Where to store identification string.
    * @param size    Size of the buffer.
    */
-  void (*identity)(struct net_device *net, device_identify_t type, char *buf, size_t size);
+  void (*identify)(struct net_device *net, device_identify_t type, char *buf, size_t size);
 } net_ops_t;
 
 /** Network device information */

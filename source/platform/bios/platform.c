@@ -32,6 +32,7 @@
 #include <x86/cpu.h>
 #include <x86/descriptor.h>
 
+#include <bios/pxe.h>
 #include <bios/vbe.h>
 #include <bios/bios.h>
 #include <bios/disk.h>
@@ -91,4 +92,5 @@ __noreturn void bios_main(void)
 void target_device_probe(void) {
     bios_disk_init();
     multiboot_init();
+    pxe_init();
 }
