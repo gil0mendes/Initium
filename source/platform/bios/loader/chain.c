@@ -90,6 +90,10 @@
      }
 
      dprintf("chain: chainloading device %s (id: 0x%x)\n", disk->device.name, disk_id);
+
+     // execute pre-boot tasks
+     loader_preboot();
+
      chain_loader_enter(disk_id, partition_addr);
  }
 

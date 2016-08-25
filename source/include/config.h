@@ -32,24 +32,37 @@
 
 #include <lib/list.h>
 
-#include <console.h>
+/** Structure defining operations for an OS loader */
+typedef struct loader_ops {
+  /**
+   * Load the operating system.
+   *
+   * @param private   Loader private data.
+   */
+  void (*load)(void *private) __noreturn;
 
-struct command;
-struct device;
-struct directory;
-struct loader_ops;
-struct value;
+  #ifdef CONFIG_TARGET_HAS_UI
+  /**
+   * Get a configuration window for the OS.
+   *
+   * @param private     Loader private data.
+   * @param title       Title to give the window.
+   * @return            Window for configuring the OS.
+   */
+  struct ui_window *(*configure)(void *private, const char *title);
+  #endif
+} loader_ops_t;
 
 /** Structure containing an environment. */
 typedef struct environ {
-    /** Values set in the environment by the user. */
-    list_t entries;
+  /** Values set in the environment by the user. */
+  list_t entries;
 
-    /** Per-environment data used internally. */
-    struct device *device;              /**< Current device. */
-    struct fs_handle *directory;        /**< Current directory. */
-    struct loader_ops *loader;          /**< Operating system loader operations. */
-    void *loader_private;               /**< Data used by the loader. */
+  /** Per-environment data used internally. */
+  struct device *device;              /**< Current device. */
+  struct fs_handle *directory;        /**< Current directory. */
+  loader_ops_t *loader;               /**< Operating system loader operations. */
+  void *loader_private;               /**< Data used by the loader. */
 } environ_t;
 
 /** Structure containing a list of commands. */
@@ -57,44 +70,44 @@ typedef list_t command_list_t;
 
 /** Structure containing a list of values. */
 typedef struct value_list {
-    struct value *values;               /**< Array of values. */
-    size_t count;                       /**< Number of arguments. */
+  struct value *values;               /**< Array of values. */
+  size_t count;                       /**< Number of arguments. */
 } value_list_t;
 
 /** Value type enumeration. */
 typedef enum value_type {
-    VALUE_TYPE_INTEGER,                 /**< Integer. */
-    VALUE_TYPE_BOOLEAN,                 /**< Boolean. */
-    VALUE_TYPE_STRING,                  /**< String. */
-    VALUE_TYPE_LIST,                    /**< List. */
-    VALUE_TYPE_COMMAND_LIST,            /**< Command list. */
-    VALUE_TYPE_REFERENCE,               /**< Variable reference (not seen by commands). */
+  VALUE_TYPE_INTEGER,                 /**< Integer. */
+  VALUE_TYPE_BOOLEAN,                 /**< Boolean. */
+  VALUE_TYPE_STRING,                  /**< String. */
+  VALUE_TYPE_LIST,                    /**< List. */
+  VALUE_TYPE_COMMAND_LIST,            /**< Command list. */
+  VALUE_TYPE_REFERENCE,               /**< Variable reference (not seen by commands). */
 } value_type_t;
 
 /** Structure containing a value used in the configuration.  */
 typedef struct value {
-    /** Type of the value. */
-    value_type_t type;
+  /** Type of the value. */
+  value_type_t type;
 
-    /** Storage for the value. */
-    union {
-        uint64_t integer;               /**< Integer. */
-        bool boolean;                   /**< Boolean. */
-        char *string;                   /**< String. */
-        value_list_t *list;             /**< List. */
-        command_list_t *cmds;           /**< Command list. */
-    };
+  /** Storage for the value. */
+  union {
+    uint64_t integer;               /**< Integer. */
+    bool boolean;                   /**< Boolean. */
+    char *string;                   /**< String. */
+    value_list_t *list;             /**< List. */
+    command_list_t *cmds;           /**< Command list. */
+  };
 } value_t;
 
 /** Structure describing a command. */
 typedef struct command {
-    const char *name;                   /**< Name of the command. */
-    const char *description;            /**< Description of the command. */
+  const char *name;                   /**< Name of the command. */
+  const char *description;            /**< Description of the command. */
 
-    /** Execute the command.
-     * @param args          List of arguments.
-     * @return              Whether the command completed successfully. */
-    bool (*func)(value_list_t *args);
+  /** Execute the command.
+   * @param args          List of arguments.
+   * @return              Whether the command completed successfully. */
+  bool (*func)(value_list_t *args);
 } command_t;
 
 /** Define a builtin command. */

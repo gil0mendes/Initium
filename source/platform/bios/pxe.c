@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
+ * Copyright (c) 2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -130,12 +130,12 @@ static status_t set_current_handle(pxe_handle_t *handle) {
   return STATUS_SUCCESS;
 }
 
-/** 
+/**
  * Read the next packet from a TFTP file.
- * 
+ *
  * @note                Reads to BIOS_MEM_BASE.
  * @param handle        Handle to read from.
- * @return              Status code describing the result of the operation. 
+ * @return              Status code describing the result of the operation.
  */
 static status_t read_packet(pxe_handle_t *handle) {
   pxenv_tftp_read_t read;
@@ -152,14 +152,14 @@ static status_t read_packet(pxe_handle_t *handle) {
   return STATUS_SUCCESS;
 }
 
-/** 
+/**
  * Read from a file.
- * 
+ *
  * @param _handle       Handle to read from.
  * @param buf           Buffer to read into.
  * @param count         Number of bytes to read.
  * @param offset        Offset to read from.
- * @return              Status code describing the result of the operation. 
+ * @return              Status code describing the result of the operation.
  */
 static status_t pxe_fs_read(fs_handle_t *_handle, void *buf, size_t count, offset_t offset) {
   pxe_handle_t *handle = container_of(_handle, pxe_handle_t, handle);
@@ -197,14 +197,14 @@ static status_t pxe_fs_read(fs_handle_t *_handle, void *buf, size_t count, offse
   return STATUS_SUCCESS;
 }
 
-/** 
+/**
  * Open a path on the filesystem.
- * 
+ *
  * @param mount         Mount to open from.
  * @param path          Path to file/directory to open (can be modified).
  * @param from          Handle on this FS to open relative to.
  * @param _handle       Where to store pointer to opened handle.
- * @return              Status code describing the result of the operation. 
+ * @return              Status code describing the result of the operation.
  */
 static status_t pxe_fs_open_path(fs_mount_t *mount, char *path, fs_handle_t *from, fs_handle_t **_handle) {
   pxe_device_t *device = container_of(mount, pxe_device_t, mount);
@@ -252,10 +252,10 @@ static status_t pxe_fs_open_path(fs_mount_t *mount, char *path, fs_handle_t *fro
   return STATUS_SUCCESS;
 }
 
-/** 
+/**
  * Close a handle.
- * 
- * @param _handle       Handle to close. 
+ *
+ * @param _handle       Handle to close.
  */
 static void pxe_fs_close(fs_handle_t *_handle) {
   pxe_handle_t *handle = container_of(_handle, pxe_handle_t, handle);
@@ -271,10 +271,10 @@ static fs_ops_t pxe_fs_ops = {
   .close = pxe_fs_close,
 };
 
-/** 
+/**
  * Get the PXE entry point address.
- * 
- * @return              Whether the entry point could be found. 
+ *
+ * @return              Whether the entry point could be found.
  */
 static bool get_entry_point(void) {
   bios_regs_t regs;
@@ -310,10 +310,10 @@ static bool get_entry_point(void) {
   return true;
 }
 
-/** 
+/**
  * Get the BOOTP reply packet.
- * 
- * @return              Pointer to BOOTP reply packet. 
+ *
+ * @return              Pointer to BOOTP reply packet.
  */
 static bootp_packet_t *get_bootp_packet(void) {
   pxenv_get_cached_info_t ci;
@@ -328,7 +328,24 @@ static bootp_packet_t *get_bootp_packet(void) {
   return (bootp_packet_t *)segoff_to_linear(ci.buffer);
 }
 
-/** 
+/**
+ * Shut down PXE before booting an OS
+ */
+static void shutdown_pxe(void) {
+  if (pxe_call(PXENV_UNDI_SHUTDOWN, (void *)BIOS_MEM_BASE) != PXENV_EXIT_SUCCESS) {
+    dprintf("pxe: warning: PXENV_UNDI_SHUTDOWN failed\n");
+  }
+
+  if (pxe_call(PXENV_UNLOAD_STACK, (void *)BIOS_MEM_BASE) != PXENV_EXIT_SUCCESS) {
+    dprintf("pxe: warning: PXENV_UNLOAD_STACK failed\n");
+  }
+
+  if (pxe_call(PXENV_STOP_UNDI, (void *)BIOS_MEM_BASE) != PXENV_EXIT_SUCCESS) {
+    dprintf("pxe: warning: PXENV_STOP_UNDI failed\n");
+  }
+}
+
+/**
  * Initialize PXE.
  */
 void pxe_init(void) {
@@ -345,16 +362,16 @@ void pxe_init(void) {
     "pxe: booting via PXE, entry point at %04x:%04x (%p)\n",
     pxe_entry_point >> 16, pxe_entry_point & 0xffff, segoff_to_linear(pxe_entry_point));
 
-  /* When using PXE, 0x8d000 onwards is reserved for use by the PXE stack so
-   * we need to mark it as internal to ensure we don't load anything there.
-   * Also reserve a bit more because the PXE ROM on one of my test machines
-   * appears to take a dump over memory below there as well. */
+  // When using PXE, 0x8d000 onwards is reserved for use by the PXE stack so
+  // we need to mark it as internal to ensure we don't load anything there.
+  // Also reserve a bit more because the PXE ROM on some machines appears to
+  // take a dump over memory below there as well.
   memory_protect(0x80000, 0x1f000);
 
-  /* Obtain the BOOTP reply packet. */
+  // Obtain the BOOTP reply packet.
   bootp = get_bootp_packet();
 
-  /* Create a device. */
+  // Create a device.
   pxe = malloc(sizeof(*pxe));
   memset(pxe, 0, sizeof(*pxe));
   pxe->net.ops = &pxe_net_ops;
@@ -363,4 +380,7 @@ void pxe_init(void) {
   pxe->mount.ops = &pxe_fs_ops;
   net_device_register_with_bootp(&pxe->net, bootp, true);
   pxe->net.device.mount = &pxe->mount;
+
+  // register a pre-boot hook to shut down the PXE stack
+  loader_register_preboot_hook(shutdown_pxe);
 }

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2015 Gil Mendes
+ * Copyright (c) 2012-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -687,6 +687,9 @@ static __noreturn void initium_loader_load(void *_loader) {
   dprintf(
     "initium: entry point at 0x%" PRIxLOAD " stack at 0x%" PRIx64 "\n",
     loader->entry, loader->core->stack_base);
+
+  // perform pre-boot tasks
+  loader_preboot();
 
   /* Perform platform setup. THis has to be done late, and we cannot perform
    * any I/O afterwards, as for EFI we call ExitBootServices() here.

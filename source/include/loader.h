@@ -41,37 +41,40 @@ struct ui_window;
 
 // Structure defining an OS loader type
 typedef struct loader_type {
-	/**
-	 * Load the operating system.
-	 * @note		Should not return.
-	 */
-	void (*load)(void) __noreturn;
+  /**
+   * Load the operating system.
+   * @note		Should not return.
+   */
+  void (*load)(void) __noreturn;
 
-	#if CONFIG_UI
-	/**
-	 * Return a window for configuring the OS.
-	 *
-	 * @return		Pointer to configuration window.
-	 */
-	struct ui_window *(*configure)(void);
-	#endif
+  #if CONFIG_UI
+  /**
+   * Return a window for configuring the OS.
+   *
+   * @return		Pointer to configuration window.
+   */
+  struct ui_window *(*configure)(void);
+  #endif
 } loader_type_t;
+
+/** Operating modes for loaded OS */
+typedef enum load_mode {
+	LOAD_MODE_32BIT, 		/**< 32-bit */
+	LOAD_MODE_64BIT, 		/**< 64-bit */
+} load_mode_t;
 
 /** Builtin object definition structure. */
 typedef struct builtin {
-	/** Type of the builtin */
-	enum {
-		BUILTIN_TYPE_PARTITION,
-		BUILTIN_TYPE_FS,
-		BUILTIN_TYPE_COMMAND,
-	} type;
+  /** Type of the builtin */
+  enum {
+    BUILTIN_TYPE_PARTITION,
+    BUILTIN_TYPE_FS,
+    BUILTIN_TYPE_COMMAND,
+  } type;
 
-	/** Pointer to object */
-	void *object;
+  /** Pointer to object */
+  void *object;
 } builtin_t;
-
-// Type of a hook function to call before booting an OS
-typedef void (*preboot_hook_t)(void);
 
 extern char __start[], __end[];
 extern builtin_t __builtins_start[], __builtins_end[];
@@ -101,7 +104,7 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * can be used directly without modification.
  */
 #ifndef TARGET_VIRT_OFFSET
-# define TARGET_VIRT_OFFSET    0
+  #define TARGET_VIRT_OFFSET    0
 #endif
 
 /**
@@ -112,11 +115,11 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * override this, for example, to avoid allocatting from low memory.
  */
 #ifdef TARGET_PHYS_MIN
-#	if TARGET_PHYS_MIN < 0x1000
-#		error "Invalid minimum physical address"
-#	endif
+  #if TARGET_PHYS_MIN < 0x1000
+    #		error "Invalid minimum physical address"
+  #endif
 #else
-#	define TARGET_PHYS_MIN		0x1000
+  #define TARGET_PHYS_MIN		0x1000
 #endif
 
 /**
@@ -127,7 +130,7 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * access the low 4GB of the physical address space.
  */
 #ifndef TARGET_PHYS_MAX
-# define TARGET_PHYS_MAX       0xffffffff
+  #define TARGET_PHYS_MAX       0xffffffff
 #endif
 
 /**
@@ -137,7 +140,7 @@ extern builtin_t __builtins_start[], __builtins_end[];
  * @return             Converted physical address.
  */
 static inline phys_ptr_t virt_to_phys(ptr_t addr) {
-       return (addr - TARGET_VIRT_OFFSET);
+  return (addr - TARGET_VIRT_OFFSET);
 }
 
 /**
@@ -147,32 +150,11 @@ static inline phys_ptr_t virt_to_phys(ptr_t addr) {
  * @return             Converted virtual address.
  */
 static inline ptr_t phys_to_virt(phys_ptr_t addr) {
-       return (addr + TARGET_VIRT_OFFSET);
+  return (addr + TARGET_VIRT_OFFSET);
 }
 
-/** Operating modes for a loaded OS. */
-typedef enum load_mode {
-    LOAD_MODE_32BIT,                    /**< 32-bit. */
-    LOAD_MODE_64BIT,                    /**< 64-bit. */
-} load_mode_t;
-
-/** Structure defining operations for an OS loader. */
-typedef struct loader_ops {
-    /** Load the operating system.
-     * @param private       Loader private data. */
-    void (*load)(void *private) __noreturn;
-
-	#ifdef CONFIG_TARGET_HAS_UI
-	/**
-	 * Get a configuration window for the OS.
-	 *
-	 * @param private		Loader private data.
-	 * @param title			Title to give the window.
-	 * @return              Window for configuring the OS.
-	 */
-	struct ui_window *(*configure)(void *private, const char *title);
-	#endif
-} loader_ops_t;
+/** Type of hook function to call before booting an OS */
+typedef void (*preboot_hook_t)(void);
 
 extern void target_halt(void) __noreturn;
 extern void target_reboot(void) __noreturn;
@@ -191,13 +173,13 @@ extern int printf(const char *fmt, ...) __printf(1, 2);
 
 #ifndef __TEST
 
-extern int dvprintf(const char *fmt, va_list args);
-extern int dprintf(const char *fmt, ...) __printf(1, 2);
+  extern int dvprintf(const char *fmt, va_list args);
+  extern int dprintf(const char *fmt, ...) __printf(1, 2);
 
 #else
 
-#define dvprintf(fmt, args)
-#define dprintf(fmt...)
+  #define dvprintf(fmt, args)
+  #define dprintf(fmt...)
 
 #endif // __TEST
 
@@ -206,4 +188,4 @@ extern void loader_preboot(void);
 
 extern void loader_main(void) __noreturn;
 
-#endif /* __LOADER_H */
+#endif // __LOADER_H

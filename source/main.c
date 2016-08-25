@@ -29,34 +29,61 @@
 
 #include <menu.h>
 #include <shell.h>
+#include <assert.h>
 #include <config.h>
 #include <device.h>
 #include <loader.h>
 #include <memory.h>
 
-/** Main function of the loader. */
+/** Maximum number of pre-boot hooks */
+#define PREBOOT_HOOKS_MAX   8
+
+/** Array of pre-boot hooks */
+static preboot_hook_t preboot_hooks[PREBOOT_HOOKS_MAX];
+static size_t preboot_hook_count = 0;
+
+/**
+ * Add a pre-boot hook.
+ *
+ * @param hook Hook to add.
+ */
+void loader_register_preboot_hook(preboot_hook_t hook) {
+  assert(preboot_hook_count < PREBOOT_HOOKS_MAX);
+  preboot_hooks[preboot_hook_count++] = hook;
+}
+
+/**
+ * Perform pre-boot tasks.
+ */
+void loader_preboot(void) {
+  for (size_t i = 0; i < preboot_hook_count; i++) { preboot_hooks[i](); }
+}
+
+/**
+ * Main function of the loader.
+ */
 void loader_main(void) {
-    environ_t *env;
+  environ_t *env;
 
-    // initialize config
-    config_init();
+  // initialize config
+  config_init();
 
-    // initialize memory
-    memory_init();
+  // initialize memory
+  memory_init();
 
-    // initialize devices
-    device_init();
+  // initialize devices
+  device_init();
 
-    // load the configuration file
-    config_load();
+  // load the configuration file
+  config_load();
 
-    // display the menu
-    env = menu_display();
+  // display the menu
+  env = menu_display();
 
-    // and finnaly boot the OS
-    if (env->loader) {
-        environ_boot(env);
-    } else {
-        boot_error("No operating system to boot");
-    }
+  // and finnaly boot the OS
+  if (env->loader) {
+    environ_boot(env);
+  } else {
+    boot_error("No operating system to boot");
+  }
 }
