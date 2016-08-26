@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015_2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -83,15 +83,6 @@
 
      push    %edx
      push    %esi
-
-     /* Restore the console to a decent state. Set display page to the first and
-      * move the cursor to (0, 0). */
-     movw    $0x0500, %ax
-     int     $0x10
-     movw    $0x0200, %ax
-     xorw    %bx, %bx
-     xorw    %dx, %dx
-     int     $0x10
 
      /* Try to disable the A20 line. */
      call    disable_a20
