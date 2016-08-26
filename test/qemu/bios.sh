@@ -15,11 +15,11 @@ cat > ${isodir}/boot/loader.cfg << EOF
 set "timeout" 5
 
 entry "Test (32-bit)" {
-	initium "/test-ia32.elf" ["/test-ia32.elf"]
+	initium "test-ia32.elf" ["test-ia32.elf"]
 }
 
 entry "Test (64-bit)" {
-	initium "/test-amd64.elf" ["/test-amd64.elf"]
+	initium "test-amd64.elf" ["test-amd64.elf"]
 }
 EOF
 
