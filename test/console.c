@@ -1,26 +1,26 @@
 /**
-* The MIT License (MIT)
-*
-* Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 /**
  * @file
@@ -199,12 +199,12 @@ void primary_console_init(initium_tag_t *tags) {
   log_init(tags);
 
   while (tags->type != INITIUM_TAG_NONE) {
-    if (tags->type == INITIUM_TAG_VIDEO)
-    {
+    if (tags->type == INITIUM_TAG_VIDEO) {
+      console_out_t *console = NULL;
+
       video = (initium_tag_video_t *)tags;
 
-      if (video->type == INITIUM_VIDEO_LFB && video->lfb.flags & INITIUM_LFB_RGB)
-      {
+      if (video->type == INITIUM_VIDEO_LFB && video->lfb.flags & INITIUM_LFB_RGB) {
         current_video_mode = malloc(sizeof(*current_video_mode));
         current_video_mode->type = VIDEO_MODE_LFB;
         current_video_mode->width = video->lfb.width;
@@ -221,11 +221,10 @@ void primary_console_init(initium_tag_t *tags) {
         current_video_mode->mem_virt = video->lfb.fb_virt;
         current_video_mode->mem_size = video->lfb.fb_size;
 
-        primary_console.out = fb_console_create();
-        primary_console.out->ops->init(primary_console.out);
+        console = fb_console_create();
       }
 
-#ifdef CONFIG_ARCH_X86
+      #ifdef CONFIG_ARCH_X86
       if (video->type == INITIUM_VIDEO_VGA) {
         current_video_mode = malloc(sizeof(*current_video_mode));
         current_video_mode->type = VIDEO_MODE_VGA;
@@ -237,11 +236,13 @@ void primary_console_init(initium_tag_t *tags) {
         current_video_mode->mem_virt = video->vga.mem_virt;
         current_video_mode->mem_size = video->vga.mem_size;
 
-        primary_console.out = vga_console_create();
-        primary_console.out->ops->init(primary_console.out);
+        console = vga_console_create();
       }
-#endif
+      #endif
 
+      if (console && console->ops->init) { console->ops->init(console); }
+
+      primary_console.out = console;
       break;
     }
 
