@@ -118,8 +118,8 @@ typedef struct ui_textview
 } ui_textview_t;
 
 /** Properties of the UI console. */
-static uint16_t ui_console_width;
-static uint16_t ui_console_height;
+static size_t ui_console_width;
+static size_t ui_console_height;
 
 /** UI nesting count (nested calls to ui_display()) */
 static unsigned ui_nest_count;
@@ -1150,6 +1150,8 @@ static input_result_t ui_textview_input(ui_window_t *window, uint16_t key) {
       console_scroll_up(current_console);
       console_set_cursor(current_console, 0, 0, false);
       render_textview_line(textview, --textview->offset);
+
+      if (!textview->offset) { return INPUT_RENDER_HELP; }
     }
 
     return INPUT_HANDLED;
@@ -1158,6 +1160,10 @@ static input_result_t ui_textview_input(ui_window_t *window, uint16_t key) {
       console_scroll_down(current_console);
       console_set_cursor(current_console, 0, -1, false);
       render_textview_line(textview, textview->offset++ + CONTENT_HEIGHT);
+
+      if (textview->count - textview->offset <= CONTENT_HEIGHT) { 
+        return INPUT_RENDER_HELP; 
+      }
     }
 
     return INPUT_HANDLED;
