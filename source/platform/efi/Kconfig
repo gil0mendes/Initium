@@ -31,6 +31,9 @@ config TARGET_NS16550_IO
 config TARGET_HAS_DISK
     def_bool y
 
+config TARGET_HAS_NET
+    def_bool y
+
 config TARGET_HAS_UI
     def_bool y
 

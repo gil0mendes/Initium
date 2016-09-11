@@ -32,6 +32,7 @@ sources = FeatureSources(config, [
   'loader/initium.c',
 
   'efi.c',
+  'net.c',
   'disk.c',
   'video.c',
   'memory.c',

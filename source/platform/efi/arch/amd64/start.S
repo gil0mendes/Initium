@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -200,6 +200,66 @@ FUNCTION_START(__efi_call7)
     movq    %rdi, %rcx
     jmp     __efi_call
 FUNCTION_END(__efi_call7)
+
+FUNCTION_START(__efi_call8)
+    push    %rbp
+    movq    %rsp, %rbp
+
+    subq    $64, %rsp
+    movq    88(%rsp), %rax
+    movq    %rax, 56(%rsp)
+    movq    80(%rsp), %rax
+    movq    %rax, 48(%rsp)
+    movq    %r9, 40(%rsp)
+    movq    %r8, 32(%rsp)
+    movq    %rcx, %r9
+    movq    %rdx, %r8
+    movq    %rsi, %rdx
+    movq    %rdi, %rcx
+    jmp     __efi_call
+FUNCTION_END(__efi_call8)
+
+FUNCTION_START(__efi_call9)
+    push    %rbp
+    movq    %rsp, %rbp
+
+    subq    $80, %rsp
+    movq    112(%rsp), %rax
+    movq    %rax, 64(%rsp)
+    movq    104(%rsp), %rax
+    movq    %rax, 56(%rsp)
+    movq    96(%rsp), %rax
+    movq    %rax, 48(%rsp)
+    movq    %r9, 40(%rsp)
+    movq    %r8, 32(%rsp)
+    movq    %rcx, %r9
+    movq    %rdx, %r8
+    movq    %rsi, %rdx
+    movq    %rdi, %rcx
+    jmp     __efi_call
+FUNCTION_END(__efi_call9)
+
+FUNCTION_START(__efi_call10)
+    push    %rbp
+    movq    %rsp, %rbp
+
+    subq    $80, %rsp
+    movq    120(%rsp), %rax
+    movq    %rax, 72(%rsp)
+    movq    112(%rsp), %rax
+    movq    %rax, 64(%rsp)
+    movq    104(%rsp), %rax
+    movq    %rax, 56(%rsp)
+    movq    96(%rsp), %rax
+    movq    %rax, 48(%rsp)
+    movq    %r9, 40(%rsp)
+    movq    %r8, 32(%rsp)
+    movq    %rcx, %r9
+    movq    %rdx, %r8
+    movq    %rsi, %rdx
+    movq    %rdi, %rcx
+    jmp     __efi_call
+FUNCTION_END(__efi_call10)
 
 /** EFI call wrapper. */
 PRIVATE_FUNCTION_START(__efi_call)

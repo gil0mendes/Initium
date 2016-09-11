@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -71,8 +71,8 @@
  */
 #define __VA_NARG(...) __VA_NARG_I(_0, ## __VA_ARGS__, __RSEQ_N())
 #define __VA_NARG_I(...) __VA_NARG_N(__VA_ARGS__)
-#define __VA_NARG_N(_0, _1, _2, _3, _4, _5, _6, _7, N, ...) N
-#define __RSEQ_N() 7, 6, 5, 4, 3, 2, 1, 0
+#define __VA_NARG_N(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define __RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define __efi_vcall_(n) __efi_call##n
 #define __efi_vcall(n) __efi_vcall_(n)
@@ -119,5 +119,8 @@ extern uint64_t __efi_call4(uint64_t, uint64_t, uint64_t, uint64_t);
 extern uint64_t __efi_call5(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 extern uint64_t __efi_call6(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 extern uint64_t __efi_call7(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+extern uint64_t __efi_call8(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+extern uint64_t __efi_call9(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+extern uint64_t __efi_call10(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
 #endif /* __EFI_ARCH_API_H */

@@ -73,7 +73,7 @@ static uint16_t pxe_call(uint16_t func, void *linear) {
 }
 
 /**
- * Get identification information for the device.
+ * Get identification information for a PXE device.
  *
  * @param net           Device to identify.
  * @param type          Type of the information to get.
