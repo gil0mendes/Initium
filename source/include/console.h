@@ -37,40 +37,40 @@ struct console_out;
 
 /** Console draw region structure. */
 typedef struct draw_region {
-  uint16_t x;                         /**< X position. */
-  uint16_t y;                         /**< Y position. */
-  uint16_t width;                     /**< Width of region. */
-  uint16_t height;                    /**< Height of region. */
-  bool scrollable;                    /**< Whether to scroll when cursor reaches the end. */
+	uint16_t x;                     /**< X position. */
+	uint16_t y;                     /**< Y position. */
+	uint16_t width;                 /**< Width of region. */
+	uint16_t height;                /**< Height of region. */
+	bool scrollable;                /**< Whether to scroll when cursor reaches the end. */
 } draw_region_t;
 
 /** Console color definitions (match VGA colors). */
 typedef enum color {
-  COLOR_BLACK,                       /**< Black. */
-  COLOR_BLUE,                        /**< Dark Blue. */
-  COLOR_GREEN,                       /**< Dark Green. */
-  COLOR_CYAN,                        /**< Dark Cyan. */
-  COLOR_RED,                         /**< Dark Red. */
-  COLOR_MAGENTA,                     /**< Dark Magenta. */
-  COLOR_BROWN,                       /**< Brown. */
-  COLOR_LIGHT_GREY,                  /**< Light Grey. */
-  COLOR_GREY,                        /**< Dark Grey. */
-  COLOR_LIGHT_BLUE,                  /**< Light Blue. */
-  COLOR_LIGHT_GREEN,                 /**< Light Green. */
-  COLOR_LIGHT_CYAN,                  /**< Light Cyan. */
-  COLOR_LIGHT_RED,                   /**< Light Red. */
-  COLOR_LIGHT_MAGENTA,               /**< Light Magenta. */
-  COLOR_YELLOW,                      /**< Yellow. */
-  COLOR_WHITE,                       /**< White. */
+	COLOR_BLACK,                    /**< Black. */
+	COLOR_BLUE,                     /**< Dark Blue. */
+	COLOR_GREEN,                    /**< Dark Green. */
+	COLOR_CYAN,                     /**< Dark Cyan. */
+	COLOR_RED,                      /**< Dark Red. */
+	COLOR_MAGENTA,                  /**< Dark Magenta. */
+	COLOR_BROWN,                    /**< Brown. */
+	COLOR_LIGHT_GREY,               /**< Light Grey. */
+	COLOR_GREY,                     /**< Dark Grey. */
+	COLOR_LIGHT_BLUE,               /**< Light Blue. */
+	COLOR_LIGHT_GREEN,              /**< Light Green. */
+	COLOR_LIGHT_CYAN,               /**< Light Cyan. */
+	COLOR_LIGHT_RED,                /**< Light Red. */
+	COLOR_LIGHT_MAGENTA,            /**< Light Magenta. */
+	COLOR_YELLOW,                   /**< Yellow. */
+	COLOR_WHITE,                    /**< White. */
 
-  /**
-   * Default foreground/background colors.
-   *
-   * This is defined separately to allow, for example, on serial consoles for
-   * the colors to be set back to defaults for the console. For other console
-   * implementations, it simply sets the defaults defined below.
-   */
-  COLOR_DEFAULT,
+	/**
+	 * Default foreground/background colors.
+	 *
+	 * This is defined separately to allow, for example, on serial consoles for
+	 * the colors to be set back to defaults for the console. For other console
+	 * implementations, it simply sets the defaults defined below.
+	 */
+	COLOR_DEFAULT,
 } color_t;
 
 /** Default console colors. */
@@ -79,137 +79,137 @@ typedef enum color {
 
 /** Console output operations structure. */
 typedef struct console_out_ops {
-  /**
-   * Initialization operations.
-   */
+	/**
+	 * Initialization operations.
+	 */
 
-  /**
-   * Initialize the console when it is made active.
-   *
-   * @param console       Console output device.
-   */
-  void (*init)(struct console_out *console);
+	/**
+	 * Initialize the console when it is made active.
+	 *
+	 * @param console       Console output device.
+	 */
+	void (*init)(struct console_out *console);
 
-  /**
-   * Deinitialize the console when it is being made inactive.
-   *
-   * @param console       Console output device.
-   */
-  void (*deinit)(struct console_out *console);
+	/**
+	 * Deinitialize the console when it is being made inactive.
+	 *
+	 * @param console       Console output device.
+	 */
+	void (*deinit)(struct console_out *console);
 
-  /**
-   * Basic operations.
-   */
+	/**
+	 * Basic operations.
+	 */
 
-  /**
-   * Write a character to the console.
-   *
-   * @param console       Console output device.
-   * @param ch            Character to write.
-   */
-  void (*putc)(struct console_out *console, char ch);
+	/**
+	 * Write a character to the console.
+	 *
+	 * @param console       Console output device.
+	 * @param ch            Character to write.
+	 */
+	void (*putc)(struct console_out *console, char ch);
 
-  /**
-   * Set the current colors (optional).
-   *
-   * @param console       Console output device.
-   * @param fg            Foreground color.
-   * @param bg            Background color.
-   */
-  void (*set_color)(struct console_out *console, color_t fg, color_t bg);
+	/**
+	 * Set the current colors (optional).
+	 *
+	 * @param console       Console output device.
+	 * @param fg            Foreground color.
+	 * @param bg            Background color.
+	 */
+	void (*set_color)(struct console_out *console, color_t fg, color_t bg);
 
-  /**
-   * UI operations.
-   */
-  
-  /**
-   * Begin UI mode (optional).
-   *
-   * @param console   Console output device.
-   */
-  void (*begin_ui)(struct console_out *console);
+	/**
+	 * UI operations.
+	 */
 
-  /**
-   * End UI mode (optional).
-   *
-   * @param console   Console output device.
-   */
-  void (*end_ui)(struct console_out *console);
+	/**
+	 * Begin UI mode (optional).
+	 *
+	 * @param console   Console output device.
+	 */
+	void (*begin_ui)(struct console_out *console);
 
-  /**
-   * Set the draw region of the console.
-   *
-   * Sets the draw region of the console. All operations on the console (i.e.
-   * writing, scrolling) will be constrained to this region. The cursor will
-   * be moved to 0, 0 within this region.
-   *
-   * @param console       Console output device.
-   * @param region        New draw region, or NULL to restore to whole console.
-   */
-  void (*set_region)(struct console_out *console, const draw_region_t *region);
+	/**
+	 * End UI mode (optional).
+	 *
+	 * @param console   Console output device.
+	 */
+	void (*end_ui)(struct console_out *console);
 
-  /**
-   * Get the current draw region.
-   *
-   * @param console       Console output device.
-   * @param region        Where to store details of the current draw region.
-   */
-  void (*get_region)(struct console_out *console, draw_region_t *region);
+	/**
+	 * Set the draw region of the console.
+	 *
+	 * Sets the draw region of the console. All operations on the console (i.e.
+	 * writing, scrolling) will be constrained to this region. The cursor will
+	 * be moved to 0, 0 within this region.
+	 *
+	 * @param console       Console output device.
+	 * @param region        New draw region, or NULL to restore to whole console.
+	 */
+	void (*set_region)(struct console_out *console, const draw_region_t *region);
 
-  /**
-   * Set the cursor properties.
-   *
-   * @param console       Console output device.
-   * @param x             New X position (relative to draw region). Negative
-   *                      values will move the cursor back from the right edge
-   *                      of the draw region.
-   * @param y             New Y position (relative to draw region). Negative
-   *                      values will move the cursor up from the bottom edge
-   *                      of the draw region.
-   * @param visible       Whether the cursor should be visible.
-   */
-  void (*set_cursor)(struct console_out *console, int16_t x, int16_t y, bool visible);
+	/**
+	 * Get the current draw region.
+	 *
+	 * @param console       Console output device.
+	 * @param region        Where to store details of the current draw region.
+	 */
+	void (*get_region)(struct console_out *console, draw_region_t *region);
 
-  /**
-   * Get the cursor properties.
-   *
-   * @param console       Console output device.
-   * @param _x            Where to store X position (relative to draw region).
-   * @param _y            Where to store Y position (relative to draw region).
-   * @param _visible      Where to store whether the cursor is visible
-   */
-  void (*get_cursor)(struct console_out *console, uint16_t *_x, uint16_t *_y, bool *_visible);
+	/**
+	 * Set the cursor properties.
+	 *
+	 * @param console       Console output device.
+	 * @param x             New X position (relative to draw region). Negative
+	 *                      values will move the cursor back from the right edge
+	 *                      of the draw region.
+	 * @param y             New Y position (relative to draw region). Negative
+	 *                      values will move the cursor up from the bottom edge
+	 *                      of the draw region.
+	 * @param visible       Whether the cursor should be visible.
+	 */
+	void (*set_cursor)(struct console_out *console, int16_t x, int16_t y, bool visible);
 
-  /**
-   * Clear an area to the current background color.
-   *
-   * @param console       Console output device.
-   * @param x             Start X position (relative to draw region).
-   * @param y             Start Y position (relative to draw region).
-   * @param width         Width of the area (if 0, whole width is cleared).
-   * @param height        Height of the area (if 0, whole height is cleared).
-   */
-  void (*clear)(struct console_out *console, uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+	/**
+	 * Get the cursor properties.
+	 *
+	 * @param console       Console output device.
+	 * @param _x            Where to store X position (relative to draw region).
+	 * @param _y            Where to store Y position (relative to draw region).
+	 * @param _visible      Where to store whether the cursor is visible
+	 */
+	void (*get_cursor)(struct console_out *console, uint16_t *_x, uint16_t *_y, bool *_visible);
 
-  /**
-   * Scroll the draw region up (move contents down).
-   *
-   * @param console       Console output device.
-   */
-  void (*scroll_up)(struct console_out *console);
+	/**
+	 * Clear an area to the current background color.
+	 *
+	 * @param console       Console output device.
+	 * @param x             Start X position (relative to draw region).
+	 * @param y             Start Y position (relative to draw region).
+	 * @param width         Width of the area (if 0, whole width is cleared).
+	 * @param height        Height of the area (if 0, whole height is cleared).
+	 */
+	void (*clear)(struct console_out *console, uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 
-  /**
-   * Scroll the draw region down (move contents up).
-   *
-   * @param console       Console output device.
-   */
-  void (*scroll_down)(struct console_out *console);
+	/**
+	 * Scroll the draw region up (move contents down).
+	 *
+	 * @param console       Console output device.
+	 */
+	void (*scroll_up)(struct console_out *console);
+
+	/**
+	 * Scroll the draw region down (move contents up).
+	 *
+	 * @param console       Console output device.
+	 */
+	void (*scroll_down)(struct console_out *console);
 } console_out_ops_t;
 
 /** Console output structure (embedded in implementation-specific structure) */
 typedef struct console_out {
-  const console_out_ops_t *ops; /**< output operations. */
-  bool in_ui;                   /**< whether in UI mode */
+	const console_out_ops_t *ops;   /**< output operations. */
+	bool in_ui;                     /**< whether in UI mode */
 } console_out_t;
 
 /** Special key codes. */
@@ -232,40 +232,40 @@ typedef struct console_out {
 
 /** Console input operations structure. */
 typedef struct console_in_ops {
-  /**
-   * Initialize the console when it is made active.
-   *
-   * @param console       Console input device.
-   */
-  void *(*init)(struct console_in *console);
+	/**
+	 * Initialize the console when it is made active.
+	 *
+	 * @param console       Console input device.
+	 */
+	void *(*init)(struct console_in *console);
 
-  /**
-   * Deinitialize the console when it is being made inactive.
-   *
-   * @param console       Console input device.
-   */
-  void (*deinit)(struct console_in *console);
+	/**
+	 * Deinitialize the console when it is being made inactive.
+	 *
+	 * @param console       Console input device.
+	 */
+	void (*deinit)(struct console_in *console);
 
-  /**
-   * Check for a character from the console.
-   *
-   * @param console       Console input device.
-   * @return              Whether a character is available.
-   */
-  bool (*poll)(struct console_in *console);
+	/**
+	 * Check for a character from the console.
+	 *
+	 * @param console       Console input device.
+	 * @return              Whether a character is available.
+	 */
+	bool (*poll)(struct console_in *console);
 
-  /**
-   * Read a character from the console.
-   *
-   * @param console       Console input device.
-   * @return              Character read.
-   */
-  uint16_t (*getc)(struct console_in *console);
+	/**
+	 * Read a character from the console.
+	 *
+	 * @param console       Console input device.
+	 * @return              Character read.
+	 */
+	uint16_t (*getc)(struct console_in *console);
 } console_in_ops_t;
 
 /** Console input structure (embedded in implementation-specific structure). */
 typedef struct console_in {
-  const console_in_ops_t *ops;    /**< Input operations. */
+	const console_in_ops_t *ops; /**< Input operations. */
 } console_in_t;
 
 /**
@@ -277,17 +277,18 @@ typedef struct console_in {
  * but input via a EFI console.
  */
 typedef struct console {
-  list_t header;
+	list_t header;
 
-  const char *name;                   /**< Name of the console. */
-  console_out_t *out;                 /**< Output device. */
-  console_in_t *in;                   /**< input device. */
+	const char *name;               /**< Name of the console. */
+	console_out_t *out;             /**< Output device. */
+	console_in_t *in;               /**< input device. */
+  unsigned active;                /**< Active count. */
 } console_t;
 
 /** Console capabilities. */
-#define CONSOLE_CAP_OUT         (1<<0)  /**< Console supports basic output. */
-#define CONSOLE_CAP_IN          (1<<1)  /**< Console supports input. */
-#define CONSOLE_CAP_UI          (1<<2)  /**< Console supports the user interface. */
+#define CONSOLE_CAP_OUT         (1 << 0)        /**< Console supports basic output. */
+#define CONSOLE_CAP_IN          (1 << 1)        /**< Console supports input. */
+#define CONSOLE_CAP_UI          (1 << 2)        /**< Console supports the user interface. */
 
 extern console_t primary_console;
 
@@ -325,6 +326,6 @@ extern void console_init(void);
 
 #ifdef CONFIG_TARGET_HAS_UI
 extern void debug_log_display(void);
-#endif // CONFIG_TARGET_HAS_UI
+#endif  // CONFIG_TARGET_HAS_UI
 
-#endif // __CONSOLE_H
+#endif  // __CONSOLE_H

@@ -51,7 +51,7 @@ static LIST_DECLARE(console_list);
 console_t primary_console = { .name = "con" };
 
 /** Current main console. */
-console_t *current_console = &primary_console;
+console_t *current_console;
 
 /** Debug output console. */
 console_t *debug_console;
@@ -63,24 +63,23 @@ console_t *debug_console;
  * @param caps          Capabilities to check for.
  * @return              Whether the console has the capabilities.
  */
-bool console_has_caps(console_t *console, unsigned caps) {
-  unsigned has = 0;
+bool console_has_caps(console_t *console, unsigned caps)
+{
+	unsigned has = 0;
 
-  // if the console is null return now
-  if (!console) { return false; }
+	// if the console is null return now
+	if (!console) return false;
+	// check if the console has output capabilities
+	if (console->out) {
+		has |= CONSOLE_CAP_OUT;
 
-  // check if the console has output capabilities
-  if (console->out) {
-    has |= CONSOLE_CAP_OUT;
+		// check if the console has ui capabilities
+		if (console->out->ops->set_region) has |= CONSOLE_CAP_UI;
+	}
 
-    // check if the console has ui capabilities
-    if (console->out->ops->set_region) { has |= CONSOLE_CAP_UI; }
-  }
-
-  // check if the console has input capabilities
-  if (console->in) { has |= CONSOLE_CAP_IN; }
-
-  return (has & caps) == caps;
+	// check if the console has input capabilities
+	if (console->in) has |= CONSOLE_CAP_IN;
+	return (has & caps) == caps;
 }
 
 /**
@@ -89,8 +88,9 @@ bool console_has_caps(console_t *console, unsigned caps) {
  * @param console       Console to write to (will be checked for output support).
  * @param ch            Character to write.
  */
-void console_putc(console_t *console, char ch) {
-  if (console && console->out) { console->out->ops->putc(console->out, ch); }
+void console_putc(console_t *console, char ch)
+{
+	if (console && console->out) console->out->ops->putc(console->out, ch);
 }
 
 /**
@@ -100,10 +100,10 @@ void console_putc(console_t *console, char ch) {
  * @param fg            Foreground color.
  * @param bg            Background color.
  */
-void console_set_color(console_t *console, color_t fg, color_t bg) {
-  if (console && console->out && console->out->ops->set_color) {
-    console->out->ops->set_color(console->out, fg, bg);
-  }
+void console_set_color(console_t *console, color_t fg, color_t bg)
+{
+	if (console && console->out && console->out->ops->set_color)
+		console->out->ops->set_color(console->out, fg, bg);
 }
 
 /**
@@ -111,18 +111,18 @@ void console_set_color(console_t *console, color_t fg, color_t bg) {
  *
  * @param console Console to operate on (must have CONSOLE_CAP_UI).
  */
-void console_begin_ui(console_t *console) {
-  // ensure the console has the necessary capabilities
-  assert(console_has_caps(console, CONSOLE_CAP_UI));
-  assert(!console->out->in_ui);
+void console_begin_ui(console_t *console)
+{
+	// ensure the console has the necessary capabilities
+	assert(console_has_caps(console, CONSOLE_CAP_UI));
+	assert(!console->out->in_ui);
 
-  console->out->in_ui = true;
+	console->out->in_ui = true;
 
-  // check if the UI has already booted up
-  if (console->out->ops->begin_ui) {
-    // init the UI
-    console->out->ops->begin_ui(console->out);
-  }
+	// check if the UI has already booted up
+	if (console->out->ops->begin_ui)
+		// init the UI
+		console->out->ops->begin_ui(console->out);
 }
 
 /**
@@ -130,21 +130,21 @@ void console_begin_ui(console_t *console) {
  *
  * @param console Console to operate on (must have CONSOLE_CAP_UI).s
  */
-void console_end_ui(console_t *console) {
-  assert(console->out->in_ui);
+void console_end_ui(console_t *console)
+{
+	assert(console->out->in_ui);
 
-  // reset state and clear the default colors
-  console_set_region(current_console, NULL);
-  console_set_cursor(current_console, 0, 0, true);
-  console_set_color(current_console, COLOR_DEFAULT, COLOR_DEFAULT);
-  console_clear(current_console, 0, 0, 0, 0);
+	// reset state and clear the default colors
+	console_set_region(current_console, NULL);
+	console_set_cursor(current_console, 0, 0, true);
+	console_set_color(current_console, COLOR_DEFAULT, COLOR_DEFAULT);
+	console_clear(current_console, 0, 0, 0, 0);
 
-  // if the console has a end_ui function execute them
-  if (console->out->ops->end_ui) {
-    console->out->ops->end_ui(console->out);
-  }
+	// if the console has a end_ui function execute them
+	if (console->out->ops->end_ui)
+		console->out->ops->end_ui(console->out);
 
-  console->out->in_ui = false;
+	console->out->in_ui = false;
 }
 
 /**
@@ -157,9 +157,10 @@ void console_end_ui(console_t *console) {
  * @param console       Console to operate on (must have CONSOLE_CAP_UI).
  * @param region        New draw region, or NULL to restore to whole console.
  */
-void console_set_region(console_t *console, const draw_region_t *region) {
-  assert(console->out->in_ui);
-  console->out->ops->set_region(console->out, region);
+void console_set_region(console_t *console, const draw_region_t *region)
+{
+	assert(console->out->in_ui);
+	console->out->ops->set_region(console->out, region);
 }
 
 /**
@@ -168,9 +169,10 @@ void console_set_region(console_t *console, const draw_region_t *region) {
  * @param console       Console to operate on (must have CONSOLE_CAP_UI).
  * @param region        Where to store details of the current draw region.
  */
-void console_get_region(console_t *console, draw_region_t *region) {
-  assert(console->out->in_ui);
-  console->out->ops->get_region(console->out, region);
+void console_get_region(console_t *console, draw_region_t *region)
+{
+	assert(console->out->in_ui);
+	console->out->ops->get_region(console->out, region);
 }
 
 /**
@@ -185,9 +187,10 @@ void console_get_region(console_t *console, draw_region_t *region) {
  *                      of the draw region.
  * @param visible       Whether the cursor should be visible.
  */
-void console_set_cursor(console_t *console, int16_t x, int16_t y, bool visible) {
-  assert(console->out->in_ui);
-  console->out->ops->set_cursor(console->out, x, y, visible);
+void console_set_cursor(console_t *console, int16_t x, int16_t y, bool visible)
+{
+	assert(console->out->in_ui);
+	console->out->ops->set_cursor(console->out, x, y, visible);
 }
 
 /**
@@ -198,9 +201,10 @@ void console_set_cursor(console_t *console, int16_t x, int16_t y, bool visible) 
  * @param _y            Where to store Y position (relative to draw region).
  * @param _visible      Where to store whether the cursor is visible
  */
-void console_get_cursor(console_t *console, uint16_t *_x, uint16_t *_y, bool *_visible) {
-  assert(console->out->in_ui);
-  console->out->ops->get_cursor(console->out, _x, _y, _visible);
+void console_get_cursor(console_t *console, uint16_t *_x, uint16_t *_y, bool *_visible)
+{
+	assert(console->out->in_ui);
+	console->out->ops->get_cursor(console->out, _x, _y, _visible);
 }
 
 /**
@@ -212,9 +216,10 @@ void console_get_cursor(console_t *console, uint16_t *_x, uint16_t *_y, bool *_v
  * @param width         Width of the area (if 0, whole width is cleared).
  * @param height        Height of the area (if 0, whole height is cleared).
  */
-void console_clear(console_t *console, uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
-  assert(console->out->in_ui);
-  console->out->ops->clear(console->out, x, y, width, height);
+void console_clear(console_t *console, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+	assert(console->out->in_ui);
+	console->out->ops->clear(console->out, x, y, width, height);
 }
 
 /**
@@ -222,9 +227,10 @@ void console_clear(console_t *console, uint16_t x, uint16_t y, uint16_t width, u
  *
  * @param console       Console to operate on (must have CONSOLE_CAP_UI).
  */
-void console_scroll_up(console_t *console) {
-  assert(console->out->in_ui);
-  console->out->ops->scroll_up(console->out);
+void console_scroll_up(console_t *console)
+{
+	assert(console->out->in_ui);
+	console->out->ops->scroll_up(console->out);
 }
 
 /**
@@ -232,9 +238,10 @@ void console_scroll_up(console_t *console) {
  *
  * @param console       Console to operate on (must have CONSOLE_CAP_UI).
  */
-void console_scroll_down(console_t *console) {
-  assert(console->out->in_ui);
-  console->out->ops->scroll_down(console->out);
+void console_scroll_down(console_t *console)
+{
+	assert(console->out->in_ui);
+	console->out->ops->scroll_down(console->out);
 }
 
 /**
@@ -243,9 +250,10 @@ void console_scroll_down(console_t *console) {
  * @param console       Console to operate on (must have CONSOLE_CAP_IN).
  * @return              Whether a character is available.
  */
-bool console_poll(console_t *console) {
-  assert(console_has_caps(console, CONSOLE_CAP_IN));
-  return console->in->ops->poll(console->in);
+bool console_poll(console_t *console)
+{
+	assert(console_has_caps(console, CONSOLE_CAP_IN));
+	return console->in->ops->poll(console->in);
 }
 
 /**
@@ -254,9 +262,10 @@ bool console_poll(console_t *console) {
  * @param console       Console to operate on (must have CONSOLE_CAP_IN).
  * @return              Character read.
  */
-uint16_t console_getc(console_t *console) {
-  assert(console_has_caps(console, CONSOLE_CAP_IN));
-  return console->in->ops->getc(console->in);
+uint16_t console_getc(console_t *console)
+{
+	assert(console_has_caps(console, CONSOLE_CAP_IN));
+	return console->in->ops->getc(console->in);
 }
 
 /**
@@ -266,11 +275,12 @@ uint16_t console_getc(console_t *console) {
  * @param data          Console to use.
  * @param total         Pointer to total character count.
  */
-void console_vprintf_helper(char ch, void *data, int *total) {
-  console_t *console = data;
+void console_vprintf_helper(char ch, void *data, int *total)
+{
+	console_t *console = data;
 
-  console_putc(console, ch);
-  *total = *total + 1;
+	console_putc(console, ch);
+	*total = *total + 1;
 }
 
 /** Output a formatted message to a console.
@@ -278,8 +288,9 @@ void console_vprintf_helper(char ch, void *data, int *total) {
  * @param fmt           Format string used to create the message.
  * @param args          Arguments to substitute into format.
  * @return              Number of characters printed. */
-int console_vprintf(console_t *console, const char *fmt, va_list args) {
-  return do_vprintf(console_vprintf_helper, console, fmt, args);
+int console_vprintf(console_t *console, const char *fmt, va_list args)
+{
+	return do_vprintf(console_vprintf_helper, console, fmt, args);
 }
 
 /** Output a formatted message to a console.
@@ -287,146 +298,160 @@ int console_vprintf(console_t *console, const char *fmt, va_list args) {
  * @param fmt           Format string used to create the message.
  * @param ...           Arguments to substitute into format.
  * @return              Number of characters printed. */
-int console_printf(console_t *console, const char *fmt, ...) {
-  va_list args;
-  int ret;
+int console_printf(console_t *console, const char *fmt, ...)
+{
+	va_list args;
+	int ret;
 
-  va_start(args, fmt);
-  ret = console_vprintf(console, fmt, args);
-  va_end(args);
+	va_start(args, fmt);
+	ret = console_vprintf(console, fmt, args);
+	va_end(args);
 
-  return ret;
+	return ret;
 }
 
 /** Output a formatted message to the current console.
  * @param fmt           Format string used to create the message.
  * @param args          Arguments to substitute into format.
  * @return              Number of characters printed. */
-int vprintf(const char *fmt, va_list args) {
-  return do_vprintf(console_vprintf_helper, current_console, fmt, args);
+int vprintf(const char *fmt, va_list args)
+{
+	return do_vprintf(console_vprintf_helper, current_console, fmt, args);
 }
 
 /** Output a formatted message to the current console.
  * @param fmt           Format string used to create the message.
  * @param ...           Arguments to substitute into format.
  * @return              Number of characters printed. */
-int printf(const char *fmt, ...) {
-  va_list args;
-  int ret;
+int printf(const char *fmt, ...)
+{
+	va_list args;
+	int ret;
 
-  va_start(args, fmt);
-  ret = vprintf(fmt, args);
-  va_end(args);
+	va_start(args, fmt);
+	ret = vprintf(fmt, args);
+	va_end(args);
 
-  return ret;
+	return ret;
 }
 
 /** Helper for dvprintf().
  * @param ch            Character to display.
  * @param data          Unused.
  * @param total         Pointer to total character count. */
-void dvprintf_helper(char ch, void *data, int *total) {
-  console_putc(debug_console, ch);
+void dvprintf_helper(char ch, void *data, int *total)
+{
+	console_putc(debug_console, ch);
 
-  /* Store in the log buffer. */
-  debug_log[(debug_log_start + debug_log_length) % DEBUG_LOG_SIZE] = ch;
-  if (debug_log_length < DEBUG_LOG_SIZE) {
-    debug_log_length++;
-  } else {
-    debug_log_start = (debug_log_start + 1) % DEBUG_LOG_SIZE;
-  }
+	/* Store in the log buffer. */
+	debug_log[(debug_log_start + debug_log_length) % DEBUG_LOG_SIZE] = ch;
+	if (debug_log_length < DEBUG_LOG_SIZE)
+		debug_log_length++;
+	else
+		debug_log_start = (debug_log_start + 1) % DEBUG_LOG_SIZE;
 
-  *total = *total + 1;
+	*total = *total + 1;
 }
 
 /** Output a formatted message to the debug console.
  * @param fmt           Format string used to create the message.
  * @param args          Arguments to substitute into format.
  * @return              Number of characters printed. */
-int dvprintf(const char *fmt, va_list args) {
-  return do_vprintf(dvprintf_helper, NULL, fmt, args);
+int dvprintf(const char *fmt, va_list args)
+{
+	return do_vprintf(dvprintf_helper, NULL, fmt, args);
 }
 
 /** Output a formatted message to the debug console.
  * @param fmt           Format string used to create the message.
  * @param ...           Arguments to substitute into format.
  * @return              Number of characters printed. */
-int dprintf(const char *fmt, ...) {
-  va_list args;
-  int ret;
+int dprintf(const char *fmt, ...)
+{
+	va_list args;
+	int ret;
 
-  va_start(args, fmt);
-  ret = dvprintf(fmt, args);
-  va_end(args);
+	va_start(args, fmt);
+	ret = dvprintf(fmt, args);
+	va_end(args);
 
-  return ret;
+	return ret;
 }
 
 /** Look up a console by name.
  * @param name          Name of the console to look up.
  * @return              Pointer to console if found, NULL if not. */
-console_t *console_lookup(const char *name) {
-  list_foreach(&console_list, iter) {
-    console_t *console = list_entry(iter, console_t, header);
+console_t *console_lookup(const char *name)
+{
+	list_foreach(&console_list, iter) {
+		console_t *console = list_entry(iter, console_t, header);
 
-    if (strcmp(console->name, name) == 0)
-      return console;
-  }
+		if (strcmp(console->name, name) == 0)
+			return console;
+	}
 
-  return NULL;
+	return NULL;
 }
 
 /** Register a console.
  * @param console       Console to register (details filled in). */
-void console_register(console_t *console) {
-  if (console_lookup(console->name))
-    internal_error("Console named '%s' already exists", console->name);
+void console_register(console_t *console)
+{
+	if (console_lookup(console->name))
+		internal_error("Console named '%s' already exists", console->name);
 
-  list_init(&console->header);
-  list_append(&console_list, &console->header);
+	list_init(&console->header);
+	list_append(&console_list, &console->header);
+
+	console->active = 0;
 }
 
 /** Make a console active.
  * @param var           Pointer to console variable to set.
  * @param console       Console to set. */
-static void set_console(console_t **var, console_t *console) {
-  console_t *prev = *var;
+static void set_console(console_t **var, console_t *console)
+{
+	console_t *prev = *var;
 
-  if (console != prev) {
-    if (prev) {
-      if (prev->out && prev->out->ops->deinit)
-        prev->out->ops->deinit(prev->out);
-      if (prev->in && prev->in->ops->deinit)
-        prev->in->ops->deinit(prev->in);
-    }
+	if (console != prev) {
+		if (prev && --prev->active == 0) {
+			if (prev->out && prev->out->ops->deinit)
+				prev->out->ops->deinit(prev->out);
+			if (prev->in && prev->in->ops->deinit)
+				prev->in->ops->deinit(prev->in);
+		}
 
-    *var = console;
+		*var = console;
 
-    if (console) {
-      if (console->out && console->out->ops->init)
-        console->out->ops->init(console->out);
-      if (console->in && console->in->ops->init)
-        console->in->ops->init(console->in);
-    }
-  }
+		if (console && ++console->active == 1) {
+			if (console->out && console->out->ops->init)
+				console->out->ops->init(console->out);
+			if (console->in && console->in->ops->init)
+				console->in->ops->init(console->in);
+		}
+	}
 }
 
 /** Set a console as the current console.
  * @param console       Console to set as current. */
-void console_set_current(console_t *console) {
-  set_console(&current_console, console);
+void console_set_current(console_t *console)
+{
+	set_console(&current_console, console);
 }
 
 /** Set a console as the debug console.
  * @param console       Console to set as debug. */
-void console_set_debug(console_t *console) {
-  set_console(&debug_console, console);
+void console_set_debug(console_t *console)
+{
+	set_console(&debug_console, console);
 }
 
 /** Initialize the console. */
-void console_init(void) {
-  console_register(&primary_console);
-  target_console_init();
+void console_init(void)
+{
+	console_register(&primary_console);
+	target_console_init();
+	console_set_current(&primary_console);
 }
 
 /**
@@ -436,13 +461,14 @@ void console_init(void) {
 #ifdef CONFIG_TARGET_HAS_UI
 
 /** Display the debug log. */
-void debug_log_display(void) {
-  ui_window_t *textview = ui_textview_create(
-                            "Debug Log", debug_log, DEBUG_LOG_SIZE, 
-                            debug_log_start, debug_log_length);
+void debug_log_display(void)
+{
+	ui_window_t *textview = ui_textview_create(
+		"Debug Log", debug_log, DEBUG_LOG_SIZE,
+		debug_log_start, debug_log_length);
 
-  ui_display(textview, 0);
-  ui_window_destroy(textview);
+	ui_display(textview, 0);
+	ui_window_destroy(textview);
 }
 
 #endif // CONFIG_TARGET_HAS_UI
@@ -454,26 +480,27 @@ void debug_log_display(void) {
 /** List available consoles.
  * @param args          Argument list.
  * @return              Whether successful. */
-static bool config_cmd_lsconsole(value_list_t *args) {
-  if (args->count != 0) {
-    config_error("Invalid arguments");
-    return false;
-  }
+static bool config_cmd_lsconsole(value_list_t *args)
+{
+	if (args->count != 0) {
+		config_error("Invalid arguments");
+		return false;
+	}
 
-  list_foreach(&console_list, iter) {
-    console_t *console = list_entry(iter, console_t, header);
+	list_foreach(&console_list, iter) {
+		console_t *console = list_entry(iter, console_t, header);
 
-    printf("%s", console->name);
+		printf("%s", console->name);
 
-    if (console == current_console)
-      printf(" (current)");
-    if (console == debug_console)
-      printf(" (debug)");
+		if (console == current_console)
+			printf(" (current)");
+		if (console == debug_console)
+			printf(" (debug)");
 
-    printf("\n");
-  }
+		printf("\n");
+	}
 
-  return true;
+	return true;
 }
 
 BUILTIN_COMMAND("lsconsole", "List available consoles", config_cmd_lsconsole);
@@ -481,7 +508,41 @@ BUILTIN_COMMAND("lsconsole", "List available consoles", config_cmd_lsconsole);
 /** Set the current console.
  * @param args          Argument list.
  * @return              Whether successful. */
-static bool config_cmd_console(value_list_t *args) {
+static bool config_cmd_console(value_list_t *args)
+{
+	console_t *console;
+
+	if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
+		config_error("Invalid arguments");
+		return false;
+	}
+
+	console = console_lookup(args->values[0].string);
+	if (!console) {
+		config_error("Console '%s' not found", args->values[0].string);
+		return false;
+	}
+
+	// check if the console supports output
+	if (!console->out) {
+		config_error("Console '%s' does not support output", args->values[0].string);
+		return false;
+	}
+
+	console_set_current(console);
+	return true;
+}
+
+BUILTIN_COMMAND("console", "Set the current console", config_cmd_console);
+
+/**
+ * Set the debug console.
+ *
+ * @param  args Arguments list.
+ * @return      Whether successful.
+ */
+static bool config_cmd_debug(value_list_t *args)
+{
   console_t *console;
 
   if (args->count != 1 || args->values[0].type != VALUE_TYPE_STRING) {
@@ -495,36 +556,35 @@ static bool config_cmd_console(value_list_t *args) {
     return false;
   }
 
-  // check if the console supports output
   if (!console->out) {
     config_error("Console '%s' does not support output", args->values[0].string);
     return false;
   }
 
-  console_set_current(console);
+  console_set_debug(console);
   return true;
 }
 
-BUILTIN_COMMAND("console", "Set the current console", config_cmd_console);
+BUILTIN_COMMAND("debug", "Set the debug console", config_cmd_debug);
 
 /**
  * Print the debug log.
- * 
+ *
  * @param  args Argument list.
  * @return      Whether successful.
  */
-static bool config_cmd_log(value_list_t *args) {
-  if (args->count != 0) {
-    config_error("Invalid arguments");
-    return false;
-  }
+static bool config_cmd_log(value_list_t *args)
+{
+	if (args->count != 0) {
+		config_error("Invalid arguments");
+		return false;
+	}
 
-  // print the debug log
-  for (size_t i = 0; i < debug_log_length; i++) {
-    console_putc(current_console, debug_log[(debug_log_start + i) % DEBUG_LOG_SIZE]);
-  }
+	// print the debug log
+	for (size_t i = 0; i < debug_log_length; i++)
+		console_putc(current_console, debug_log[(debug_log_start + i) % DEBUG_LOG_SIZE]);
 
-  return true;
+	return true;
 }
 
 BUILTIN_COMMAND("log", "Output the contents of the debug log", config_cmd_log);
