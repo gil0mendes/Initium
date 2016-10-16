@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,11 +53,37 @@
  * @return		Destination location.
  */
 void *memcpy(void *__restrict dest, const void *__restrict src, size_t count) {
-	const unsigned char *s = src;
-	unsigned char *d = dest;
+	const char *s = (const char *)src;
+	const unsigned long *ns;
+	char *d = (char *)dest;
+	unsigned long *nd;
 
-	for(; count != 0; count--)
-		*d++ = *s++;
+	// align the destination
+	while ((ptr_t)d & (sizeof(unsigned long) - 1)) {
+		if (count--) {
+			*d++ = *s++;
+		} else {
+			return dest;
+		}
+	}
+
+	// write in native-sized blocks if we can
+	if (count >= sizeof(unsigned long)) {
+		nd = (unsigned long *)d;
+		ns = (const unsigned long *)s;
+
+		// unroll the loop if possible
+		while (count >= (sizeof(unsigned long) * 4)) {
+			*nd++ = *ns++;
+			count -= sizeof(unsigned long);
+		}
+
+		d = (char *)nd;
+		s = (const char *)ns;
+	}
+
+	// write remaing bytes
+	while(count--) { *d++ = *s++; }
 
 	return dest;
 }
@@ -66,16 +92,59 @@ void *memcpy(void *__restrict dest, const void *__restrict src, size_t count) {
 
 #ifndef TARGET_HAS_MEMSET
 
-/** Fill a memory area.
+/**
+ * Fill a memory area.
+ *
  * @param dest		The memory area to fill.
  * @param val		The value to fill with (converted to an unsigned char).
  * @param count		The number of bytes to fill.
- * @return		Destination location. */
+ *
+ * @return		Destination location.
+ */
 void *memset(void *dest, int val, size_t count) {
-	unsigned char *d = dest;
+	unsigned char c = val & 0xff;
+	unsigned long *nd, nval;
+	char *d = (char *)dest;
 
-	for(; count != 0; count--)
-		*d++ = (unsigned char)val;
+	// align the destination
+	while ((ptr_t)d & (sizeof(unsigned long) - 1)) {
+		if (count--) {
+			*d++ = c;
+		} else {
+			return dest;
+		}
+	}
+
+	// write in native-sized blocks if we can
+	if (count >= sizeof(unsigned long)) {
+		nd = (unsigned long *)d;
+
+		// compute the value we will write
+		#ifdef __LP64_
+			nval = c * 0x0101010101010101ul;
+		#else
+			nval = c * 0x01010101ul;
+		#endif
+
+		// unroll the loop if possible
+		while (count >= (sizeof(unsigned long) * 4)) {
+			*nd++ = nval;
+ 			*nd++ = nval;
+ 			*nd++ = nval;
+ 			*nd++ = nval;
+ 			count -= sizeof(unsigned long) * 4;
+		}
+
+		while (count >= sizeof(unsigned long)) {
+			*nd++ = nval;
+			count -= sizeof(unsigned long);
+		}
+
+		d = (char *)nd;
+	}
+
+	// write remaing bytes
+	while(count--) { *d++ = val; }
 
 	return dest;
 }

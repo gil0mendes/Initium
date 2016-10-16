@@ -1,7 +1,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) 2014-2015 Gil Mendes
+# Copyright (c) 2014-2016 Gil Mendes
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,6 @@ from util import FeatureSources
 sources = FeatureSources(config, [
   'loader/initium.c',
   'loader/initium_enter.S',
-
-  'lib/string.c',
 
   'arch.c',
   'backtrace.c',

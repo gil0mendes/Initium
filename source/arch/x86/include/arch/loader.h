@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,6 @@
 #define __ARCH__LOADER_H
 
 #include <types.h>
-
-// Properties of the architecture (function we provide etc.).
-#define TARGET_HAS_MEMCPY          1
-#define TARGET_HAS_MEMSET          2
 
 /**
  * Spin loop hint.
