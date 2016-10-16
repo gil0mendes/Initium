@@ -1151,7 +1151,7 @@ static input_result_t ui_textview_input(ui_window_t *window, uint16_t key) {
       console_set_cursor(current_console, 0, 0, false);
       render_textview_line(textview, --textview->offset);
 
-      if (!textview->offset) { return INPUT_RENDER_HELP; }
+      return INPUT_RENDER_HELP;
     }
 
     return INPUT_HANDLED;
@@ -1161,9 +1161,7 @@ static input_result_t ui_textview_input(ui_window_t *window, uint16_t key) {
       console_set_cursor(current_console, 0, -1, false);
       render_textview_line(textview, textview->offset++ + CONTENT_HEIGHT);
 
-      if (textview->count - textview->offset <= CONTENT_HEIGHT) { 
-        return INPUT_RENDER_HELP; 
-      }
+      return INPUT_RENDER_HELP;
     }
 
     return INPUT_HANDLED;
