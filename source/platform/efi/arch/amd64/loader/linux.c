@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 <author>
+ * Copyright (c) 2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,36 @@
 
 /**
  * @file
- * @brief		Compiler-specific macros/definitions.
+ * @brief   AMD64 EFI platform Linux loader.
  */
 
-#ifndef __COMPILER_H
-#define __COMPILER_H
+ #include <x86/linux.h>
 
-#ifdef __GNUC__
-	#define __unused			__attribute__((unused))
-	#define __used				__attribute__((used))
-	#define __packed			__attribute__((packed))
-	#define __aligned(a)		__attribute__((aligned(a)))
-	#define __noreturn			__attribute__((noreturn))
-	#define __malloc			__attribute__((malloc))
-	#define __printf(a, b)		__attribute__((format(printf, a, b)))
-	#define __deprecated		__attribute__((deprecated))
-	#define __section(s)		__attribute__((section(s)))
-	#define __cleanup(f)     	__attribute__((cleanup(f)))
-	#define likely(x)			__builtin_expect(!!(x), 1)
-	#define unlikely(x)			__builtin_expect(!!(x), 0)
-	#define unreachable(x)		__builtin_unreachable()
-#else
-	#error "Initium does not currently support compilers other than GCC"
-#endif
+ #include <efi/efi.h>
 
-#define STRINGIFY(val)		#val
-#define XSTRINGIFY(val)		STRINGIFY(val)
+ #include <loader.h>
 
-#define static_assert(cond)	\
-	do { \
-		struct __static_assert { \
-			char static_assert_failed[(cond) ? 1 : -1]; \
-		}; \
-	} while(0);
+extern void linux_platform_enter(
+	efi_handle_t handle, efi_system_table_t *table, linux_params_t *params,
+	ptr_t entry) __noreturn;
 
-#endif // __COMPILER_H
+/** Enter a Linux kernel.
+ * @param loader        Loader internal data.
+ * @param params        Kernel parameters structure. */
+void linux_platform_load(linux_loader_t *loader, linux_params_t *params)
+{
+	ptr_t entry;
+
+	if (params->hdr.version < 0x20b || !params->hdr.handover_offset)
+		boot_error("Kernel does not support EFI handover");
+
+	if (params->hdr.version >= 0x20c && !(params->hdr.xloadflags & LINUX_XLOAD_EFI_HANDOVER_64))
+		boot_error("Kernel does not support 64-bit EFI handover");
+
+	/* 64-bit entry point is 512 bytes after the 32-bit one. */
+	entry = params->hdr.code32_start + params->hdr.handover_offset + 512;
+
+	/* Start the kernel. */
+	dprintf("linux: kernel EFI handover entry at %p, params at %p\n", entry, params);
+	linux_platform_enter(efi_image_handle, efi_system_table, params, entry);
+}

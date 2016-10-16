@@ -40,6 +40,7 @@ sources = FeatureSources(config, [
     'lib/line_editor.c',
 
     ('TARGET_HAS_INITIUM64', 'TARGET_HAS_INITIUM32', 'loader/initium.c'),
+    ('TARGET_HAS_LINUX', 'loader/linux.c'),
 
     ('TARGET_HAS_DISK', 'partition/gpt.c'),
     ('TARGET_HAS_DISK', 'partition/mbr.c'),

@@ -477,7 +477,7 @@ static void add_fs_bootdev_tag(initium_loader_t *loader, const char *uuid) {
 
 /**
  * Add a network boot device tag.
- * 
+ *
  * @param loader Loader internal data.
  * @param device Device booted from.
  */
@@ -516,10 +516,10 @@ static void add_other_bootdev_tag(initium_loader_t *loader, const char *str) {
   memcpy((char *)tag + round_up(sizeof(*tag), 8), str, len);
 }
 
-/** 
+/**
  * Add boot device information to the tag list.
- * 
- * @param loader        Loader internal data. 
+ *
+ * @param loader        Loader internal data.
  */
 static void add_bootdev_tag(initium_loader_t *loader) {
   device_t *device;
@@ -703,6 +703,8 @@ static __noreturn void initium_loader_load(void *_loader) {
   initium_arch_enter(loader);
 }
 
+#ifdef CONFIG_TARGET_HAS_UI
+
 /** Get a configuration window.
  * @param _loader       Pointer to loader internal data.
  * @param title         Title to give the window.
@@ -740,19 +742,26 @@ static ui_window_t *initium_loader_configure(void *_loader, const char *title) {
   return window;
 }
 
+#endif // CONFIG_TARGET_HAS_UI
+
 /** Initium loader operations. */
 static loader_ops_t initium_loader_ops = {
   .load = initium_loader_load,
+  #ifdef CONFIG_TARGET_HAS_UI
   .configure = initium_loader_configure,
+  #endif
 };
 
 /**
  * Configuration command.
  */
 
-/** Check whether the command arguments are valid.
+/**
+ * Check whether the command arguments are valid.
+ *
  * @param args          Arguments to check.
- * @return              Whether arguments are valid. */
+ * @return              Whether arguments are valid.
+ */
 static bool check_args(value_list_t *args) {
   if (args->count != 1 && args->count != 2)
     return false;

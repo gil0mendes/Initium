@@ -27,3 +27,6 @@ config TARGET_HAS_INITIUM32
 
 config TARGET_HAS_INITIUM64
     def_bool y
+
+config TARGET_HAS_LINUX
+    def_bool y

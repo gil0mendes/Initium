@@ -26,6 +26,8 @@ sources = FeatureSources(config, [
   'loader/chain.c',
   'loader/chain_enter.S',
   'loader/initium.c',
+  'loader/linux.c',
+  'loader/linux_enter.S',
 
   'pxe.c',
   'bios.S',

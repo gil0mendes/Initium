@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2016 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,6 @@
 /**
  * @file
  * @brief		String handling functions.
- *
- * @note		These functions are written with code size rather than
- *			speed in mind.
  */
 
 #include <lib/ctype.h>
