@@ -159,6 +159,9 @@ __noreturn void linux_arch_load(linux_loader_t *loader)
 	else if (!(params->hdr.loadflags & LINUX_LOAD_LOADED_HIGH))
 		boot_error("zImage kernels are not supported");
 
+	// check platform requirements
+	linux_platform_check(loader, params);
+
 	// Start populating required fields in the header. Don't set heap_end_ptr or
 	// the CAN_USE_HEAP flag, as these appear to only be required by the 16-bit
 	// entry point which we do not use.
@@ -238,4 +241,15 @@ __noreturn void linux_arch_load(linux_loader_t *loader)
 	// entry point. For EFI, this will enter the kernel using the handover
 	// protocol.
 	linux_platform_load(loader, params);
+}
+
+/**
+ * Check for platform-specific requirements.
+ *
+ * @param loader Loader internal data.
+ * @param params Kernel params structure.
+ */
+__weak void linux_platform_check(linux_loader_t *loader, linux_params_t *params)
+{
+	// Nothing happens
 }

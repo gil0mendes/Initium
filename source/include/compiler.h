@@ -31,19 +31,20 @@
 #define __COMPILER_H
 
 #ifdef __GNUC__
-	#define __unused			__attribute__((unused))
-	#define __used				__attribute__((used))
-	#define __packed			__attribute__((packed))
+	#define __unused				__attribute__((unused))
+	#define __used					__attribute__((used))
+	#define __packed				__attribute__((packed))
 	#define __aligned(a)		__attribute__((aligned(a)))
 	#define __noreturn			__attribute__((noreturn))
-	#define __malloc			__attribute__((malloc))
-	#define __printf(a, b)		__attribute__((format(printf, a, b)))
+	#define __malloc				__attribute__((malloc))
+	#define __printf(a, b)	__attribute__((format(printf, a, b)))
 	#define __deprecated		__attribute__((deprecated))
 	#define __section(s)		__attribute__((section(s)))
-	#define __cleanup(f)     	__attribute__((cleanup(f)))
-	#define likely(x)			__builtin_expect(!!(x), 1)
+	#define __cleanup(f)    __attribute__((cleanup(f)))
+	#define __weak     			__attribute__((weak))
+	#define likely(x)				__builtin_expect(!!(x), 1)
 	#define unlikely(x)			__builtin_expect(!!(x), 0)
-	#define unreachable(x)		__builtin_unreachable()
+	#define unreachable(x)	__builtin_unreachable()
 #else
 	#error "Initium does not currently support compilers other than GCC"
 #endif
