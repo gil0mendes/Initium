@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014-2015 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #include <types.h>
 
 extern void *memcpy(void *__restrict dest, const void *__restrict src,
-	size_t count);
+		    size_t count);
 extern void *memset(void *dest, int val, size_t count);
 extern void *memmove(void *dest, const void *src, size_t count);
 extern int memcmp(const void *p1, const void *p2, size_t count);
@@ -51,18 +51,20 @@ extern char *strstr(const char *s, const char *what);
 extern char *strstrip(char *str);
 extern char *strcpy(char *__restrict dest, const char *__restrict src);
 extern char *strncpy(char *__restrict dest, const char *__restrict src,
-	size_t count);
+		     size_t count);
 extern char *strcat(char *__restrict dest, const char *__restrict src);
 extern char *strdup(const char *src);
 extern char *strndup(const char *src, size_t n);
 extern unsigned long strtoul(const char *cp, char **endp, unsigned int base);
-extern long strtol(const char *cp,char **endp,unsigned int base);
+extern long strtol(const char *cp, char **endp, unsigned int base);
 extern unsigned long long strtoull(const char *cp, char **endp,
-	unsigned int base);
+				   unsigned int base);
 extern long long strtoll(const char *cp, char **endp, unsigned int base);
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 extern int vsprintf(char *buf, const char *fmt, va_list args);
 extern int snprintf(char *buf, size_t size, const char *fmt, ...);
 extern int sprintf(char *buf, const char *fmt, ...);
+
+extern void split_cmdline(const char *str, char **_path, char **_cmdline);
 
 #endif /* __LIB_STRING_H */
