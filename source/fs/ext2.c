@@ -387,14 +387,27 @@
      return STATUS_SUCCESS;
  }
 
- /** Open an entry on an ext2 filesystem.
+ /**
+  * Open an entry on an ext2 filesystem.
+  *
   * @param _entry        Entry to open (obtained via iterate()).
   * @param _handle       Where to store pointer to opened handle.
-  * @return              Status code describing the result of the operation. */
+  * @return              Status code describing the result of the operation.
+  */
  static status_t ext2_open_entry(const fs_entry_t *_entry, fs_handle_t **_handle) {
      ext2_entry_t *entry = (ext2_entry_t *)_entry;
      ext2_handle_t *owner = (ext2_handle_t *)_entry->owner;
      ext2_mount_t *mount = (ext2_mount_t *)_entry->owner->mount;
+
+     if (entry->num == owner->num) {
+       fs_retain(&owner->handle);
+       *_handle = &owner->handle;
+       return STATUS_SUCCESS;
+     } else if (entry->num == EXT2_ROOT_INO) {
+       fs_retain(mount->mount.root);
+       *_handle = mount->mount.root;
+       return STATUS_SUCCESS;
+     }
 
      return open_inode(mount, entry->num, owner, _handle);
  }
