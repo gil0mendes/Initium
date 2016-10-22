@@ -36,6 +36,8 @@
 
 #include <status.h>
 
+struct device;
+
 extern char __text_start[], __data_start[], __bss_start[];
 
 extern efi_handle_t efi_image_handle;
@@ -50,11 +52,11 @@ extern efi_status_t efi_allocate_pool(efi_memory_type_t pool_type, efi_uintn_t s
 extern efi_status_t efi_free_pool(void *buffer);
 
 extern efi_status_t efi_locate_handle(
-    efi_locate_search_type_t search_type, efi_guid_t *protocol, void *search_key,
-    efi_handle_t **_handles, efi_uintn_t *_num_handles);
+	efi_locate_search_type_t search_type, efi_guid_t *protocol, void *search_key,
+	efi_handle_t **_handles, efi_uintn_t *_num_handles);
 extern efi_status_t efi_open_protocol(
-    efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
-    void **_interface);
+	efi_handle_t handle, efi_guid_t *protocol, efi_uint32_t attributes,
+	void **_interface);
 
 extern efi_status_t efi_get_loaded_image(efi_handle_t handle, efi_loaded_image_t **_image);
 
@@ -65,20 +67,23 @@ extern bool efi_is_child_device_node(efi_device_path_t *parent, efi_device_path_
 /** Get the next device path node in a device path.
  * @param path          Current path node.
  * @return              Next path node, or NULL if end of list. */
-static inline efi_device_path_t *efi_next_device_node(efi_device_path_t *path) {
-    path = (efi_device_path_t *)((char *)path + path->length);
-    return (path->type != EFI_DEVICE_PATH_TYPE_END) ? path : NULL;
+static inline efi_device_path_t *efi_next_device_node(efi_device_path_t *path)
+{
+	path = (efi_device_path_t*)((char*)path + path->length);
+	return (path->type != EFI_DEVICE_PATH_TYPE_END) ? path : NULL;
 }
 
 /** Get the last device path node in a device path.
  * @param path          Current path node.
  * @return              Last path node. */
-static inline efi_device_path_t *efi_last_device_node(efi_device_path_t *path) {
-    for (efi_device_path_t *next = path; next; path = next, next = efi_next_device_node(path))
-        ;
+static inline efi_device_path_t *efi_last_device_node(efi_device_path_t *path)
+{
+	for (efi_device_path_t *next = path; next; path = next, next = efi_next_device_node(path)) ;
 
-    return path;
+	return path;
 }
+
+extern efi_handle_t efi_device_get_handle(struct device *device);
 
 extern void efi_main(efi_handle_t image_handle, efi_system_table_t *system_table) __noreturn;
 extern void efi_exit(efi_status_t status, efi_char16_t *data, efi_uintn_t data_size) __noreturn;
