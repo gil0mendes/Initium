@@ -44,7 +44,7 @@ extern void linux_platform_enter(
  * @param loader        Loader internal data.
  * @param header        Whether the kernel image is valid.
  */
-bool linux_platform_check(linux_loader_t *loader, linux_header_t *headers)
+bool linux_platform_check(linux_loader_t *loader, linux_header_t *header)
 {
 	if (header->version < 0x20b || !header->handover_offset) {
 		config_error("'%s' does not support eFI handover", loader->path);
@@ -63,7 +63,7 @@ bool linux_platform_check(linux_loader_t *loader, linux_header_t *headers)
  * @param loader        Loader internal data.
  * @param params        Kernel parameters structure.
  */
-void linux_platform_check(linux_loader_t *loader, linux_params_t *params)
+void linux_platform_load(linux_loader_t *loader, linux_params_t *params)
 {
 	ptr_t entry;
 
