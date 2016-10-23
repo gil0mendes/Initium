@@ -29,9 +29,11 @@
 
 #include <lib/string.h>
 
+#include <efi/device.h>
+#include <efi/disk.h>
 #include <efi/efi.h>
 #include <efi/net.h>
-#include <efi/disk.h>
+#include <efi/services.h>
 
 #include <loader.h>
 #include <memory.h>

@@ -35,8 +35,10 @@
  *    provided by the PXE BC protocol.
  */
 
+#include <efi/device.h>
 #include <efi/efi.h>
 #include <efi/net.h>
+#include <efi/services.h>
 
 #include <lib/string.h>
 

@@ -51,6 +51,7 @@
 
  #include <efi/efi.h>
  #include <efi/memory.h>
+ #include <efi/services.h>
 
  #include <assert.h>
  #include <config.h>

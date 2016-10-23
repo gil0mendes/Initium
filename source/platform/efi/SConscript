@@ -31,13 +31,14 @@ sources = FeatureSources(config, [
   'loader/efi.c',
   'loader/initium.c',
 
-  'efi.c',
-  'net.c',
-  'disk.c',
-  'video.c',
-  'memory.c',
   'console.c',
+  'device.c',
+  'disk.c',
+  'memory.c',
+  'net.c',
   'platform.c',
+  'services.c',
+  'video.c',
 ])
 
 # Add architecture-specific headers.

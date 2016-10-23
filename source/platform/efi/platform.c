@@ -27,11 +27,12 @@
  * @brief       EFI platform main functions.
  */
 
+ #include <efi/disk.h>
 #include <efi/efi.h>
-#include <efi/net.h>
-#include <efi/disk.h>
-#include <efi/video.h>
 #include <efi/memory.h>
+#include <efi/net.h>
+#include <efi/services.h>
+#include <efi/video.h>
 
 #include <lib/string.h>
 
@@ -59,69 +60,73 @@ efi_boot_services_t *efi_boot_services;
  * @param image_handle  Handle to the loader image.
  * @param system_table  Pointer to EFI system table.
  */
-__noreturn void efi_main(efi_handle_t image_handle, efi_system_table_t *system_table) {
-    efi_status_t ret;
+__noreturn void efi_main(efi_handle_t image_handle, efi_system_table_t *system_table)
+{
+	efi_status_t ret;
 
-    // Save image handler
-    efi_image_handle = image_handle;
+	// Save image handler
+	efi_image_handle = image_handle;
 
-    // Save EFI system table
-    efi_system_table = system_table;
-    efi_runtime_services = system_table->runtime_services;
-    efi_boot_services = system_table->boot_services;
+	// Save EFI system table
+	efi_system_table = system_table;
+	efi_runtime_services = system_table->runtime_services;
+	efi_boot_services = system_table->boot_services;
 
-    // Initialize architecture code
-    arch_init();
+	// Initialize architecture code
+	arch_init();
 
-    // Firmware is required to set a 5 minute watchdog timer before
-    // running an image. Disable it.
-    efi_call(efi_boot_services->set_watchdog_timer, 0, 0, 0, NULL);
+	// Firmware is required to set a 5 minute watchdog timer before
+	// running an image. Disable it.
+	efi_call(efi_boot_services->set_watchdog_timer, 0, 0, 0, NULL);
 
-    // Initialise console
-    console_init();
+	// Initialise console
+	console_init();
 
-    // print out section information, useful for debugging
-    dprintf("efi: base @ %p, text @ %p, data @ %p, bss @ %p\n", __start, __text_start, __data_start, __bss_start);
+	// print out section information, useful for debugging
+	dprintf("efi: base @ %p, text @ %p, data @ %p, bss @ %p\n", __start, __text_start, __data_start, __bss_start);
 
-    // Initialise memory map
-    efi_memory_init();
+	// Initialise memory map
+	efi_memory_init();
 
-    // Initialize video
-    efi_video_init();
+	// Initialize video
+	efi_video_init();
 
-    /* Get the loaded image protocol. */
-    ret = efi_get_loaded_image(image_handle, &efi_loaded_image);
+	/* Get the loaded image protocol. */
+	ret = efi_get_loaded_image(image_handle, &efi_loaded_image);
 
-    if (ret != EFI_SUCCESS) {
-	    internal_error("Failed to get loaded image protocol: 0x%zx", ret);
+	if (ret != EFI_SUCCESS) {
+		internal_error("Failed to get loaded image protocol: 0x%zx", ret);
 	}
 
-    // Call loader main function
-    loader_main();
+	// Call loader main function
+	loader_main();
 }
 
 /**
  * Detect and register all devices.
  */
-void target_device_probe(void) {
-    efi_disk_init();
+void target_device_probe(void)
+{
+	efi_disk_init();
 
-    // start net system
-    // this will register all network devices
-    efi_net_init();
+	// start net system
+	// this will register all network devices
+	efi_net_init();
 }
 
 /**
  * Reboot the system.
  */
-void target_reboot(void) {
-    efi_call(efi_runtime_services->reset_system, EFI_RESET_WARM, EFI_SUCCESS, 0, NULL);
-    internal_error("EFI reset failed");
+void target_reboot(void)
+{
+	efi_call(efi_runtime_services->reset_system, EFI_RESET_WARM, EFI_SUCCESS, 0, NULL);
+	internal_error("EFI reset failed");
 }
 
 /**
  * Exit the loader.
  */
-void target_exit(void) {
-    efi_exit(EFI_SUCCESS, NULL, 0);
+void target_exit(void)
+{
+	efi_exit(EFI_SUCCESS, NULL, 0);
 }
