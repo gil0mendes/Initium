@@ -28,6 +28,7 @@ Import(*vars)
 from util import FeatureSources
 
 sources = FeatureSources(config, [
+    'fs/decompress.c',
     ('TARGET_HAS_DISK', 'fs/ext2.c'),
     ('TARGET_HAS_DISK', 'fs/fat.c'),
     ('TARGET_HAS_DISK', 'fs/iso9660.c'),
@@ -38,6 +39,7 @@ sources = FeatureSources(config, [
     'lib/string.c',
     'lib/charset.c',
     'lib/line_editor.c',
+    'lib/tinfl.c',
 
     ('TARGET_HAS_INITIUM64', 'TARGET_HAS_INITIUM32', 'loader/initium.c'),
     ('TARGET_HAS_LINUX', 'loader/linux.c'),
