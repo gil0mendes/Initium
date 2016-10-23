@@ -29,6 +29,8 @@ sources = FeatureSources(config, [
   'loader/initium.c',
   'loader/initium_enter.S',
   'loader/linux.c',
+  'loader/multiboot.c',
+  'loader/multiboot_enter.S',
 
   'arch.c',
   'backtrace.c',

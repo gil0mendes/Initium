@@ -181,7 +181,7 @@ FUNCTION_END(enable_a20)
 
 /** Flags for the Multiboot header. */
 #define MULTIBOOT_HEADER_FLAGS	\
-	(MULTIBOOT_HEADER_KLUDGE | MULTIBOOT_HEADER_MODALIGN)
+	(MULTIBOOT_AOUT_KLUDGE | MULTIBOOT_PAGE_ALIGN)
 
 /** Multiboot header structure. */
 .align 4
@@ -252,7 +252,7 @@ PRIVATE_FUNCTION_START(multiboot_entry)
 	stosb
 	test	%al, %al
 	jnz	1b
-2:	addl	$MULTIBOOT_MODULE_SIZE, %edx
+2:	addl	$MULTIBOOT_MODULE_INFO_SIZE, %edx
 	loop	.Lloop
 
 .Lrelocate:

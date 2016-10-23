@@ -27,7 +27,8 @@ from util import FeatureSources
 
 sources = FeatureSources(config, [
     'loader/linux.c',
-    
+    'loader/multiboot.c',
+
     'relocate.c',
     'start.S',
 ])
