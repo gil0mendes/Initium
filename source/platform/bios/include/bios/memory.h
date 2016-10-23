@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Gil Mendes
+ * Copyright (c) 2014-2016 Gil Mendes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,5 +56,7 @@ typedef struct e820_entry {
 	uint32_t type;			/**< Type of range. */
 	uint32_t attr;			/**< Attributes of range. */
 } __packed e820_entry_t;
+
+extern void bios_memory_get_mmap(void **_buf, size_t *_num_entries, size_t *_entry_size);
 
 #endif /* __BIOS_MEMORY_H */

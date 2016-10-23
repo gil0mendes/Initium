@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,42 +33,19 @@
 #include <loader/initium.h>
 
 #include <assert.h>
+#include <memory.h>
 
-void initium_platform_setup(initium_loader_t *loader) {
-    bios_regs_t regs;
-    uint32_t num_entries, entry_size;
+void initium_platform_setup(initium_loader_t *loader)
+{
+	void *buf __cleanup_free;
+	size_t num_entries, entry_size, size;
+	initium_tag_bios_e820_t *tag;
 
-    bios_regs_init(&regs);
-
-    num_entries = 0;
-    entry_size = 0;
-    do {
-	    regs.eax = 0xe820;
-	    regs.edx = E820_SMAP;
-	    regs.ecx = 64;
-	    regs.edi = BIOS_MEM_BASE + (num_entries * entry_size);
-	    bios_call(0x15, &regs);
-
-	    if (regs.eflags & X86_FLAGS_CF) {
-		    break;
-		}
-
-	    if (!num_entries) {
-		    entry_size = regs.ecx;
-		} else {
-		    assert(entry_size == regs.ecx);
-		}
-
-	    num_entries++;
-	} while (regs.ebx != 0);
-
-    if (num_entries) {
-        size_t size = num_entries * entry_size;
-        initium_tag_bios_e820_t *tag = initium_alloc_tag(loader, INITIUM_TAG_BIOS_E820, sizeof(*tag) + size);
-
-        tag->num_entries = num_entries;
-        tag->entry_size = entry_size;
-
-        memcpy(tag->entries, (void *)BIOS_MEM_BASE, size);
-    }
+	// get a copy of the E820 memory map
+	bios_memory_get_mmap(&buf, &num_entries, &entry_size);
+	size = num_entries * entry_size;
+	tag = initium_alloc_tag(loader, INITIUM_TAG_BIOS_E820, sizeof(*tag) + size);
+	tag->num_entries = num_entries;
+	tag->entry_size = entry_size;
+	memcpy(tag->entries, buf, size);
 }
