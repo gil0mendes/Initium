@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,16 +30,8 @@
  #ifndef __LIB_BACKTRACE_H
  #define __LIB_BACKTRACE_H
 
- #include <types.h>
+ #include <lib/printf.h>
 
-/**
- * Type of a backtrace callback.
- *
- * @param private       Private data argument.
- * @param addr          Address from the backtrace.
- */
-typedef void (*backtrace_cb_t)(void *private, ptr_t addr);
-
-extern void backtrace(backtrace_cb_t cb, void *private);
+extern void backtrace(printf_t func);
 
  #endif /* __LIB_BACKTRACE_H */

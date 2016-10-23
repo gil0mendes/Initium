@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Gil Mendes
+ * Copyright (c) 2015-2016 Gil Mendes <gil00mendes@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,24 +30,37 @@
 #include <lib/backtrace.h>
 #include <x86/cpu.h>
 
+#include <loader.h>
+
 /** Structure containing a stack frame. */
 typedef struct stack_frame {
-    struct stack_frame *next;       /**< Pointer to next stack frame. */
-    ptr_t addr;                     /**< Function return address. */
+	struct stack_frame *next;       /**< Pointer to next stack frame. */
+	ptr_t addr;                     /**< Function return address. */
 } stack_frame_t;
 
 /**
  * Print out a backtrace.
  *
- * @param cb            Callback function.
- * @param private       Argument to pass to callback.
+ * @param func  Print function to use.
  */
-void backtrace(backtrace_cb_t cb, void *private) {
-    stack_frame_t *frame;
+void backtrace(printf_t func)
+{
+	stack_frame_t *frame;
 
-    frame = (stack_frame_t *)x86_read_bp();
-    while(frame && frame->addr) {
-	    cb(private, frame->addr);
-	    frame = frame->next;
+  #ifdef __PIC__
+	func("Backtrace (base = %p):\n", __start);
+  #else
+	func("Backtrace:\n");
+  #endif
+
+	frame = (stack_frame_t*)x86_read_bp();
+	while (frame && frame->addr) {
+    #ifdef __PIC__
+		func(" %p (%p)\n", frame->addr, frame->addr - (ptr_t)__start);
+	  #else
+		func(" %p\n", frame->addr);
+	  #endif
+
+		frame = frame->next;
 	}
 }
