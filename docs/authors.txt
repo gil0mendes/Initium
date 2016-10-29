@@ -1,9 +1,0 @@
-Authors
-=======
-
-Initium is primarily written by the following people:
-
-* Gil Mendes <gil00mendes@gmail.com>
-
-A full list of contributors can be obtained by looking throug the
-Git repository history.
