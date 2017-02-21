@@ -88,31 +88,11 @@ FUNCTION_END(loader_entry)
  * If it's not supported throw error "e".
  */
 FUNCTION_START(enable_sse)
-	// check for SSE
-	movl $1, %eax
-	cpuid
-	testl (1<<25), %edx
-	jz 	.no_SSE
-
 	# Enable SSE (CR4_OFXSR_BIT) and SSE exceptions CR4_OSXMMEX)
 	# This must be done before jumping into C code
 	mov %cr4,%eax
 	or $0x600,%eax
 	mov %eax,%cr4
-
-	// enable SSE
-	movl %cr0, %eax
-	and $0xFFFB, %ax					// clear coprocessor emulation CR0.EM
-	or	$0x2, %ax 						// set coprocessor monitoring CR0.MP
-	movl	%eax, %cr0
-	movl %cr4, %eax
-	or (3<<9), %ax
-	movl %eax, %cr4
-
-	ret
-	// TODO: handle this error correctly.
-.no_SSE:
-	hlt
 FUNCTION_END(enable_sse)
 
 /** Test whether the A20 line is enabled.
