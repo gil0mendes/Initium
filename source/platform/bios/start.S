@@ -89,19 +89,25 @@ FUNCTION_END(loader_entry)
  */
 FUNCTION_START(enable_sse)
 	// check for SSE
-	mov $0x1, %eax
+	movl $1, %eax
 	cpuid
-	cmpl 1<<25, %edx
+	testl (1<<25), %edx
 	jz 	.no_SSE
 
+	# Enable SSE (CR4_OFXSR_BIT) and SSE exceptions CR4_OSXMMEX)
+	# This must be done before jumping into C code
+	mov %cr4,%eax
+	or $0x600,%eax
+	mov %eax,%cr4
+
 	// enable SSE
-	mov %cr0, %eax
+	movl %cr0, %eax
 	and $0xFFFB, %ax					// clear coprocessor emulation CR0.EM
 	or	$0x2, %ax 						// set coprocessor monitoring CR0.MP
-	mov	%eax, %cr0
-	mov %cr4, %eax
-	or 3<<9, %ax
-	mov %eax, %cr4
+	movl	%eax, %cr0
+	movl %cr4, %eax
+	or (3<<9), %ax
+	movl %eax, %cr4
 
 	ret
 	// TODO: handle this error correctly.
