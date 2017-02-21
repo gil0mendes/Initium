@@ -60,6 +60,9 @@ FUNCTION_START(loader_entry)
 	/* Enable the A20 line. */
 	call	enable_a20
 
+	/* Enable SSE */
+	call enable_sse
+
 	/* Now we need to switch to protected mode. */
 1:	addr32	lgdt	(loader_gdtp - LOADER_LOAD_ADDR)
 	movl	%cr0, %eax
@@ -78,6 +81,33 @@ FUNCTION_START(loader_entry)
 	/* Jump to the common startup code. */
 	jmp	common_entry
 FUNCTION_END(loader_entry)
+
+/**
+ * Check for SSE and enable it.
+ *
+ * If it's not supported throw error "e".
+ */
+FUNCTION_START(enable_sse)
+	// check for SSE
+	mov $0x1, %eax
+	cpuid
+	cmpl 1<<25, %edx
+	jz 	.no_SSE
+
+	// enable SSE
+	mov %cr0, %eax
+	and $0xFFFB, %ax					// clear coprocessor emulation CR0.EM
+	or	$0x2, %ax 						// set coprocessor monitoring CR0.MP
+	mov	%eax, %cr0
+	mov %cr4, %eax
+	or 3<<9, %ax
+	mov %eax, %cr4
+
+	ret
+	// TODO: handle this error correctly.
+.no_SSE:
+	hlt
+FUNCTION_END(enable_sse)
 
 /** Test whether the A20 line is enabled.
  * @note		Partially based on code found at
