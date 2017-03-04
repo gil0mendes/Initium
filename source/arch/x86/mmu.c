@@ -39,6 +39,7 @@
 #include <x86/mmu.h>
 
 #include <lib/string.h>
+#include <lib/utility.h>
 
 #include <assert.h>
 #include <loader.h>
@@ -347,6 +348,8 @@ static bool mmu_mem_op_64(mmu_context_t *ctx, uint64_t addr, uint64_t size, unsi
 		    page_size = PAGE_SIZE - (addr % PAGE_SIZE);
 		}
 
+		page_size = min(page_size, size);
+
 	    do_mem_op(page, page_size, op, &value);
 
 	    addr += page_size;
@@ -394,6 +397,8 @@ static bool mmu_mem_op_32(mmu_context_t *ctx, uint32_t addr, uint32_t size, unsi
 		    page = (ptbl[pte] & X86_PTE_ADDR_MASK_32) + (addr % PAGE_SIZE);
 		    page_size = PAGE_SIZE - (addr % PAGE_SIZE);
 		}
+
+		page_size = min(page_size, size);
 
 	    do_mem_op(page, page_size, op, &value);
 
