@@ -111,7 +111,12 @@ typedef struct vbe_mode_info {
 #define VBE_SIGNATURE                   "VBE2"
 
 /** VBE mode number bits. */
-#define VBE_MODE_LFB                    (1 << 14)   /**< Use linear framebuffer model. */
+#define VBE_MODE_LFB                    (1<<14)     /**< Use linear framebuffer model. */
+
+/** VBE mode memory model values. */
+#define VBE_MEMORY_MODEL_TEXT           0           /**< Text mode. */
+#define VBE_MEMORY_MODEL_DIRECT_COLOUR  6           /**< Direct color. */
+
 
 /** VBE function definitions. */
 #define VBE_FUNCTION_CONTROLLER_INFO    0x4f00      /**< Return VBE Controller Information. */

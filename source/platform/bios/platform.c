@@ -37,6 +37,7 @@
 #include <bios/bios.h>
 #include <bios/disk.h>
 #include <bios/multiboot.h>
+#include <bios/video.h>
 
 #include <console.h>
 #include <device.h>
