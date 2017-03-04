@@ -46,10 +46,14 @@ FUNCTION_START(loader_entry)
 	movw	%ax, %ds
 	movw	%ax, %es
 
-	/* Save the boot device/partition offset LBA. */
-	addr32 movb %dl, (bios_boot_device - LOADER_LOAD_ADDR)
-	addr32 movl %ebx, (bios_boot_partition - LOADER_LOAD_ADDR)
-	addr32 movl %ecx, (bios_boot_partition - LOADER_LOAD_ADDR) + 4
+	/* Save the boot device/partition offset LBA.
+	 *
+	 * These addresses (and the GDT pointer) must be 16-bit addresses,
+	 * real-mode segment limits are in effect.
+	 * Use addr32 here to avoid "reallocation truncated to fit" linker errors.*/
+	addr32 movb %dl, %es:(bios_boot_device - LOADER_LOAD_ADDR)
+	addr32 movl %ebx, %es:(bios_boot_partition - LOADER_LOAD_ADDR)
+	addr32 movl %ecx, %es:(bios_boot_partition - LOADER_LOAD_ADDR) + 4
 
 	/* Make sure we're displaying page 0, and move the cursor to (0,0) */
 	movb	$0x02, %ah
@@ -64,7 +68,7 @@ FUNCTION_START(loader_entry)
 	call enable_sse
 
 	/* Now we need to switch to protected mode. */
-1:	addr32	lgdt	(loader_gdtp - LOADER_LOAD_ADDR)
+1:	addr32	lgdt	%es:(loader_gdtp - LOADER_LOAD_ADDR)
 	movl	%cr0, %eax
 	orl	$(1<<0), %eax
 	movl	%eax, %cr0
