@@ -2,10 +2,6 @@
 *.pyc
 .DS_Store
 /build
-/.config*
-/.sconsign.dblite
-/documentation/markdown/output
-/.ovmf-*.bin
 
 # Vim
 *.swp
