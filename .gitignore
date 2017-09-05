@@ -2,6 +2,13 @@
 *.pyc
 .DS_Store
 /build
+config.mak
 
 # Vim
 *.swp
+/target/
+**/*.rs.bk
+Cargo.lock
+/target/
+**/*.rs.bk
+Cargo.lock
