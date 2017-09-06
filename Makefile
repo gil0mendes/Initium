@@ -18,8 +18,14 @@ linker_script := src/platform/$(platform)/linker.ld
 assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
 	build/arch/$(arch)/%.o, $(assembly_source_files))
+iso := build/initium-$(arch).iso
 
-.PHONY: all clean cargo
+# Qemu variables
+QEMU=qemu-system-$(arch)
+QEMUFLAGS=-serial mon:stdio -d cpu_reset -d guest_errors
+QEMUFLAGS+=-smp 4 -m 1024
+
+.PHONY: all clean cargo run iso
 
 all: $(bootloader)
 
@@ -37,3 +43,21 @@ cargo:
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm
 	@mkdir -p $(shell dirname $@)
 	@nasm -felf64 $< -o $@
+
+# Compile the boot sector
+build/bin/cdboot.bin:
+	@mkdir -p build/bin/
+	nasm -f bin -o $@ src/platform/bios/cdboot.asm
+
+# Build ISO image
+$(iso): build/bin/cdboot.bin
+	@rm -rf build/iso/
+	@mkdir -p build/iso/boot/
+	@cp build/bin/cdboot.bin build/iso/boot/
+	@mkisofs -J -R -l -b boot/cdboot.bin -V "CDROM" \
+		-boot-load-size 4 -boot-info-table -no-emul-boot \
+		-o $@ build/iso/
+
+# Run on qemu
+run: $(iso)
+	$(QEMU) $(QEMUFLAGS) -cdrom $(iso) -s
