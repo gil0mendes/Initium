@@ -1,15 +1,9 @@
 [package]
-name = "initium"
-version = "0.1.0"
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
+name = "platform"
+version = "0.1.0"
 
 [dependencies]
-
-[dependencies.platform]
-path = "platform/efi"
-
-[lib]
-crate-type = ["staticlib"]
 
 [profile]
 
@@ -18,7 +12,3 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
-
-[features]
-default = []
-live = []
