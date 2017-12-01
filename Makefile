@@ -8,6 +8,7 @@
 # Include configurations files
 include mk/config.mk
 include mk/docker.mk
+include mk/virtualbox.mk
 
 # TODO: move this into a separated file
 arch ?= x86_64
@@ -23,9 +24,7 @@ iso := build/initium-$(arch).iso
 build_dir=build/$(arch)-$(platform)
 FS_DIR=$(build_dir)/testfs
 
-# EFI
-EFI_ASM = platform/$(platform)/start.asm
-
+# Platform assembly file
 assembly_source_files := $(wildcard platform/$(platform)/*.asm)
 assembly_object_files := $(patsubst platform/$(platform)/%.asm, \
 	$(build_dir)/platform/%.o, $(assembly_source_files))
@@ -50,14 +49,45 @@ clean:
 cargo:
 	xargo build --target=$(target)
 
-# Link bootloader
+# Link bootloader and produce PE compatible exe.
 $(bootloader): cargo $(assembly_object_files)
 	@$(LD) $(LDFLAGS) \
 		-T $(linker_script) \
 		-L $(artifact_dir) \
 		-l initium \
 		-o $@ \
-		$(assembly_object_files) $(artifact) 
+		$(assembly_object_files) $(artifact)
+	mkdir -p $(FS_DIR)/efi/boot
+	$(OBJCOPY) \
+		-j .text \
+		-j .reloc \
+		-j .data \
+		-j .dynamic \
+		-j .rela.dyn \
+		-j .dynsym \
+		-j .bss \
+		--target efi-app-x86_64 \
+		$(bootloader) $(FS_DIR)/efi/boot/bootx64.efi
+
+# Compile platform assembly files
+$(build_dir)/platform/%.o: platform/$(platform)/%.asm
+	@mkdir -p $(shell dirname $@)
+	nasm -felf64 $< -o $@
+
+# Build ISO image
+$(iso): $(bootloader)
+	@mkisofs -V "CDROM" -o $@ $(FS_DIR)
+
+build: $(iso)
+
+# Run on qemu
+run: $(iso)
+	$(QEMU) $(QEMUFLAGS) \
+		-drive if=pflash,format=raw,unit=0,file=.ovmf-amd64.bin,readonly=on \
+		-drive file=$(iso),media=cdrom -boot d
+	rm -rf $(FS_DIR)
+
+## -- Not used for now
 
 # Create HD image
 $(HDIMAGE): $(bootloader)
@@ -71,34 +101,3 @@ $(HDIMAGE): $(bootloader)
 	mcopy -i $(HDIMAGE).part.img $(bootloader) ::
 	dd if=$(HDIMAGE).part.img of=$(HDIMAGE).tmp bs=512 count=550000 seek=2048 conv=notrunc
 	mv $(HDIMAGE).tmp $(HDIMAGE)
-
-# Build
-build: $(HDIMAGE)
-
-# Run on qemu
-run: $(bootloader)
-	mkdir -p $(FS_DIR)/efi/boot
-	cp $(bootloader) $(FS_DIR)/efi/boot/bootx64.efi
-	$(QEMU) $(QEMUFLAGS) \
-		-drive if=pflash,format=raw,unit=0,file=.ovmf-amd64.bin,readonly=on \
-		-drive file=fat:rw:build/test,format=raw
-	rm -rf $(FS_DIR)
-
-# Compile platform assembly files
-$(build_dir)/platform/%.o: platform/$(platform)/%.asm
-	@mkdir -p $(shell dirname $@)
-	nasm -felf64 $< -o $@
-
-## ----- OLD
-
-# Build ISO image
-$(iso):
-	@rm -rf build/iso/
-	@mkdir -p build/iso/boot/
-	@mkisofs -J -R -l -b boot/cdboot.bin -V "CDROM" \
-		-boot-load-size 4 -boot-info-table -no-emul-boot \
-		-o $@ build/iso/
-
-# Run EFI on qemu
-run_efi:
-	$(QEMU) $(QEMUFLAGS) -pflash .ovmf-amd64.bin -hda fat:${fsdir}
