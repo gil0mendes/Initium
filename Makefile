@@ -25,8 +25,8 @@ build_dir=build/$(arch)-$(platform)
 FS_DIR=$(build_dir)/testfs
 
 # Platform assembly file
-assembly_source_files := $(wildcard platform/$(platform)/*.asm)
-assembly_object_files := $(patsubst platform/$(platform)/%.asm, \
+assembly_source_files := $(wildcard platform/$(platform)/*.s)
+assembly_object_files := $(patsubst platform/$(platform)/%.s, \
 	$(build_dir)/platform/%.o, $(assembly_source_files))
 
 # Qemu variables
@@ -70,9 +70,9 @@ $(bootloader): cargo $(assembly_object_files)
 		$(bootloader) $(FS_DIR)/efi/boot/bootx64.efi
 
 # Compile platform assembly files
-$(build_dir)/platform/%.o: platform/$(platform)/%.asm
+$(build_dir)/platform/%.o: platform/$(platform)/%.s
 	@mkdir -p $(shell dirname $@)
-	nasm -felf64 $< -o $@
+	@$(CC) -nostdinc -c --target=x86_64-pc-none-elf -o $@ $<
 
 # Build ISO image
 $(iso): $(bootloader)
@@ -82,9 +82,9 @@ build: $(iso)
 
 # Run on qemu
 run: $(iso)
-	$(QEMU) $(QEMUFLAGS) \
+	$(QEMU) -serial stdio -m 512 -monitor vc:1024x768 -s \
 		-drive if=pflash,format=raw,unit=0,file=.ovmf-amd64.bin,readonly=on \
-		-drive file=$(iso),media=cdrom -boot d
+		-drive file=fat:rw:$(FS_DIR)
 	rm -rf $(FS_DIR)
 
 ## -- Not used for now

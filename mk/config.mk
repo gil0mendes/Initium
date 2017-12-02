@@ -12,4 +12,5 @@ endif
 # LD variables
 LDFLAGS = -nostdlib -znocombreloc -shared -Bsymbolic --no-undefined
 LD = ld.lld
+CC = cc
 OBJCOPY = $(prefix)objcopy
