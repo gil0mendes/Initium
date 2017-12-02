@@ -4,6 +4,7 @@ name = "platform"
 version = "0.1.0"
 
 [dependencies]
+uefi_types = { path = "../../uefi_types" }
 
 [profile]
 

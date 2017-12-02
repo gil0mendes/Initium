@@ -1,8 +1,10 @@
 #![no_std]
 #![no_main]
 
+extern crate uefi_types;
+
 #[no_mangle]
-pub extern fn efi_main() {
+pub extern "C" fn efi_main() {
   loop {
   }
 }
