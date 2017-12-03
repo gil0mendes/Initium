@@ -1,6 +1,6 @@
 use types::*;
 use memory_services::{AllocatePages, FreePages, GetMemoryMap, AllocatePool, FreePool};
-use miscellaneous::{SetWatchdogTimer};
+use miscellaneous::{SetWatchdogTimer, Stall, CopyMem};
 
 // #define EFI_BOOT_SERVICES_SIGNATURE 0x56524553544f4f42
 
@@ -123,7 +123,7 @@ pub struct BootServices {
 
     /// Miscellaneous Service
     /// Stalls the processor
-    pub stall: NotImplemented,
+    pub stall: Stall,
 
     /// Miscellaneous Service
     /// Resets and sets a watchdog timer used during boot services time
@@ -180,7 +180,7 @@ pub struct BootServices {
 
     /// Miscellaneous Service
     /// Copies the contents of one buffer to another buffer
-    pub copy_mem: NotImplemented,
+    pub copy_mem: CopyMem,
 
     /// Miscellaneous Service
     /// Fills a buffer with a specified value

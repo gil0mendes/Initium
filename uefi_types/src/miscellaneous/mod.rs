@@ -17,3 +17,20 @@ pub type SetWatchdogTimer = unsafe extern "win64" fn(
   // reason to be logged with a watchdog event.
   watchdogData: *mut u16
 ) -> Status;
+
+///  Copies the contents of one buffer to another buffer.
+pub type CopyMem = unsafe extern "win64" fn(
+  // DestinationPointer to the destination buffer of the 
+  // memory copy.
+  destinationPointer: *mut usize,
+  // SourcePointer to the source buffer of the memory copy.
+  sourcePointer: *const usize,
+  // LengthNumber of bytes to copy from Source to Destination.
+  lengthNumber: u64
+) -> Status;
+
+/// Induces a fine-grained stall.
+pub type Stall = unsafe extern "win64" fn(
+  // The number of microseconds to stall execution.
+  microseconds: usize
+) -> Status;
