@@ -1,5 +1,6 @@
 use types::*;
 use memory_services::{AllocatePages, FreePages, GetMemoryMap, AllocatePool, FreePool};
+use miscellaneous::{SetWatchdogTimer};
 
 // #define EFI_BOOT_SERVICES_SIGNATURE 0x56524553544f4f42
 
@@ -126,7 +127,7 @@ pub struct BootServices {
 
     /// Miscellaneous Service
     /// Resets and sets a watchdog timer used during boot services time
-    pub set_watchdog_timer: NotImplemented,
+    pub set_watchdog_timer: SetWatchdogTimer,
 
     /// Open and Close Protocol Service
     /// Uses a set of precedence rules to find the gbest set of drivers to
