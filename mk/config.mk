@@ -14,3 +14,6 @@ LDFLAGS = -nostdlib -znocombreloc -shared -Bsymbolic --no-undefined
 LD = ld.lld
 CC = cc
 OBJCOPY = $(prefix)objcopy
+
+# Rust related configurations
+export RUST_TARGET_PATH=$(abspath targets)
