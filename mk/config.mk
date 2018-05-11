@@ -10,7 +10,7 @@ else
 endif
 
 # LD variables
-LDFLAGS = -nostdlib -znocombreloc -shared -Bsymbolic --no-undefined
+LDFLAGS = -nostdlib -znocombreloc -shared -Bsymbolic --no-undefined --gc-sections
 LD = ld.lld
 CC = cc
 OBJCOPY = $(prefix)objcopy

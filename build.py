@@ -102,18 +102,6 @@ def build_command():
     )
     execute(command)
 
-    # linked_file = BUILD_DIR / 'initium.bin'
-    # TODO: future linker
-    # sp.run([
-    #     'ld.lld',
-    #     *LDFLAGS,
-    #     '-T', LINKER_SCRIPT,
-    #     '-L', XARGO_BUILD_DIR,
-    #     '-l', 'initium',
-    #     '-o', linked_file,
-    #     built_file
-    # ])
-
     # Create build folder
     boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
     makedirs(boot_dir)
