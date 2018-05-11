@@ -155,11 +155,16 @@ def run_qemu():
 def toolchain_command():
     # TODO: implement a proper config mechanism
     config = {
-        'TOOLCHAIN_DIR': TOOLS_DIR
+        'ARCH': ARCH,
+        'PLATFORM': PLATFORM,
+        'TOOLCHAIN_DIR': TOOLS_DIR,
+        'TOOLCHAIN_TARGET': 'x86_64-efi-pe',
+        'TOOLCHAIN_MAKE_JOBS': 16
     }
 
     # Initialise the toolchain manager and add the toolchain build target.
     toolchain = ToolchainManager(config)
+    toolchain.update()
 
 def main(args) -> int:
     """ Runs the user-requested actions. """
