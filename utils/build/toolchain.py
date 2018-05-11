@@ -4,27 +4,11 @@ from subprocess import Popen, PIPE
 from time import time
 from urllib.parse import urlparse
 
+from utils import execute, makedirs, remove
+
 def msg(msg):
     """ Print out a message to the console """
     print('\033[0;32m>>>\033[0;1m %s\033[0m' % (msg))
-
-def makedirs(path):
-    try:
-        os.makedirs(path)
-    except:
-        pass
-
-def remove(path):
-    if not os.path.lexists(path):
-        return
-
-    # Handle symbolic links first as isfile() and isdir() follow links.
-    if os.path.islink(path) or os.path.isfile(path):
-        os.remove(path)
-    elif os.path.isdir(path):
-        shutil.rmtree(path)
-    else:
-        raise Exception('Unhandled type during remove (%s)' % (path))
 class ToolchainComponent:
     def __init__(self, manager):
         self.manager = manager
@@ -48,27 +32,14 @@ class ToolchainComponent:
 
                 # Download to .part and then rename when complete so we can
                 # easily do continuing of downloads.
-                self.execute(f'wget -c -O {target}.part {url}')
+                execute(f'wget -c -O {target}.part {url}')
                 os.rename(target + '.part', target)
 
             # Unpack if this is a tarball.
             if name[-8:] == '.tar.bz2':
-                self.execute(f'tar -C {self.manager.builddir} -xjf {target}')
+                execute(f'tar -C {self.manager.builddir} -xjf {target}')
             elif name[-7:] == '.tar.gz':
-                self.execute(f'tar -C {self.manager.builddir} -xzf {target}')
-
-    def execute(self, cmd, directory = '.', expected = 0):
-        """
-        Helper function to execute a command and throw an exception is
-        required status not returned.
-        """
-        print(f'+ {cmd}')
-        old_cwd = os.getcwd()
-        os.chdir(directory)
-        if os.system(cmd) != expected:
-            os.chdir(old_cwd)
-            raise Exception('Command did not return expected value')
-        os.chdir(old_cwd)
+                execute(f'tar -C {self.manager.builddir} -xzf {target}')
 
     def _build(self):
         """
@@ -109,9 +80,9 @@ class BinutilsComponent(ToolchainComponent):
 
         # Build and install it
         os.mkdir('binutils-build')
-        self.execute(f'../binutils-{self.version}/configure {confopts}', 'binutils-build')
-        self.execute(f'make -j{self.manager.makejobs}', 'binutils-build')
-        self.execute('make install', 'binutils-build')
+        execute(f'../binutils-{self.version}/configure {confopts}', 'binutils-build')
+        execute(f'make -j{self.manager.makejobs}', 'binutils-build')
+        execute('make install', 'binutils-build')
 
 class ToolchainManager:
     def __init__(self, config):

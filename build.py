@@ -12,9 +12,7 @@ from pathlib import Path
 sys.path = [os.path.abspath(os.path.join('utils', 'build'))] + sys.path
 
 from toolchain import ToolchainManager
-
-## Configurable settings
-BINUTILS_VER = '2.28.1'
+from utils import execute, makedirs, remove
 
 # Target variables
 ARCH = 'x86_64'
@@ -29,14 +27,19 @@ QEMU = 'qemu-system-' + ARCH
 
 # Path to workspace directory
 WORKSPACE_DIR = Path(__file__).resolve().parents[0]
+BUILD_DIR = WORKSPACE_DIR / 'build'
+TOOLS_DIR = BUILD_DIR / 'tools'
+TOOLS_PREFIX = TOOLS_DIR / 'generic' / 'x86_64-efi-pe' / 'bin'
+
+# Tools
+AR = TOOLS_PREFIX / 'ar'
+LD = TOOLS_PREFIX / 'ld'
 
 # Path to directory containing OVMF files
 OVMF_FW = WORKSPACE_DIR / '.ovmf-amd64.bin'
 
 XARGO_BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 XARGO_TARGETS_DIR = WORKSPACE_DIR / 'targets'
-BUILD_DIR = WORKSPACE_DIR / 'build'
-TOOLS_DIR = BUILD_DIR / 'tools'
 ISO_DIR = BUILD_DIR / 'iso'
 ISO_FILE_NAME = TARGET + '.iso'
 ISO_FILE = BUILD_DIR / ISO_FILE_NAME
@@ -53,44 +56,54 @@ def run_xargo(verb, *flags):
         env = dict(os.environ, RUST_TARGET_PATH = XARGO_TARGETS_DIR)
     ).check_returncode()
 
-def build():
-    'Builds Initium bootloader'
+def build_command():
+    """
+    Builds Initium bootloader
+    """
 
     # Build Initium
-    run_xargo('build', '--package', 'initium')
     built_file = XARGO_BUILD_DIR / 'libinitium.a'
+    run_xargo('build', '--package', 'initium')
+    
+    # Extract object from library
+    extract_folder = BUILD_DIR / 'temp_extract'
     object_file = BUILD_DIR / 'initium.o'
 
-    # Convert library into an object file to be linked
-    sp.run([
-        'ar',
-        ''
-    ])
+    makedirs(extract_folder)
+    execute(f'{AR} -x {built_file}', extract_folder)
+
+    # Link all objects into one file
+    execute(f'ld.lld -r *.o -o {object_file}', extract_folder)
+    remove(extract_folder)
 
     # Link bootloader and produce PE compatible executable
-    sp.run([
-        'ar',
-        '--oformat', 'pei-x86-64',
-		'--dll',
-		'--image-base', '0',
-		'--section-alignment', '32',
-		'--file-alignment', '32',
-		'--major-os-version', '0',
-		'--minor-os-version', '0',
-		'--major-image-version', '0',
-		'--minor-image-version', '0',
-		'--major-subsystem-version', '0',
-		'--minor-subsystem-version', '0',
-		'--subsystem', '10',
-		'--heap', '0,0',
-		'--stack', '0,0',
-		'--pic-executable',
-		'--entry', 'uefi_main',
-		'--no-insert-timestamp',
-        built_file, '-o', object_file
-    ]).check_returncode()
+    efi_executable = BUILD_DIR / 'initium.efi'
+    command = (
+        f'{LD} '
+        '--oformat pei-x86-64 '
+		'--dll '
+		'--image-base 0 '
+		'--section-alignment 32 '
+		'--file-alignment 32 '
+		'--major-os-version 0 '
+		'--minor-os-version 0 '
+		'--major-image-version 0 '
+		'--minor-image-version 0 '
+		'--major-subsystem-version 0 '
+		'--minor-subsystem-version 0 '
+		'--subsystem 10 '
+		'--heap 0,0 '
+		'--stack 0,0 '
+		'--pic-executable '
+		'--entry uefi_start '
+		'--no-insert-timestamp '
+        f'{object_file} '
+        f'-o {efi_executable}'
+    )
+    execute(command)
 
     # linked_file = BUILD_DIR / 'initium.bin'
+    # TODO: future linker
     # sp.run([
     #     'ld.lld',
     #     *LDFLAGS,
@@ -103,16 +116,16 @@ def build():
 
     # Create build folder
     boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
-    boot_dir.mkdir(parents = True, exist_ok=True)
+    makedirs(boot_dir)
 
     # Copy output into build dir    
     output_file = boot_dir / 'BootX64.efi'
-    shutil.copy2(built_file, output_file)
+    shutil.copy2(efi_executable, output_file)
 
 def build_iso():
     sp.run(['mkisofs', '-V', 'Initium', '-o', ISO_FILE, BUILD_DIR])
 
-def run_qemu():
+def run_command():
     'Runs the code in QEMU'
 
     qemu_flags = [
@@ -136,21 +149,6 @@ def run_qemu():
     ]
 
     sp.run([QEMU] + qemu_flags).check_returncode()
-
-# def toolchain():
-#     'Compile toolchain'
-#     # Remove previous tools
-#     if os.path.exists(TOOLS_DIR):
-#         shutil.rmtree(TOOLS_DIR)
-
-#     # Create the new folder here the tools will be placed
-#     os.makedirs(TOOLS_DIR / 'downloads')
-
-#     # Download Binutils
-#     url = f'https://ftp.gnu.org/gnu/binutils/binutils-{BINUTILS_VER}.tar.xz'
-#     urllib.request.urlretrieve(url, TOOLS_DIR / 'downloads' / 'binutils.tar.xz')
-
-#     # Extract
 
 def toolchain_command():
     # TODO: implement a proper config mechanism
@@ -179,7 +177,9 @@ def main(args) -> int:
 
     # List of available commands
     KNOWN_COMMANDS = {
-        'toolchain': toolchain_command
+        'toolchain': toolchain_command,
+        'build': build_command,
+        'run': run_command
     }
 
     for cmd in commands:
