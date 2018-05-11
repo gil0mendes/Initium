@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate bitflags;
@@ -13,3 +14,4 @@ mod miscellaneous;
 pub use self::memory_services::types::*;
 pub use self::memory_services::{allocate_pages, free_pages, MemoryMap, MemoryMapFailure,
                                 get_memory_map};
+pub use self::miscellaneous::set_watchdog_timer;

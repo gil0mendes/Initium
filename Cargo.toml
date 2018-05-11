@@ -3,13 +3,15 @@ name = "initium"
 version = "0.1.0"
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 
+[lib]
+name = 'initium'
+path = "src/lib.rs"
+crate-type = ["staticlib"]
+
 [dependencies]
 
 [dependencies.platform]
 path = "platform/efi"
-
-[lib]
-crate-type = ["staticlib"]
 
 [profile]
 

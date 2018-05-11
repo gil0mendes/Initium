@@ -3,13 +3,20 @@ authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 name = "platform"
 version = "0.1.0"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
-uefi_types = { path = "../../uefi_types" }
+# uefi_types = { path = "../../uefi_types" }
+# efi = { git = "https://github.com/reynoldsbd/libefi" }
+# compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
+fixedvec = "0.2.3"
 
 [profile]
 
 [profile.dev]
 panic = "abort"
+lto = true
 
 [profile.release]
 panic = "abort"
