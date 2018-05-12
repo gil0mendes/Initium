@@ -6,13 +6,14 @@
 
 extern crate libuefi;
 
+use libuefi::types::*;
 use libuefi::system_table::SystemTable;
 
 // pub(crate) static mut UEFI_SYSTEM_TABLE: Option<&'static uefi::SystemTable> = None;
 
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "win64" fn uefi_start(image_handle: usize, system_table: SystemTable) {
+pub extern "win64" fn uefi_start(image_handle: Handle, system_table: SystemTable) {
     loop{}
     // unsafe {
     //     UEFI_SYSTEM_TABLE = Some(&system_table);
