@@ -11,10 +11,16 @@ use libuefi::system_table::SystemTable;
 
 // pub(crate) static mut UEFI_SYSTEM_TABLE: Option<&'static uefi::SystemTable> = None;
 
+extern {
+    fn load_main();
+}
+
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "win64" fn uefi_start(image_handle: Handle, system_table: SystemTable) {
-    loop{}
+pub extern "win64" fn uefi_start(image_handle: Handle, system_table: &'static SystemTable) -> Status {
+    unsafe { load_main(); }
+
+    Status::Success
     // unsafe {
     //     UEFI_SYSTEM_TABLE = Some(&system_table);
     // }

@@ -1,8 +1,11 @@
 mod status;
+mod guid;
 
 use core::alloc::Opaque;
 use core::result;
+
 pub use self::status::Status;
+pub use self::guid::Guid;
 
 /// Return type of many UEFI functions.
 pub type Result<T> = result::Result<T, Status>;

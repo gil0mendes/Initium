@@ -1,14 +1,15 @@
+# OS
 *~
 *.pyc
 .DS_Store
+
+# Editors
+*.swp
+.idea/
+
+# Project specific
+/target/
+**/*.rs.bk
+Cargo.lock
 /build
 config.mak
-
-# Vim
-*.swp
-/target/
-**/*.rs.bk
-Cargo.lock
-/target/
-**/*.rs.bk
-Cargo.lock

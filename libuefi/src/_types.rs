@@ -1,14 +1,5 @@
-/// This type is not yet implemented. You are encouraged to submit a pull request.
-pub type NotImplemented = *const ();
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[repr(C)] // align 64-bit
-pub struct Guid(pub u64, pub u64);
-
 /// Status code returned by an EFI function.
 // pub type Status = usize;
-
-pub type Handle = *mut ();
 
 pub type Event = *mut ();
 
