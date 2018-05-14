@@ -7,7 +7,7 @@
 extern crate libuefi;
 
 use libuefi::types::*;
-use libuefi::system_table::SystemTable;
+use libuefi::SystemTable;
 
 // pub(crate) static mut UEFI_SYSTEM_TABLE: Option<&'static uefi::SystemTable> = None;
 
@@ -18,6 +18,8 @@ extern {
 /// Entry point for EFI platforms
 #[no_mangle]
 pub extern "win64" fn uefi_start(image_handle: Handle, system_table: &'static SystemTable) -> Status {
+    system_table.stdout().reset(false);
+
     unsafe { load_main(); }
 
     Status::Success

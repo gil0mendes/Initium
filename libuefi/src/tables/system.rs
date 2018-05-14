@@ -1,12 +1,13 @@
 use types::*;
+use protocols::console::text;
+use super::header::Header;
 // use boot_services::BootServices;
 
 // const SYSTEM_TABLE_SIGNATURE: u64 = 0x5453595320494249;
-
+#[repr(C)]
 pub struct SystemTable {
     /// Table header
-    // pub hdr: TableHeader,
-    pub hdr: NotImplemented,
+    pub header: Header,
     /// Null-terminated UTF-16 name of firmware vendor
     pub firmware_vendor: *const u16, // char16
     /// Revision of firmware
@@ -18,7 +19,7 @@ pub struct SystemTable {
     /// Handle to the active console output device
     pub console_out_handle: Handle,
     /// Pointer to the interface associated with console_out_handle
-    pub con_out: NotImplemented,
+    con_out: *mut text::Output,
     /// Handle to the active console standard error device
     pub standard_error_handle: Handle,
     /// Pointer to the interface associated with standard_error_handle
@@ -32,4 +33,15 @@ pub struct SystemTable {
     pub number_of_table_entries: usize,
     /// A pointer to an array of system configuration table.
     pub configuration_table: NotImplemented,
+}
+
+impl SystemTable {
+    /// Return the standard output protocol.
+    pub fn stdout(&self) -> &mut text::Output {
+        unsafe { &mut *self.con_out }
+    }
+}
+
+impl super::Table for SystemTable {
+    const SIGNATURE: u64 = 0x5453_5953_2049_4249;
 }

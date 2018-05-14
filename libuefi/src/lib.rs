@@ -9,14 +9,15 @@
 extern crate bitflags;
 
 pub mod types;
-pub mod system_table;
 pub mod protocols;
+pub mod tables;
 // pub mod boot_services;
 
 // mod memory_services;
 // mod miscellaneous;
 
 pub use types::{Status, Guid, Result};
+pub use tables::SystemTable;
 
 // pub use self::memory_services::types::*;
 // pub use self::memory_services::{allocate_pages, free_pages, MemoryMap, MemoryMapFailure,

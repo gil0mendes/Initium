@@ -109,4 +109,9 @@ impl Status {
     }
 }
 
-
+impl Into<Result<()>> for Status {
+    #[inline]
+    fn into(self) -> Result<()> {
+        self.into_with(|| ())
+    }
+}

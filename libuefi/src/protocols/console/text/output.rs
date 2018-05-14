@@ -18,6 +18,14 @@ pub struct Output {
     enable_cursor: extern "C" fn(this: &Output, visible: bool) -> Status,
 }
 
+impl Output {
+    /// Resets the text output device hardware.
+    #[inline]
+    pub fn reset(&mut self, extended: bool) -> Result<()> {
+        (self.reset)(self, extended).into()
+    }
+}
+
 impl_proto! {
     protocol Output {
         Guid = 0x387477c2, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
