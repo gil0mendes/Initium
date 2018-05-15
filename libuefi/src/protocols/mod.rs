@@ -12,7 +12,7 @@ use super::types::Guid;
 
 pub trait Protocol {
     /// Unique protocol identifier.
-    const Guid: Guid;
+    const GUID: Guid;
 }
 
 #[macro_use]
