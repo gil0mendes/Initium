@@ -18,9 +18,11 @@ extern {
 /// Entry point for EFI platforms
 #[no_mangle]
 pub extern "win64" fn uefi_start(image_handle: Handle, system_table: &'static SystemTable) -> Status {
-    system_table.stdout().reset(false);
+    system_table.stdout();
 
-    unsafe { load_main(); }
+    loop {}
+
+    // unsafe { load_main(); }
 
     Status::Success
     // unsafe {

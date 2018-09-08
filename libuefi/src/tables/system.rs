@@ -2,13 +2,11 @@ use types::*;
 use protocols::console::text;
 use super::header::Header;
 use super::revision::Revision;
-// use boot_services::BootServices;
 
-// const SYSTEM_TABLE_SIGNATURE: u64 = 0x5453595320494249;
 #[repr(C)]
 pub struct SystemTable {
     /// Table header
-    pub header: Header,
+    header: Header,
     /// Null-terminated UTF-16 name of firmware vendor
     pub firmware_vendor: *const u16, // char16
     /// Revision of firmware
@@ -16,7 +14,7 @@ pub struct SystemTable {
     /// Handle to the active console input device
     pub console_in_handle: Handle,
     /// Pointer to the interface associated with console_in_handle
-    pub con_in: text::Input,
+    pub con_in: *mut text::Input,
     /// Handle to the active console output device
     pub console_out_handle: Handle,
     /// Pointer to the interface associated with console_out_handle
