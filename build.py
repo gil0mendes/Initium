@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 'Script used automate some common tasks when developing for Initium.'
 
-import sys
 import os
+import argparse
+import sys
 import shutil
 import subprocess as sp
 import urllib.request
@@ -24,6 +25,9 @@ CONFIG = 'debug'
 
 # Tools
 QEMU = 'qemu-system-' + ARCH
+
+# Set to `True` or use the `--verbose` argument to print commands.
+VERBOSE = False
 
 # Path to workspace directory
 WORKSPACE_DIR = Path(__file__).resolve().parents[0]
@@ -49,12 +53,13 @@ def clean():
     sp.run(['xargo', 'clean'])
     shutil.rmtree(BUILD_DIR)
 
-def run_xargo(verb, *flags):
-    'Runs Xargo with certain arguments'
-    sp.run(
-        ['xargo', verb, '--target', TARGET, *flags],
-        env = dict(os.environ, RUST_TARGET_PATH = XARGO_TARGETS_DIR)
-    ).check_returncode()
+def run_xbuild(*flags):
+    'Runs Cargo XBuild with certain arguments'
+
+    cmd = ['cargo', 'xbuild', '--target', TARGET, *flags]
+    print(cmd)
+
+    sp.run(cmd, env = dict(os.environ, RUST_TARGET_PATH = XARGO_TARGETS_DIR)).check_returncode()
 
 def build_command():
     """
@@ -63,52 +68,52 @@ def build_command():
 
     # Build Initium
     built_file = XARGO_BUILD_DIR / 'libinitium.a'
-    run_xargo('build', '--package', 'initium')
+    run_xbuild('--package', 'initium')
     
     # Extract object from library
-    extract_folder = BUILD_DIR / 'temp_extract'
-    object_file = BUILD_DIR / 'initium.o'
+    # extract_folder = BUILD_DIR / 'temp_extract'
+    # object_file = BUILD_DIR / 'initium.o'
 
-    makedirs(extract_folder)
-    execute(f'{AR} -x {built_file}', extract_folder)
+    # makedirs(extract_folder)
+    # execute(f'{AR} -x {built_file}', extract_folder)
 
     # Link all objects into one file
-    execute(f'ld.lld -r *.o -o {object_file}', extract_folder)
-    remove(extract_folder)
+    # execute(f'ld.lld -r *.o -o {object_file}', extract_folder)
+    # remove(extract_folder)
 
     # Link bootloader and produce PE compatible executable
-    efi_executable = BUILD_DIR / 'initium.efi'
-    command = (
-        f'{LD} '
-        '--oformat pei-x86-64 '
-		'--dll '
-		'--image-base 0 '
-		'--section-alignment 32 '
-		'--file-alignment 32 '
-		'--major-os-version 0 '
-		'--minor-os-version 0 '
-		'--major-image-version 0 '
-		'--minor-image-version 0 '
-		'--major-subsystem-version 0 '
-		'--minor-subsystem-version 0 '
-		'--subsystem 10 '
-		'--heap 0,0 '
-		'--stack 0,0 '
-		'--pic-executable '
-		'--entry uefi_start '
-		'--no-insert-timestamp '
-        f'{object_file} '
-        f'-o {efi_executable}'
-    )
-    execute(command)
+    # efi_executable = BUILD_DIR / 'initium.efi'
+    # command = (
+    #     f'{LD} '
+    #     '--oformat pei-x86-64 '
+	# 	'--dll '
+	# 	'--image-base 0 '
+	# 	'--section-alignment 32 '
+	# 	'--file-alignment 32 '
+	# 	'--major-os-version 0 '
+	# 	'--minor-os-version 0 '
+	# 	'--major-image-version 0 '
+	# 	'--minor-image-version 0 '
+	# 	'--major-subsystem-version 0 '
+	# 	'--minor-subsystem-version 0 '
+	# 	'--subsystem 10 '
+	# 	'--heap 0,0 '
+	# 	'--stack 0,0 '
+	# 	'--pic-executable '
+	# 	'--entry uefi_start '
+	# 	'--no-insert-timestamp '
+    #     f'{object_file} '
+    #     f'-o {efi_executable}'
+    # )
+    # execute(command)
 
-    # Create build folder
-    boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
-    makedirs(boot_dir)
+    # # Create build folder
+    # boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
+    # makedirs(boot_dir)
 
-    # Copy output into build dir    
-    output_file = boot_dir / 'BootX64.efi'
-    shutil.copy2(efi_executable, output_file)
+    # # Copy output into build dir    
+    # output_file = boot_dir / 'BootX64.efi'
+    # shutil.copy2(efi_executable, output_file)
 
 def build_iso():
     sp.run(['mkisofs', '-V', 'Initium', '-o', ISO_FILE, BUILD_DIR])
@@ -152,35 +157,38 @@ def toolchain_command():
     toolchain = ToolchainManager(config)
     toolchain.update()
 
-def main(args) -> int:
-    """ Runs the user-requested actions. """
+def main(args):
+    "Runs the user-requested actions."
 
-    # We needs at least one parameter
-    if len(args) < 2:
-        print("Expected at least one parameter (the commands to run):\n - toolchain\n - build\n - run")
-        return 1
+    # Clear any Rust flags which might affect the build.
+    os.environ["RUSTFLAGS"] = ""
 
-    # Get all given commands
-    commands = args[1:]
+    usage = "%(prog)s verb [options]"
+    desc = "Build script for Initium"
 
-    # List of available commands
-    KNOWN_COMMANDS = {
-        'toolchain': toolchain_command,
-        'build': build_command,
-        'run': run_command
-    }
+    parser = argparse.ArgumentParser(usage=usage, description=desc)
 
-    for cmd in commands:
-        if cmd in KNOWN_COMMANDS:
-            try:
-                KNOWN_COMMANDS[cmd]()
-            except sp.CalledProcessError:
-                return 1
-        else:
-            print("Unknown verb:", cmd)
-            return 1
-    
-    return 0
+    parser.add_argument("--verbose", "-v", action="store_true")
+
+    subparsers = parser.add_subparsers(dest="verb")
+    toolchain_parser = subparsers.add_parser("toolchain")
+    build_parser = subparsers.add_parser("build")
+    run_parser = subparsers.add_parser("run")
+
+    opts = parser.parse_args()
+
+    # Check if we need to enable verbose mode
+    global VERBOSE
+    VERBOSE = VERBOSE or opts.verbose
+
+    if opts.verb == "toolchain":
+        toolchain_command()
+    elif opts.verb == "build":
+        build_command()
+    elif opts.verb == "run":
+        run_command()
+    else:
+        raise ValueError(f"Unknown verb {opts.verb}")
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
