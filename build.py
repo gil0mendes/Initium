@@ -81,6 +81,11 @@ def build_command():
     output_file = boot_dir / 'BootX64.efi'
     shutil.copy2(built_file, output_file)
 
+    # Write startup file to load into loader automatically
+    startup_file = open(BUILD_DIR / "startup.nsh", "w")
+    startup_file.write("\EFI\BOOT\BOOTX64.EFI")
+    startup_file.close()
+
 def build_iso():
     sp.run(['mkisofs', '-V', 'Initium', '-o', ISO_FILE, BUILD_DIR])
 

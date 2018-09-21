@@ -6,6 +6,8 @@
 # Editors
 *.swp
 .idea/
+.vscode/.ropeproject/config.py
+.vscode/.ropeproject/objectdb
 
 # Project specific
 /target/
