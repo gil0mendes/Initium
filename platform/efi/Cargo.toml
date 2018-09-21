@@ -2,12 +2,14 @@
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 name = "platform"
 version = "0.1.0"
+edition = "2018"
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
-libuefi = { path = "../../libuefi" }
+uefi = { path = "../../libs/uefi-rs" }
+uefi-services = { path = "../../libs/uefi-rs/uefi-services" }
 # efi = { git = "https://github.com/reynoldsbd/libefi" }
 # compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
 # fixedvec = "0.2.3"

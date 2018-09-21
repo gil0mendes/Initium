@@ -42,8 +42,8 @@ LD = TOOLS_PREFIX / 'ld'
 # Path to directory containing OVMF files
 OVMF_FW = WORKSPACE_DIR / '.ovmf-amd64.bin'
 
-XARGO_BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
-XARGO_TARGETS_DIR = WORKSPACE_DIR / 'targets'
+CARGO_BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
+CARGO_TARGETS_DIR = WORKSPACE_DIR / 'targets'
 ISO_DIR = BUILD_DIR / 'iso'
 ISO_FILE_NAME = TARGET + '.iso'
 ISO_FILE = BUILD_DIR / ISO_FILE_NAME
@@ -57,63 +57,29 @@ def run_xbuild(*flags):
     'Runs Cargo XBuild with certain arguments'
 
     cmd = ['cargo', 'xbuild', '--target', TARGET, *flags]
-    print(cmd)
 
-    sp.run(cmd, env = dict(os.environ, RUST_TARGET_PATH = XARGO_TARGETS_DIR)).check_returncode()
+    if VERBOSE:
+        print(' '.join(cmd))
+
+    sp.run(cmd).check_returncode()
 
 def build_command():
     """
     Builds Initium bootloader
     """
 
-    # Build Initium
-    built_file = XARGO_BUILD_DIR / 'libinitium.a'
     run_xbuild('--package', 'initium')
-    
-    # Extract object from library
-    # extract_folder = BUILD_DIR / 'temp_extract'
-    # object_file = BUILD_DIR / 'initium.o'
 
-    # makedirs(extract_folder)
-    # execute(f'{AR} -x {built_file}', extract_folder)
+    # Create build folder
+    boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
+    boot_dir.mkdir(parents=True, exist_ok=True)
 
-    # Link all objects into one file
-    # execute(f'ld.lld -r *.o -o {object_file}', extract_folder)
-    # remove(extract_folder)
+    # Copy the built EFI application to the right directory
+    # for running tests.
+    built_file = CARGO_BUILD_DIR / 'initium.efi'
 
-    # Link bootloader and produce PE compatible executable
-    # efi_executable = BUILD_DIR / 'initium.efi'
-    # command = (
-    #     f'{LD} '
-    #     '--oformat pei-x86-64 '
-	# 	'--dll '
-	# 	'--image-base 0 '
-	# 	'--section-alignment 32 '
-	# 	'--file-alignment 32 '
-	# 	'--major-os-version 0 '
-	# 	'--minor-os-version 0 '
-	# 	'--major-image-version 0 '
-	# 	'--minor-image-version 0 '
-	# 	'--major-subsystem-version 0 '
-	# 	'--minor-subsystem-version 0 '
-	# 	'--subsystem 10 '
-	# 	'--heap 0,0 '
-	# 	'--stack 0,0 '
-	# 	'--pic-executable '
-	# 	'--entry uefi_start '
-	# 	'--no-insert-timestamp '
-    #     f'{object_file} '
-    #     f'-o {efi_executable}'
-    # )
-    # execute(command)
-
-    # # Create build folder
-    # boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
-    # makedirs(boot_dir)
-
-    # # Copy output into build dir    
-    # output_file = boot_dir / 'BootX64.efi'
-    # shutil.copy2(efi_executable, output_file)
+    output_file = boot_dir / 'BootX64.efi'
+    shutil.copy2(built_file, output_file)
 
 def build_iso():
     sp.run(['mkisofs', '-V', 'Initium', '-o', ISO_FILE, BUILD_DIR])
@@ -123,22 +89,35 @@ def run_command():
 
     qemu_flags = [
         '-s',
+
         # Disable default devices
+        # QEMU by default enables a ton of devices which slow down boot.
         '-nodefaults',
-        # Enable serial
-        '-serial', 'stdio',
+
         # Use a standard VGA for graphics
         '-vga', 'std',
+
+        # Use a modern machine, with acceleration if possible.
+        '-machine', 'q35,accel=kvm:tcg',
+
+        # Allocate some memory.
+        '-m', '128M',
+
+        # Set up OVMF.
+        '-drive', 'if=pflash,format=raw,readonly,file=OVMF_CODE.fd',
+	    '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd',
+
+        # Mount a local directory as a FAT partition
+        '-drive', f'format=raw,file=fat:rw:{BUILD_DIR}',
+
+        # Enable serial
+        '-serial', 'stdio',
+
         # Setup monitor
         '-monitor', 'vc:1024x768',
-        # Allocate some memory.
-        '-m', '512M',
-        # Set up OVMF.
-        '-drive', f'if=pflash,format=raw,unit=0,file={OVMF_FW},readonly=on',
+        
         # Create AHCI controller
-        '-device', 'ahci,id=ahci,multifunction=on',
-        # Mount a local directory as a FAT partition
-        '-drive', f'file=fat:rw:{BUILD_DIR}'
+        '-device', 'ahci,id=ahci,multifunction=on'
     ]
 
     sp.run([QEMU] + qemu_flags).check_returncode()
@@ -162,6 +141,7 @@ def main(args):
 
     # Clear any Rust flags which might affect the build.
     os.environ["RUSTFLAGS"] = ""
+    os.environ["RUST_TARGET_PATH"] = str(CARGO_TARGETS_DIR)
 
     usage = "%(prog)s verb [options]"
     desc = "Build script for Initium"

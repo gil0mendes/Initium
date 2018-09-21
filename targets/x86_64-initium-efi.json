@@ -1,33 +1,26 @@
 {
-  "linker": "false",
-  "linker-flavor": "lld-link",
-  "llvm-target": "x86_64-efi-pe",
+  "llvm-target": "x86_64-pc-windows-gnu",
+  "env": "gnu",
+  "target-family": "windows",
   "target-endian": "little",
   "target-pointer-width": "64",
   "target-c-int-width": "32",
-  "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
+  "os": "uefi",
   "arch": "x86_64",
-  "os": "efi",
-  "env": "pe",
-  "vendor": "unknown",
-  "target-family": "none",
+  "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
+  "linker": "rust-lld",
+  "linker-flavor": "lld-link",
   "pre-link-args": {
-		"lld-link": [
-      "-static",
-      "/Machine:x64",
+    "lld-link": [
+      "/Subsystem:EFI_Application",
       "/Entry:uefi_start"
-		]
-	},
-  "features": "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-3dnow,-3dnowa,-avx,-avx2,+soft-float",
-  "dynamic-linking": false,
-  "executables": false,
-  "relocation-model": "pic",
-  "disable-redzone": true,
-  "eliminate-frame-pointer": false,
-  "exe-suffix": "",
-  "has-rpath": false,
-  "no-compiler-rt": true,
-  "no-default-libraries": true,
+    ]
+  },
+  "panic-strategy": "abort",
+  "default-hidden-visibility": true,
+  "executables": true,
   "position-independent-executables": true,
-  "has-elf-tls": false
+  "exe-suffix": ".efi",
+  "is-like-windows": true,
+  "emit-debug-gdb-scripts": false
 }

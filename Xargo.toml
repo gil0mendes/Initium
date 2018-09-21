@@ -1,6 +1,3 @@
-[dependencies.core]
-stage = 0
+[dependencies]
+alloc = {}
 
-[dependencies.compiler_builtins]
-features = ["mem"]
-stage = 1

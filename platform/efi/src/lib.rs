@@ -1,24 +1,23 @@
-#![feature(lang_items)]
-#![feature(compiler_builtins_lib)]
-#![feature(try_trait)]
 #![no_std]
 #![no_main]
 
-extern crate libuefi;
+#![feature(compiler_builtins_lib)]
+#![feature(panic_implementation)]
+#![feature(try_trait)]
 
-use libuefi::types::*;
-use libuefi::SystemTable;
+extern crate uefi;
+
+use core::panic::PanicInfo;
+
+use uefi::prelude::*;
 
 // pub(crate) static mut UEFI_SYSTEM_TABLE: Option<&'static uefi::SystemTable> = None;
 
-extern {
-    fn load_main();
-}
-
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "win64" fn uefi_start(image_handle: Handle, system_table: &'static SystemTable) -> Status {
-    system_table.stdout();
+pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static SystemTable) -> Status {
+    // Initialize logging.
+    uefi_services::init(system_table);
 
     loop {}
 
@@ -42,14 +41,8 @@ pub extern "win64" fn uefi_start(image_handle: Handle, system_table: &'static Sy
 //     }
 // }
 
-#[lang = "panic_fmt"]
-#[no_mangle]
-pub extern fn rust_begin_panic(message: core::fmt::Arguments, file: &'static str, line: u32, column: u32) -> ! {
-    // println!("Panic in {file} at {line}:{column}: {message}", message=message, file=file, line=line, column=column);
-    loop {}
-}
-
-#[no_mangle]
-pub extern "C" fn __floatundisf() {
-    loop {}
-}
+// #[panic_handler]
+// fn panic(_info: &PanicInfo) -> ! {
+//     // println!("Panic in {file} at {line}:{column}: {message}", message=message, file=file, line=line, column=column);
+//     loop {}
+// }

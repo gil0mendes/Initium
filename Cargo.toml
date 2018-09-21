@@ -2,25 +2,14 @@
 name = "initium"
 version = "0.1.0"
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
+publish = false
+edition = "2018"
 
-[lib]
-name = 'initium'
-path = "src/lib.rs"
-crate-type = ["staticlib"]
+# [[bin]]
+# name = 'initium'
+# path = "src/lib.rs"
 
 [dependencies]
 
 [dependencies.platform]
 path = "platform/efi"
-
-[profile]
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
-
-[features]
-default = []
-live = []
