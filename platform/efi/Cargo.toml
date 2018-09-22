@@ -10,6 +10,9 @@ path = "src/lib.rs"
 [dependencies]
 uefi = { path = "../../libs/uefi-rs" }
 uefi-services = { path = "../../libs/uefi-rs/uefi-services" }
+
+log = { version = "0.4", default-features = false }
+
 # efi = { git = "https://github.com/reynoldsbd/libefi" }
 # compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
 # fixedvec = "0.2.3"
