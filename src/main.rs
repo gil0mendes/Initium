@@ -5,7 +5,7 @@
 
 extern crate platform;
 
-// #[no_mangle]
-// pub extern fn load_main() {
-//     loop {}
-// }
+#[no_mangle]
+pub extern fn load_main() {
+    loop {}
+}

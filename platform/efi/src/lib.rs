@@ -14,7 +14,9 @@ use core::panic::PanicInfo;
 
 use uefi::prelude::*;
 
-// pub(crate) static mut UEFI_SYSTEM_TABLE: Option<&'static uefi::SystemTable> = None;
+extern {
+    fn load_main();
+}
 
 /// Check if the UEFI where we are running on is compatible
 /// with the loader.
@@ -35,15 +37,8 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
 
     check_revision(system_table.uefi_revision());
 
-    loop {}
-
-    // unsafe { load_main(); }
+    // Call loader main function
+    unsafe { load_main(); }
 
     Status::Success
-    // unsafe {
-    //     UEFI_SYSTEM_TABLE = Some(&system_table);
-    // }
-    // println!("UEFI header: {:#?}", system_table.get_header());
-    // main();
-    // uefi::Status::Success
 }
