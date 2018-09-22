@@ -11,6 +11,7 @@ extern crate uefi;
 extern crate log;
 
 use core::panic::PanicInfo;
+use core::ptr;
 
 use uefi::prelude::*;
 
@@ -36,6 +37,10 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
     uefi_services::init(system_table);
 
     check_revision(system_table.uefi_revision());
+
+    // Firmware is required to set a 5 minute watchdog timer before
+	// running an image. Disable it.
+    system_table.boot.set_watchdog_timer(0, 0, 0, ptr::null_mut());
 
     // Call loader main function
     unsafe { load_main(); }
