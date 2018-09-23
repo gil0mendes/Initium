@@ -19,8 +19,10 @@ use core::ptr;
 use uefi::prelude::*;
 
 use self::memory::MemoryManager;
+use self::video::VideoManager;
 
 mod memory;
+mod video;
 
 extern {
     fn load_main();
@@ -53,6 +55,10 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
     // Initialize memory manager
     let memoryManager = MemoryManager::new();
     memoryManager.init(&system_table.boot);
+
+    // Initialize video manager
+    let mut videoManager = VideoManager::new();
+    videoManager.init(&system_table.boot);
 
     // Call loader main function
     unsafe { load_main(); }
