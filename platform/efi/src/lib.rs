@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+#![feature(alloc)]
 #![feature(compiler_builtins_lib)]
 #![feature(panic_implementation)]
 #![feature(try_trait)]
@@ -9,11 +10,17 @@ extern crate uefi;
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate alloc;
 
 use core::panic::PanicInfo;
 use core::ptr;
 
 use uefi::prelude::*;
+
+use self::memory::MemoryManager;
+
+mod memory;
 
 extern {
     fn load_main();
@@ -41,6 +48,10 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
     // Firmware is required to set a 5 minute watchdog timer before
 	// running an image. Disable it.
     system_table.boot.set_watchdog_timer(0, 0, 0, ptr::null_mut());
+
+    // Initialize memory manager
+    let memoryManager = MemoryManager::new();
+    memoryManager.init(&system_table.boot);
 
     // Call loader main function
     unsafe { load_main(); }
