@@ -47,7 +47,8 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
 
     // Firmware is required to set a 5 minute watchdog timer before
 	// running an image. Disable it.
-    system_table.boot.set_watchdog_timer(0, 0, 0, ptr::null_mut());
+    system_table.boot.set_watchdog_timer(0, 0x10000, None)
+        .expect("Could not disable watchdog timer");
 
     // Initialize memory manager
     let memoryManager = MemoryManager::new();
