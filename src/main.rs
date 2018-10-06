@@ -5,6 +5,8 @@
 
 extern crate platform;
 
+mod config;
+
 #[no_mangle]
 pub extern fn load_main() {
     loop {}

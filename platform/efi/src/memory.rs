@@ -46,7 +46,7 @@ impl MemoryManager {
         info!("efi: usable memory ranges ({} total)", desc_iter.len());
         for (j, descriptor) in desc_iter.enumerate() {
             match descriptor.ty {
-                MemoryType::Conventional => {
+                MemoryType::CONVENTIONAL => {
                     let size = descriptor.page_count * EFI_PAGE_SIZE;
                     let end_address = descriptor.phys_start + size;
                     info!("> {:#x} - {:#x} ({} KiB)", descriptor.phys_start, end_address, size);

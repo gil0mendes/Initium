@@ -17,6 +17,7 @@ use core::panic::PanicInfo;
 use core::ptr;
 
 use uefi::prelude::*;
+use uefi::Status;
 
 use self::memory::MemoryManager;
 use self::video::VideoManager;
@@ -53,15 +54,15 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static
         .expect("Could not disable watchdog timer");
 
     // Initialize memory manager
-    let memoryManager = MemoryManager::new();
-    memoryManager.init(&system_table.boot);
+    let memory_manager = MemoryManager::new();
+    memory_manager.init(&system_table.boot);
 
     // Initialize video manager
-    let mut videoManager = VideoManager::new();
-    videoManager.init(&system_table.boot);
+    let mut video_manager = VideoManager::new();
+    video_manager.init(&system_table.boot);
 
     // Call loader main function
     unsafe { load_main(); }
 
-    Status::Success
+    Status::SUCCESS
 }
