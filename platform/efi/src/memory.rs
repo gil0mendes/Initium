@@ -10,6 +10,7 @@
 use uefi::table::boot::{BootServices, MemoryType};
 
 use crate::alloc::vec::Vec;
+use uefi::ResultExt;
 
 // EFI specifies page size as 4KB regardless of the system.
 const EFI_PAGE_SIZE: u64 = 0x1000;
@@ -29,13 +30,14 @@ impl MemoryManager {
 
         // Build a buffer bigger enough to to handle the memory map
         let mut buffer = Vec::with_capacity(map_size);
+
         unsafe {
             buffer.set_len(map_size);
         }
 
         let (_key, mut desc_iter) = bt
             .memory_map(&mut buffer)
-            .expect("Failed to retrieve UEFI memory map");
+            .expect_success("Failed to retrieve UEFI memory map");
 
         assert!(desc_iter.len() > 0, "Memory map is empty");
 

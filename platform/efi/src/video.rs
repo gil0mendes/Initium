@@ -1,6 +1,7 @@
 use uefi::proto::console::gop::{GraphicsOutput};
 use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
+use uefi::ResultExt;
 
 pub struct VideoManager {
 }
@@ -15,6 +16,7 @@ impl VideoManager {
     fn set_init_graphics_mode(&self, gop: &mut GraphicsOutput) {
         let mode = gop
             .modes()
+            .map(|mode| mode.expect("Warnings encountered while querying mode"))
             .find(|ref mode| {
                 let info = mode.info();
 
@@ -23,13 +25,13 @@ impl VideoManager {
 
         gop
             .set_mode(&mode)
-            .expect("Failed to set graphics mode.")
+            .expect_success("Failed to set graphics mode.")
     }
 
     pub fn init(&mut self, bt: &BootServices) {
         // Look for a graphics output handler
         if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
-            let gop = unsafe { gop_proto.as_mut() };
+            let gop = unsafe { &mut *gop_proto.get() };
             self.set_init_graphics_mode(gop);
         } else {
             warn!("UEFI Graphics Output Protocol is not supported");

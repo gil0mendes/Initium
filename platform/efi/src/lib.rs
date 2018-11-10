@@ -3,18 +3,14 @@
 
 #![feature(alloc)]
 #![feature(compiler_builtins_lib)]
-#![feature(panic_implementation)]
 #![feature(try_trait)]
+#![feature(tool_lints)]
 
 extern crate uefi;
 
 #[macro_use]
 extern crate log;
-#[macro_use]
 extern crate alloc;
-
-use core::panic::PanicInfo;
-use core::ptr;
 
 use uefi::prelude::*;
 use uefi::Status;
@@ -22,6 +18,7 @@ use uefi::Status;
 use self::memory::MemoryManager;
 use self::video::VideoManager;
 
+mod disk;
 mod memory;
 mod video;
 
@@ -42,24 +39,32 @@ fn check_revision(rev: uefi::table::Revision) {
 
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: &'static SystemTable) -> Status {
+pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
     // Initialize logging.
-    uefi_services::init(system_table);
+    uefi_services::init(&system_table).expect_success("Failed to initialize utilities");
+
+    // Reset the console before continue
+    system_table.stdout().reset(false).expect_success("Failed to reset stdout");
 
     check_revision(system_table.uefi_revision());
 
+    // Get boot services
+    let boot_services = system_table.boot_services();
+
     // Firmware is required to set a 5 minute watchdog timer before
 	// running an image. Disable it.
-    system_table.boot.set_watchdog_timer(0, 0x10000, None)
+    boot_services.set_watchdog_timer(0, 0x10000, None)
         .expect("Could not disable watchdog timer");
 
     // Initialize memory manager
     let memory_manager = MemoryManager::new();
-    memory_manager.init(&system_table.boot);
+    memory_manager.init(&boot_services);
 
     // Initialize video manager
     let mut video_manager = VideoManager::new();
-    video_manager.init(&system_table.boot);
+    video_manager.init(&boot_services);
+
+    /*test_fs(&system_table.boot);*/
 
     // Call loader main function
     unsafe { load_main(); }
