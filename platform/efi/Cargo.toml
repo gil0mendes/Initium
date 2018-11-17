@@ -12,6 +12,8 @@ uefi = { path = "../../libs/uefi-rs" }
 uefi-services = { path = "../../libs/uefi-rs/uefi-services" }
 uefi-exts = { path = "../../libs/uefi-rs/uefi-exts" }
 
+arch = { path = "../../arch/x86_64" }
+
 log = { version = "0.4", default-features = false }
 
 [profile]

@@ -11,6 +11,7 @@ extern crate uefi;
 #[macro_use]
 extern crate log;
 extern crate alloc;
+extern crate arch;
 
 use uefi::prelude::*;
 use uefi::Status;
@@ -63,6 +64,9 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: SystemTa
     // Initialize video manager
     let mut video_manager = VideoManager::new();
     video_manager.init(&boot_services);
+
+    // Initialize arch code
+    arch::arch_init();
 
     /*test_fs(&system_table.boot);*/
 
