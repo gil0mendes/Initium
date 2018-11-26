@@ -6,6 +6,11 @@
 #[macro_use]
 extern crate log;
 extern crate x86_64;
+extern crate raw_cpuid;
+
+mod time;
+
+use raw_cpuid::CpuId;
 
 /// Check if CPUID is supported
 ///
@@ -32,6 +37,10 @@ fn check_cpuid_support() {
 /// Perform early architecture initialization
 pub fn arch_init() {
     check_cpuid_support();
+
+    // Initialize the time functions
+    let mut time_manager = time::TimeManager::new();
+    time_manager.init();
 
     info!("All Good ;)");
 }
