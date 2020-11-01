@@ -8,13 +8,17 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-uefi = { path = "../../libs/uefi-rs" }
-uefi-services = { path = "../../libs/uefi-rs/uefi-services" }
-uefi-exts = { path = "../../libs/uefi-rs/uefi-exts" }
+uefi = "0.6.0"
+uefi-services = "0.3.0"
 
 arch = { path = "../../arch/x86_64" }
 
 log = { version = "0.4", default-features = false }
+
+# When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
+# does not automatically get enabled. Therefore, we have to manually add support for
+# the memory functions.
+rlibc = "1.0.0"
 
 [profile]
 

@@ -4,6 +4,7 @@
 import os
 import argparse
 import sys
+import json
 import shutil
 import subprocess as sp
 import urllib.request
@@ -18,7 +19,7 @@ from utils import execute, makedirs, remove
 # Target variables
 ARCH = 'x86_64'
 PLATFORM = 'efi'
-TARGET = ARCH + '-initium-' + PLATFORM
+TARGET = ARCH + '-unknown-' + PLATFORM
 
 # Configuration to build
 CONFIG = 'debug'
@@ -48,46 +49,126 @@ ISO_DIR = BUILD_DIR / 'iso'
 ISO_FILE_NAME = TARGET + '.iso'
 ISO_FILE = BUILD_DIR / ISO_FILE_NAME
 
+SETTINGS = {
+    # Architecture to build for
+    'arch': 'x86_64',
+    # Print commands before tunning them
+    'verbose': False,
+    # Run QEMU without, showing GUI
+    'headless': False,
+    # Configuration to build
+    'config': 'debug',
+    # QEMU executable to use
+    # Indexed by the `arch` setting
+    'qemu_binary': {
+        'x86_64': 'qemu-system-x86_64',
+        'aarch64': 'qemu-system-aarch64',
+    },
+    # Path to directory containing `OVMF_{CODE/VARS}.fd` (for x86_64),
+    # or `*-pflash.raw` (for AArch64).
+    # `find_ovmf` function will try to find one if this isn't specified.
+    'ovmf_dir': None,
+}
+
+# Path to target directory. If None, it will be initialized with information
+# from cargo metadata at the first time target_dir function is invoked.
+TARGET_DIR = None
+
 def clean():
     'Clean generated objects'
     sp.run(['xargo', 'clean'])
     shutil.rmtree(BUILD_DIR)
 
-def run_xbuild(*flags):
-    'Runs Cargo XBuild with certain arguments'
+def target_dir():
+    """
+    Returns the target directory
+    """
+    global TARGET_DIR
+    if TARGET_DIR is None:
+        cmd = ['cargo', 'metadata', '--format-version=1']
+        result = sp.run(cmd, stdout=sp.PIPE, check=True)
+        TARGET_DIR = Path(json.loads(result.stdout)['target_directory'])
+    return TARGET_DIR
 
-    cmd = ['cargo', 'xbuild', '--target', TARGET, *flags]
+def get_target_triple():
+    arch = SETTINGS['arch']
+    return f'{arch}-unknown-efi'
 
-    if VERBOSE:
+def build_dir():
+    """
+    Returns the directory where Cargo places the build artifacts
+    """
+    return target_dir() / get_target_triple() / SETTINGS['config']
+
+def esp_dir():
+    'Returns the directory where we will build the emulated UEFI system partition'
+    return build_dir() / 'esp'
+
+def iso_file():
+    'Return the path where we will put the ISO file'
+    return build_dir() / ISO_FILE_NAME
+
+def run_tool(tool, *flags):
+    'Runs Cargo with certain arguments'
+
+    target = get_target_triple()
+    # Custom targets need to be given by relative path, instead of only by name
+    # We need to append a `.json` to turn the triple into a path
+    if SETTINGS['arch'] == 'aarch64':
+        target += '.json'
+
+    cmd = ['cargo', tool, '--target', target, *flags]
+
+    if SETTINGS['verbose']:
         print(' '.join(cmd))
 
-    sp.run(cmd).check_returncode()
+    sp.run(cmd, check=True)
 
-def build_command():
+def run_build(*flags):
+    """
+    Runs cargo-build with certain arguments.
+    """
+    run_tool('build', *flags)
+
+def build_command(*test_flags):
     """
     Builds Initium bootloader
     """
 
-    run_xbuild('--package', 'initium')
+    build_args = [
+        '--package', 'initium',
+        *test_flags,
+    ]
+
+    if SETTINGS['config'] == 'release':
+        build_args.append('--release')
+
+    run_build(*build_args)
+
+    # Copy the build test runner file to the right directory for runnings tests
+    build_file = build_dir() / 'initium.efi'
 
     # Create build folder
-    boot_dir = BUILD_DIR / 'EFI' / 'BOOT'
+    boot_dir = esp_dir() / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
+
+    arch = SETTINGS['arch']
+    if arch == 'x86_64':
+        output_file = boot_dir / 'BootX64.efi'
 
     # Copy the built EFI application to the right directory
     # for running tests.
     built_file = CARGO_BUILD_DIR / 'initium.efi'
 
-    output_file = boot_dir / 'BootX64.efi'
     shutil.copy2(built_file, output_file)
 
     # Write startup file to load into loader automatically
-    startup_file = open(BUILD_DIR / "startup.nsh", "w")
+    startup_file = open(esp_dir() / "startup.nsh", "w")
     startup_file.write("\EFI\BOOT\BOOTX64.EFI")
     startup_file.close()
 
 def build_iso():
-    sp.run(['mkisofs', '-V', 'Initium', '-o', ISO_FILE, BUILD_DIR])
+    sp.run(['mkisofs', '-V', 'Initium', '-o', iso_file(), BUILD_DIR])
 
 def run_command():
     'Runs the code in QEMU'
@@ -113,7 +194,7 @@ def run_command():
 	    '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd',
 
         # Mount a local directory as a FAT partition
-        '-drive', f'format=raw,file=fat:rw:{BUILD_DIR}',
+        '-drive', f'format=raw,file=fat:rw:{esp_dir()}',
 
         # Enable serial
         #
@@ -162,6 +243,7 @@ def main(args):
     toolchain_parser = subparsers.add_parser("toolchain")
     build_parser = subparsers.add_parser("build")
     run_parser = subparsers.add_parser("run")
+    subparsers.add_parser("check")
 
     opts = parser.parse_args()
 

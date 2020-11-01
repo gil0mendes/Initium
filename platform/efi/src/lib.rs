@@ -1,10 +1,15 @@
 #![no_std]
 #![no_main]
 
+#![feature(asm)]
 #![feature(alloc)]
-#![feature(compiler_builtins_lib)]
 #![feature(try_trait)]
 #![feature(tool_lints)]
+#![feature(abi_efiapi)]
+#![feature(const_mut_refs)]
+
+// Keep this line to ensure the `mem*` functions are linked in.
+extern crate rlibc;
 
 extern crate uefi;
 
@@ -17,11 +22,11 @@ use uefi::prelude::*;
 use uefi::Status;
 
 use self::memory::MemoryManager;
-use self::video::VideoManager;
+// use self::video::VideoManager;
 
 mod disk;
 mod memory;
-mod video;
+// mod video;
 
 extern {
     fn load_main();
@@ -40,7 +45,7 @@ fn check_revision(rev: uefi::table::Revision) {
 
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
+pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
     // Initialize logging.
     uefi_services::init(&system_table).expect_success("Failed to initialize utilities");
 
@@ -62,8 +67,8 @@ pub extern "C" fn uefi_start(_image_handle: uefi::Handle, system_table: SystemTa
     memory_manager.init(&boot_services);
 
     // Initialize video manager
-    let mut video_manager = VideoManager::new();
-    video_manager.init(&boot_services);
+    // let mut video_manager = VideoManager::new();
+    // video_manager.init(&boot_services);
 
     // Initialize arch code
     arch::arch_init();

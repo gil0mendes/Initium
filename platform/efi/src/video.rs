@@ -1,6 +1,5 @@
 use uefi::proto::console::gop::{GraphicsOutput};
 use uefi::table::boot::BootServices;
-use uefi_exts::BootServicesExt;
 use uefi::ResultExt;
 
 pub struct VideoManager {

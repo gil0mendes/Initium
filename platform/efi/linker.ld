@@ -1,6 +1,6 @@
 OUTPUT_FORMAT("pei-x86-64")
 OUTPUT_ARCH("i386:x86-64")
-ENTRY(uefi_start)
+ENTRY(efi_main)
 
 SECTIONS
 {
