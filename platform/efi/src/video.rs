@@ -29,11 +29,8 @@ impl VideoManager {
 
     pub fn init(&mut self, bt: &BootServices) {
         // Look for a graphics output handler
-        if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
-            let gop = unsafe { &mut *gop_proto.get() };
-            self.set_init_graphics_mode(gop);
-        } else {
-            warn!("UEFI Graphics Output Protocol is not supported");
-        }
+        let mut gop_proto = bt.locate_protocol::<GraphicsOutput>().expect_success("UEFI Graphics Output Protocol is not supported");
+        let gop = unsafe { &mut *gop_proto.get() };
+        self.set_init_graphics_mode(gop);
     }
 }
