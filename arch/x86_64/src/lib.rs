@@ -40,6 +40,4 @@ pub fn arch_init() {
     // Initialize the time functions
     let mut time_manager = time::TimeManager::new();
     time_manager.init();
-
-    info!("All Good ;)");
 }

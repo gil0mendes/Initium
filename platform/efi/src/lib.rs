@@ -46,6 +46,9 @@ fn check_revision(rev: uefi::table::Revision) {
 /// Entry point for EFI platforms
 #[no_mangle]
 pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
+    // Initialize arch code
+    arch::arch_init();
+
     // Initialize logging.
     uefi_services::init(&system_table).expect_success("Failed to initialize utilities");
 
@@ -69,9 +72,6 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     // Initialize video manager
     let mut video_manager = VideoManager::new();
     video_manager.init(&boot_services);
-
-    // Initialize arch code
-    arch::arch_init();
 
     /*test_fs(&system_table.boot);*/
 
