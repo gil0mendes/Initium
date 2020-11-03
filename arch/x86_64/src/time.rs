@@ -17,22 +17,36 @@ const PIT_MODE_RATE_GENERATOR: u8 = 2 << 1;
 const PIT_MODE_ACCESS_LATCH: u8 = 0 << 4;
 const PIT_MODE_ACCESS_BOTH: u8 = 3 << 4;
 
+/// Type used to store a time value in milliseconds.
+pub type msTime = u64;
+
 /// This a manager for all time functions
 pub struct TimeManager {
-    tsc_cycles_per_msec: u64
+    /// TSC cycles per milliseconds
+    tsc_cycles_per_msec: u64,
+
+    /// Initial TSC start time
+    tsc_start_time: u64,
 }
 
 impl TimeManager {
     /// Create a new time manger instance.
     pub fn new() -> Self {
         TimeManager {
-            tsc_cycles_per_msec: 0
+            tsc_cycles_per_msec: 0,
+            tsc_start_time: 0,
         }
     }
 
     /// Get the number of cycles per second
     pub fn get_cycles_per_msec(&self) -> u64 {
         self.tsc_cycles_per_msec
+    }
+
+    /// Get the current internal time.
+    pub fn current_time(&self) -> msTime {
+        let current = unsafe { _rdtsc() };
+        (current - self.get_cycles_per_msec()) / self.tsc_cycles_per_msec
     }
 
     /// Initialize the TSC

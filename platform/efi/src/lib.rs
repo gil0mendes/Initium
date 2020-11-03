@@ -23,6 +23,7 @@ use uefi::Status;
 
 use self::memory::MemoryManager;
 use self::video::VideoManager;
+use arch::ArchManager;
 
 mod disk;
 mod memory;
@@ -47,7 +48,8 @@ fn check_revision(rev: uefi::table::Revision) {
 #[no_mangle]
 pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
     // Initialize arch code
-    arch::arch_init();
+    let mut arch_manager = ArchManager::new();
+    arch_manager.init();
 
     // Initialize logging.
     uefi_services::init(&system_table).expect_success("Failed to initialize utilities");
@@ -74,6 +76,8 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     video_manager.init(&boot_services);
 
     /*test_fs(&system_table.boot);*/
+
+    info!("internal time: {}", arch_manager.time_manager.current_time());
 
     // Call loader main function
     unsafe { load_main(); }
