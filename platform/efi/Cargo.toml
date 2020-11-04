@@ -8,9 +8,6 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-uefi = "0.6.0"
-uefi-services = "0.3.0"
-
 arch = { path = "../../arch/x86_64" }
 
 log = { version = "0.4", default-features = false }
@@ -19,6 +16,8 @@ log = { version = "0.4", default-features = false }
 # does not automatically get enabled. Therefore, we have to manually add support for
 # the memory functions.
 rlibc = "1.0.0"
+
+uefi = { version = "0.6.0", default-features = false, features = ["logger"] }
 
 [profile]
 

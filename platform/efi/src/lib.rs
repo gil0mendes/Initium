@@ -1,12 +1,10 @@
 #![no_std]
-#![no_main]
 
 #![feature(asm)]
-#![feature(alloc)]
 #![feature(try_trait)]
-#![feature(tool_lints)]
 #![feature(abi_efiapi)]
 #![feature(const_mut_refs)]
+#![feature(alloc_error_handler)]
 
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
@@ -17,6 +15,7 @@ extern crate uefi;
 extern crate log;
 extern crate alloc;
 extern crate arch;
+pub mod allocator;
 
 use uefi::prelude::*;
 use uefi::Status;
@@ -24,6 +23,7 @@ use uefi::Status;
 use self::memory::MemoryManager;
 use self::video::VideoManager;
 use arch::ArchManager;
+use uefi::table::SystemTable;
 
 mod disk;
 mod memory;
@@ -32,6 +32,16 @@ mod video;
 extern {
     fn load_main();
 }
+
+/// Reference to the system table.
+///
+/// This table is only fully safe to use until UEFI boot services have been exited.
+/// After that, some fields and methods are unsafe to use, see the documentation of
+/// UEFI's ExitBootServices entry point for more details.
+static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
+
+/// Global logger object
+static mut LOGGER: Option<uefi::logger::Logger> = None;
 
 /// Check if the UEFI where we are running on is compatible
 /// with the loader.
@@ -44,6 +54,22 @@ fn check_revision(rev: uefi::table::Revision) {
     assert!(minor >= 30, "Old version of UEFI 2, some features might not be available.");
 }
 
+unsafe fn init_logging(st: &SystemTable<Boot>) {
+    let stdout = st.stdout();
+
+    // Construct the logger.
+    let logger = {
+        LOGGER = Some(uefi::logger::Logger::new(stdout));
+        LOGGER.as_ref().unwrap()
+    };
+
+    // Set the logger.
+    log::set_logger(logger).unwrap(); // Can only fail if already initialized.
+
+    // Log everything.
+    log::set_max_level(log::LevelFilter::Info);
+}
+
 /// Entry point for EFI platforms
 #[no_mangle]
 pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
@@ -51,8 +77,16 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     let mut arch_manager = ArchManager::new();
     arch_manager.init();
 
-    // Initialize logging.
-    uefi_services::init(&system_table).expect_success("Failed to initialize utilities");
+    unsafe {
+        // setup system table singleton
+        SYSTEM_TABLE = Some(system_table.unsafe_clone());
+
+        // setup logging
+        init_logging(&system_table);
+
+        //setup memory allocator
+        allocator::init(system_table.boot_services());
+    }
 
     // Reset the console before continue
     system_table.stdout().reset(false).expect_success("Failed to reset stdout");
