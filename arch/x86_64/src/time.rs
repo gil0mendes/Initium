@@ -18,7 +18,7 @@ const PIT_MODE_ACCESS_LATCH: u8 = 0 << 4;
 const PIT_MODE_ACCESS_BOTH: u8 = 3 << 4;
 
 /// Type used to store a time value in milliseconds.
-pub type msTime = u64;
+pub type MsTime = u64;
 
 /// This a manager for all time functions
 pub struct TimeManager {
@@ -44,7 +44,7 @@ impl TimeManager {
     }
 
     /// Get the current internal time.
-    pub fn current_time(&self) -> msTime {
+    pub fn current_time(&self) -> MsTime {
         let current = unsafe { _rdtsc() };
         (current - self.get_cycles_per_msec()) / self.tsc_cycles_per_msec
     }
@@ -55,7 +55,7 @@ impl TimeManager {
 
         // Check TSC support
         {
-            let has_tsc = match cpuid.get_feature_info() {
+            let has_tsc = match cpuid.get_feature_info(){
                 Some(finfo) => finfo.has_tsc(),
                 None => false,
             };
