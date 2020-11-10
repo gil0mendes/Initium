@@ -16,12 +16,13 @@ extern crate log;
 extern crate alloc;
 extern crate arch;
 pub mod allocator;
+extern crate common;
 
 use uefi::prelude::*;
 use uefi::Status;
 
 use self::memory::MemoryManager;
-use self::video::VideoManager;
+use self::video::EFIVideoManager;
 use arch::ArchManager;
 use uefi::table::SystemTable;
 
@@ -30,7 +31,7 @@ mod memory;
 mod video;
 
 extern {
-    fn load_main();
+    fn load_main(platform_manager: common::PlatformManager);
 }
 
 /// Reference to the system table.
@@ -106,15 +107,19 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     memory_manager.init(&boot_services);
 
     // Initialize video manager
-    let mut video_manager = VideoManager::new();
+    let mut video_manager = EFIVideoManager::new();
     video_manager.init(&boot_services);
 
     /*test_fs(&system_table.boot);*/
 
     info!("internal time: {}", arch_manager.time_manager.current_time());
 
+    let platform_manager = common::PlatformManager {
+        video_manager: &video_manager,
+    };
+
     // Call loader main function
-    unsafe { load_main(); }
+    unsafe { load_main(platform_manager); }
 
     Status::SUCCESS
 }

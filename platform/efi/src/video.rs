@@ -2,12 +2,14 @@ use uefi::proto::console::gop::{GraphicsOutput};
 use uefi::table::boot::BootServices;
 use uefi::ResultExt;
 
-pub struct VideoManager {
+use common::video::{VideoManager, VideoMode};
+
+pub struct EFIVideoManager {
 }
 
-impl VideoManager {
+impl EFIVideoManager {
     pub fn new() -> Self {
-        VideoManager {
+        EFIVideoManager {
         }
     }
 
@@ -32,5 +34,14 @@ impl VideoManager {
         let mut gop_proto = bt.locate_protocol::<GraphicsOutput>().expect_success("UEFI Graphics Output Protocol is not supported");
         let gop = unsafe { &mut *gop_proto.get() };
         self.set_init_graphics_mode(gop);
+    }
+}
+
+impl VideoManager for EFIVideoManager {
+    fn get_mode(&self) -> VideoMode {
+        VideoMode {
+            width: 1024,
+            height: 768,
+        }
     }
 }

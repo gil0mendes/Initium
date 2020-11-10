@@ -9,14 +9,21 @@ extern crate alloc;
 extern crate platform;
 #[macro_use]
 extern crate log;
+extern crate common;
 
 mod config;
 
 use alloc::boxed::Box;
+use common::PlatformManager;
 
 #[no_mangle]
-pub extern fn load_main() {
+pub extern fn load_main(platform_manager: PlatformManager) {
     let heap_example = Box::new(1993);
+    info!("platform_manager: {:p}", &platform_manager);
+    {
+        let mode = platform_manager.video_manager.get_mode();
+        info!("resolution: {}x{}", mode.width, mode.height);
+    }
     loop {}
 }
 

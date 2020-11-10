@@ -8,6 +8,7 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
+common = { path = "../../common" }
 arch = { path = "../../arch/x86_64" }
 
 log = { version = "0.4", default-features = false }
