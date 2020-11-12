@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 ///! Video module
 ///!
 ///! This files defines all the necessary structures to manage video and graphics inside Initium
@@ -17,8 +19,36 @@ pub struct VideoMode {
 pub trait VideoManager {
     /// Get the current video mode set
     fn get_mode(&self) -> VideoMode;
+
+    /// Get console output
+    fn get_console_out(&self) -> &ConsoleOut;
 }
 
+/// Framebuffer console state
+pub struct FrameBuffer<'gop> {
+    /// base address of the framebuffer mapping
+    base: *mut u8,
+    /// Size of the virtual memory size
+    size: usize,
+    /// Use a phantom to assign a lifetime to the unsafe pointer
+    _lifetime: PhantomData<&'gop mut u8>,
+}
+
+impl<'gop> FrameBuffer<'gop> {
+    /// Create a new Framebuffer instance
+    pub fn new(base: *mut u8, size: usize) -> Self {
+        Self {
+            base,
+            size,
+            _lifetime: PhantomData,
+        }
+    }
+}
+
+pub trait ConsoleOut {
+    /// Clear an area to the current background color.
+    fn clear(&self, x: u16, y: u16, width: u16, height: u16);
+}
 
 /*
 pub struct ModeInfo {

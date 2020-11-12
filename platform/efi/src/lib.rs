@@ -5,6 +5,7 @@
 #![feature(abi_efiapi)]
 #![feature(const_mut_refs)]
 #![feature(alloc_error_handler)]
+#![feature(in_band_lifetimes)]
 
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
@@ -25,10 +26,14 @@ use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
 use arch::ArchManager;
 use uefi::table::SystemTable;
+use crate::console::ConsoleOutManager;
+use common::video::FrameBuffer as GenericFrameBuffer;
+use core::marker::PhantomData;
 
 mod disk;
 mod memory;
 mod video;
+mod console;
 
 extern {
     fn load_main(platform_manager: common::PlatformManager);
@@ -110,12 +115,18 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     let mut video_manager = EFIVideoManager::new();
     video_manager.init(&boot_services);
 
+    // Create a console manager
+    let mut platform_framebuffer = video_manager.get_graphics_output().frame_buffer();
+    let mut framebuffer = GenericFrameBuffer::new(platform_framebuffer.as_mut_ptr(), platform_framebuffer.size());
+    let mut console_manager = ConsoleOutManager::new(framebuffer);
+
     /*test_fs(&system_table.boot);*/
 
     info!("internal time: {}", arch_manager.time_manager.current_time());
 
     let platform_manager = common::PlatformManager {
         video_manager: &video_manager,
+        console_manager: &console_manager,
     };
 
     // Call loader main function
