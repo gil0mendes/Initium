@@ -14,17 +14,20 @@ extern crate common;
 mod config;
 
 use alloc::boxed::Box;
-use common::PlatformManager;
+use platform::platform_manager;
 
 #[no_mangle]
-pub extern fn load_main(platform_manager: PlatformManager) {
-    let heap_example = Box::new(1993);
-    info!("platform_manager: {:p}", &platform_manager);
-    {
-        let mode = platform_manager.video_manager.get_mode();
+pub extern fn load_main() {
+    unsafe {
+        let platform_manager = platform_manager();
+
+        // init console
+        platform_manager.as_ref().console_manager().as_mut().init();
+
+        let mode = platform_manager.as_ref().video_manager().as_ref().get_mode();
         info!("resolution: {}x{}", mode.width, mode.height);
 
-        platform_manager.console_manager.clear(0, 0, mode.width as u16, mode.height as u16);
+        platform_manager.as_ref().console_manager().as_mut().clear(0, 0, mode.width as u16, mode.height as u16);
     }
 
     loop {}

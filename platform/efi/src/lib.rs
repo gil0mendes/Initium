@@ -18,6 +18,7 @@ extern crate alloc;
 extern crate arch;
 pub mod allocator;
 extern crate common;
+extern crate spin;
 
 use uefi::prelude::*;
 use uefi::Status;
@@ -27,16 +28,20 @@ use self::video::EFIVideoManager;
 use arch::ArchManager;
 use uefi::table::SystemTable;
 use crate::console::ConsoleOutManager;
-use common::video::FrameBuffer as GenericFrameBuffer;
 use core::marker::PhantomData;
+use core::ptr::NonNull;
+use common::video::{ConsoleOut, VideoManager};
+
+pub use manager::platform_manager;
 
 mod disk;
 mod memory;
 mod video;
 mod console;
+mod manager;
 
 extern {
-    fn load_main(platform_manager: common::PlatformManager);
+    fn load_main();
 }
 
 /// Reference to the system table.
@@ -111,26 +116,23 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     let memory_manager = MemoryManager::new();
     memory_manager.init(&boot_services);
 
-    // Initialize video manager
-    let mut video_manager = EFIVideoManager::new();
-    video_manager.init(&boot_services);
+    // initialize manager logic
+    manager::init();
+
+    // initialize the video system
+    EFIVideoManager::init(boot_services);
 
     // Create a console manager
-    let mut platform_framebuffer = video_manager.get_graphics_output().frame_buffer();
-    let mut framebuffer = GenericFrameBuffer::new(platform_framebuffer.as_mut_ptr(), platform_framebuffer.size());
-    let mut console_manager = ConsoleOutManager::new(framebuffer);
+    ConsoleOutManager::new();
 
-    /*test_fs(&system_table.boot);*/
-
+    // TODO: remove this, is just for testing
     info!("internal time: {}", arch_manager.time_manager.current_time());
 
-    let platform_manager = common::PlatformManager {
-        video_manager: &video_manager,
-        console_manager: &console_manager,
-    };
-
     // Call loader main function
-    unsafe { load_main(platform_manager); }
+    unsafe { load_main(); }
 
     Status::SUCCESS
 }
+
+
+

@@ -12,6 +12,7 @@ common = { path = "../../common" }
 arch = { path = "../../arch/x86_64" }
 
 log = { version = "0.4", default-features = false }
+spin = "0.7.0"
 
 # When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
 # does not automatically get enabled. Therefore, we have to manually add support for
