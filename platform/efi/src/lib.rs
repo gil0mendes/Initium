@@ -123,7 +123,7 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     EFIVideoManager::init(boot_services);
 
     // Create a console manager
-    ConsoleOutManager::new();
+    ConsoleOutManager::init();
 
     // TODO: remove this, is just for testing
     info!("internal time: {}", arch_manager.time_manager.current_time());

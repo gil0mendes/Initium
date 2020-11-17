@@ -27,7 +27,7 @@ pub extern fn load_main() {
         let mode = platform_manager.as_ref().video_manager().as_ref().get_mode();
         info!("resolution: {}x{}", mode.width, mode.height);
 
-        platform_manager.as_ref().console_manager().as_mut().clear(0, 0, mode.width as u16, mode.height as u16);
+        // platform_manager.as_ref().console_manager().as_mut().clear(0, 0, 0, 0);
     }
 
     loop {}

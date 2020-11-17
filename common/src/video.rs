@@ -151,6 +151,14 @@ pub trait ConsoleOut {
     fn init(&mut self);
 
     /// Clear an area to the current background color.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Start X position (relative to draw region).
+    /// * `y` - Start Y position (relative to draw region).
+    /// * ` width` - Width of the area (if 0, whole width is cleared).
+    /// * ` height` - Height of the area (if 0, whole height is cleared).
+    ///
     fn clear(&mut self, x: u16, y: u16, width: u16, height: u16);
 }
 

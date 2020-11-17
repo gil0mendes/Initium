@@ -57,7 +57,7 @@ SETTINGS = {
     # Run QEMU without, showing GUI
     'headless': False,
     # Configuration to build
-    'config': 'debug',
+    'config': CONFIG,
     # QEMU executable to use
     # Indexed by the `arch` setting
     'qemu_binary': {

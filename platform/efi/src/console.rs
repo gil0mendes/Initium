@@ -1,23 +1,26 @@
-use common::video::{ConsoleOut, FrameBuffer, VideoManager, PixelFormat};
-use common::console::DrawRegion;
+use common::video::{ConsoleOut, FrameBuffer, VideoManager, PixelFormat, VideoMode};
+use common::console::{DrawRegion, Char, FONT_WIDTH, FONT_HEIGHT};
 use crate::video::{EFIVideoManager, VIDEO_MANAGER};
 use crate::platform_manager;
 use common::PlatformManager;
-
-// Dimensions of the console font.
-const FONT_WIDTH: usize = 8;
-const FONT_HEIGHT: usize = 16;
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
+use rlibc::memset;
 
 /// Type for the cursor position
 type CursorPos = (usize, usize);
 
+
+/// Get the byte offset of a pixel.
+#[inline]
+fn fb_offset(x: u32, y: u32, stride: u32) -> usize {
+    (((y * stride) + x) * 4) as usize
+}
+
 pub static mut CONSOLE_MANAGER: Option<ConsoleOutManager> = None;
 
-#[derive(Copy, Clone)]
 pub struct ConsoleOutManager {
-    /// framebuffer virtual memory map
-    // framebuffer: FrameBuffer<'static>,
-
     /// number of columns on the console
     cols: usize,
     /// number of rows on the console
@@ -27,11 +30,13 @@ pub struct ConsoleOutManager {
     region: DrawRegion,
     /// Cursor position
     cursor_pos: CursorPos,
+    /// Console chars
+    chars: Box<Vec<Char>>,
 }
 
 impl ConsoleOutManager {
     /// Create a new console out manager instance
-    pub fn new() -> Self {
+    pub fn init() {
         let default_draw_region = DrawRegion {
             x: 0,
             y: 0,
@@ -40,19 +45,15 @@ impl ConsoleOutManager {
             scrollable: false,
         };
 
-        // let framebuffer = unsafe { VIDEO_MANAGER.unwrap().get_framebuffer() };
-
         let mut manager = Self {
-            // framebuffer,
             cols: 0,
             rows: 0,
             region: default_draw_region,
             cursor_pos: (0, 0),
+            chars: Box::new(Vec::new()),
         };
 
         unsafe { CONSOLE_MANAGER = Some(manager); };
-
-        manager
     }
 
     fn write_pixel(&mut self, pixel_base: usize, rgb: [u8; 3]) {
@@ -88,20 +89,51 @@ impl ConsoleOutManager {
             func(&mut framebuffer, pixel_base, rgb);
         }
     }
-}
 
-impl ConsoleOut for ConsoleOutManager {
-    fn init(&mut self) {
-        let current_mode = unsafe {
+    /// Get current video mode
+    fn get_current_mode(&self) -> VideoMode {
+        unsafe {
             use common::PlatformManager;
 
             let platform = platform_manager();
             let video_manager = platform.as_ref().video_manager();
             video_manager.as_ref().get_mode()
-        };
+        }
+    }
+
+    /// Draw a rectangle in a solid color.
+    fn fillrect(&self, x: u32, y: u32, width: usize, height: usize, rbg: u32) {
+        let current_mode = self.get_current_mode();
+
+        if x == 0 && width == current_mode.width && (rbg == 0 || rbg == 0xffffff) {
+            unsafe {
+                let mut video_manager = VIDEO_MANAGER.unwrap();
+                let mut framebuffer = video_manager.get_framebuffer();
+
+                let offset = fb_offset(x, y, current_mode.stride as u32);
+                let base_addr = framebuffer.as_mut_ptr().add(offset);
+                let size = (height * current_mode.stride) * 4;
+                memset(base_addr, rbg as i32, size);
+            }
+        } else {
+            // TODO: implement a pixel by pixel approach for the other cases
+            unimplemented!()
+        }
+    }
+}
+
+impl ConsoleOut for ConsoleOutManager {
+    fn init(&mut self) {
+        let current_mode = self.get_current_mode();
 
         self.cols = current_mode.width / FONT_WIDTH;
         self.rows = current_mode.height / FONT_HEIGHT;
+
+        // initialize chars array and zero the vector
+        let size = self.cols * self.rows;
+        self.chars = Box::new(vec![Char::default(); size as usize]);
+
+        self.fillrect(0, 0, current_mode.width, current_mode.height, 0xffffff);
 
         self.region = DrawRegion {
             x: 0,
@@ -113,6 +145,9 @@ impl ConsoleOut for ConsoleOutManager {
     }
 
     fn clear(&mut self, x: u16, y: u16, mut width: u16, mut height: u16) {
+        assert!(x + width <= self.region.width);
+        assert!(y + height <= self.region.height);
+
         let stride = unsafe {
             platform_manager()
                 .as_ref()
@@ -122,14 +157,18 @@ impl ConsoleOut for ConsoleOutManager {
                 .stride
         };
 
-        width = self.region.width - x;
-        height = self.region.height - y;
+        if width == 0 {
+            width = self.region.width - x;
+        }
+        if height == 0 {
+            height = self.region.height - y;
+        }
 
         for row in 0..height {
             for col in 0..width {
-                let pixel_index = (row as usize * stride) + col as usize;
-                let pixel_base = 4 * pixel_index;
-                self.write_pixel(pixel_base as usize, [200, 200, 200]);
+                // TODO: remove old code
+                let offset = fb_offset((x + col) as u32, (y + row) as u32, stride as u32);
+                self.write_pixel(offset, [(row % 255) as u8, (col % 255) as u8, (row % 255) as u8]);
             }
         }
     }
