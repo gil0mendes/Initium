@@ -2,8 +2,9 @@
 
 use core::ptr::NonNull;
 
-pub mod video;
 pub mod console;
+pub mod font;
+pub mod video;
 
 /// Trait to be implemented by the struct to be passed into the generic bootloader code
 pub trait PlatformManager {

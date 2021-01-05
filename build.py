@@ -184,7 +184,8 @@ def run_command():
         '-vga', 'std',
 
         # Use a modern machine, with acceleration if possible.
-        '-machine', 'q35,accel=kvm:tcg',
+        # '-machine', 'q35,accel=kvm:tcg', - only for Linux
+        '-machine', 'type=q35,accel=hvf',
 
         # Allocate some memory.
         '-m', '128M',

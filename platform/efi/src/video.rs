@@ -1,10 +1,8 @@
-use uefi::proto::console::gop::{GraphicsOutput, ModeInfo, PixelFormat as EFIPixelFormat};
+use uefi::proto::console::gop::{GraphicsOutput, PixelFormat as EFIPixelFormat};
 use uefi::table::boot::BootServices;
 use uefi::ResultExt;
 
 use common::video::{VideoManager, VideoMode, ConsoleOut, PixelFormat, FrameBuffer};
-use spin::{Mutex, RwLock};
-use core::borrow::BorrowMut;
 
 /// Converts a PixelFormat from UEFI crate into our common type
 fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {

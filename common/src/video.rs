@@ -1,6 +1,8 @@
 use core::marker::PhantomData;
-use core::ops::Add;
 use core::mem;
+use core::ops::Add;
+
+use crate::console::{Color, DrawRegion};
 
 ///! Video module
 ///!
@@ -159,7 +161,16 @@ pub trait ConsoleOut {
     /// * ` width` - Width of the area (if 0, whole width is cleared).
     /// * ` height` - Height of the area (if 0, whole height is cleared).
     ///
-    fn clear(&mut self, x: u16, y: u16, width: u16, height: u16);
+    fn clear(&mut self, x: usize, y: usize, width: usize, height: usize);
+
+    /// Set the draw region of the console
+    fn set_region(&mut self, region: DrawRegion);
+
+    /// Reset region to the initial values
+    fn reset_region(&mut self);
+
+    /// Set current colors.
+    fn set_color(&mut self, fg: Color, bg: Color);
 }
 
 /*

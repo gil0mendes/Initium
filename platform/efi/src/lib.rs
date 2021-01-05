@@ -1,11 +1,11 @@
 #![no_std]
-
 #![feature(asm)]
 #![feature(try_trait)]
 #![feature(abi_efiapi)]
 #![feature(const_mut_refs)]
 #![feature(alloc_error_handler)]
 #![feature(in_band_lifetimes)]
+#![feature(num_as_ne_bytes)]
 
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
@@ -25,22 +25,19 @@ use uefi::Status;
 
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
+use crate::console::ConsoleOutManager;
 use arch::ArchManager;
 use uefi::table::SystemTable;
-use crate::console::ConsoleOutManager;
-use core::marker::PhantomData;
-use core::ptr::NonNull;
-use common::video::{ConsoleOut, VideoManager};
 
-pub use manager::platform_manager;
-
+mod console;
 mod disk;
 mod memory;
 mod video;
-mod console;
-mod manager;
 
-extern {
+pub use console::CONSOLE_MANAGER;
+pub use video::VIDEO_MANAGER;
+
+extern "C" {
     fn load_main();
 }
 
@@ -60,9 +57,12 @@ fn check_revision(rev: uefi::table::Revision) {
     let (major, minor) = (rev.major(), rev.minor());
 
     info!("UEFI {}.{}", major, minor);
-    
+
     assert!(major >= 2, "Running on an old, unsupported version of UEFI");
-    assert!(minor >= 30, "Old version of UEFI 2, some features might not be available.");
+    assert!(
+        minor >= 30,
+        "Old version of UEFI 2, some features might not be available."
+    );
 }
 
 unsafe fn init_logging(st: &SystemTable<Boot>) {
@@ -100,7 +100,10 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     }
 
     // Reset the console before continue
-    system_table.stdout().reset(false).expect_success("Failed to reset stdout");
+    system_table
+        .stdout()
+        .reset(false)
+        .expect_success("Failed to reset stdout");
 
     check_revision(system_table.uefi_revision());
 
@@ -108,16 +111,14 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     let boot_services = system_table.boot_services();
 
     // Firmware is required to set a 5 minute watchdog timer before
-	// running an image. Disable it.
-    boot_services.set_watchdog_timer(0, 0x10000, None)
+    // running an image. Disable it.
+    boot_services
+        .set_watchdog_timer(0, 0x10000, None)
         .expect("Could not disable watchdog timer");
 
     // Initialize memory manager
     let memory_manager = MemoryManager::new();
     memory_manager.init(&boot_services);
-
-    // initialize manager logic
-    manager::init();
 
     // initialize the video system
     EFIVideoManager::init(boot_services);
@@ -126,13 +127,15 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     ConsoleOutManager::init();
 
     // TODO: remove this, is just for testing
-    info!("internal time: {}", arch_manager.time_manager.current_time());
+    info!(
+        "internal time: {}",
+        arch_manager.time_manager.current_time()
+    );
 
     // Call loader main function
-    unsafe { load_main(); }
+    unsafe {
+        load_main();
+    }
 
     Status::SUCCESS
 }
-
-
-

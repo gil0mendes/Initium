@@ -1,5 +1,5 @@
 use alloc::alloc::{GlobalAlloc, Layout};
-use core::ptr::{self, null_mut, NonNull};
+use core::ptr::{self, NonNull};
 
 use uefi::table::boot::{BootServices, MemoryType};
 use uefi::ResultExt;

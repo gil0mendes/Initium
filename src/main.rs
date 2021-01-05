@@ -2,8 +2,9 @@
 
 #![no_std]
 #![no_main]
-
 #![feature(panic_info_message)]
+
+use ui::Window;
 
 extern crate alloc;
 extern crate platform;
@@ -12,22 +13,23 @@ extern crate log;
 extern crate common;
 
 mod config;
-
-use alloc::boxed::Box;
-use platform::platform_manager;
+mod ui;
 
 #[no_mangle]
-pub extern fn load_main() {
+pub extern "C" fn load_main() {
+    use crate::alloc::string::ToString;
+
     unsafe {
-        let platform_manager = platform_manager();
-
         // init console
-        platform_manager.as_ref().console_manager().as_mut().init();
+        use common::video::ConsoleOut;
+        let mut consoleOption = &mut platform::CONSOLE_MANAGER;
+        let mut console = consoleOption.as_mut().unwrap();
 
-        let mode = platform_manager.as_ref().video_manager().as_ref().get_mode();
-        info!("resolution: {}x{}", mode.width, mode.height);
+        console.init();
 
-        // platform_manager.as_ref().console_manager().as_mut().clear(0, 0, 0, 0);
+        // TODO: this is a simple test is to be removed on the future
+        let window = Window::new("example".to_string());
+        window.render(console);
     }
 
     loop {}
