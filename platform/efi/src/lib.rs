@@ -29,7 +29,7 @@ use crate::console::ConsoleOutManager;
 use arch::ArchManager;
 use uefi::table::SystemTable;
 
-mod console;
+pub mod console;
 mod disk;
 mod memory;
 mod video;

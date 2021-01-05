@@ -7,7 +7,32 @@ use common::{
     console::{Char, Color, DrawRegion, FONT_HEIGHT, FONT_WIDTH},
     font::CONSOLE_FONT,
 };
+use core::fmt;
+use core::result::Result;
 use rlibc::memset;
+
+/// Print with new line to console
+#[macro_export]
+macro_rules! println {
+    ($fmt:expr) => (print!(concat!($fmt, "\n")));
+    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
+}
+
+/// Print to console
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ({
+        crate::platform::console::print(format_args!($($arg)*)).unwrap();
+    });
+}
+
+pub fn print(args: fmt::Arguments) -> fmt::Result {
+    use core::fmt::Write;
+    unsafe {
+        let mut console = &mut CONSOLE_MANAGER;
+        console.as_mut().unwrap().write_fmt(args)
+    }
+}
 
 /// Type for the cursor position
 type CursorPos = (usize, usize);
@@ -111,6 +136,27 @@ impl ConsoleOutManager {
         }
     }
 
+    fn putc(&mut self, ch: char) {
+        let (x, y) = self.cursor_pos;
+
+        let abs_x = self.region.x + x;
+        let abs_y = self.region.y + y;
+        let idx = (abs_y * self.cols) + abs_x;
+
+        self.chars[idx].char = ch;
+        self.chars[idx].foreground = self.foreground_color;
+        self.chars[idx].background = self.background_color;
+
+        self.draw_glyph(abs_x, abs_y);
+
+        // TODO: implement scroll
+        if x + 1 < self.cols {
+            self.cursor_pos = (x + 1, y);
+        } else {
+            self.cursor_pos = (0, y + 1);
+        }
+    }
+
     /// Get current video mode
     fn get_current_mode(&self) -> VideoMode {
         use common::video::VideoManager;
@@ -150,7 +196,6 @@ impl ConsoleOutManager {
             for col in 0..FONT_WIDTH {
                 let char_index = (ch.char as usize * FONT_HEIGHT) + row;
                 let font_char = CONSOLE_FONT[char_index];
-                // info!("Char: {} test {}:{}", char_index, font_char);
 
                 if (font_char & (1 << (7 - col))) > 0 {
                     self.write_pixel(x + col, y + row, ch.foreground as u32);
@@ -238,5 +283,17 @@ impl ConsoleOut for ConsoleOutManager {
     fn set_color(&mut self, fg: common::console::Color, bg: common::console::Color) {
         self.foreground_color = fg;
         self.background_color = bg;
+    }
+
+    fn resolution(&self) -> (usize, usize) {
+        (self.cols, self.rows)
+    }
+}
+
+impl fmt::Write for ConsoleOutManager {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        s.chars().for_each(|c| self.putc(c));
+
+        Result::Ok(())
     }
 }

@@ -171,6 +171,9 @@ pub trait ConsoleOut {
 
     /// Set current colors.
     fn set_color(&mut self, fg: Color, bg: Color);
+
+    /// Get console resolution
+    fn resolution(&self) -> (usize, usize);
 }
 
 /*
