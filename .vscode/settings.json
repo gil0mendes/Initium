@@ -1,4 +1,6 @@
 {
   "editor.tabSize": 4,
-  "python.pythonPath": "/usr/local/bin/python3"
+  "python.pythonPath": "/usr/local/bin/python3",
+  // Auto-save configurations
+  "editor.formatOnSave": true
 }
