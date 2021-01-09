@@ -1,5 +1,5 @@
 use alloc::string::String;
-use common::video::ConsoleOut;
+use common::console::ConsoleOut;
 
 use super::{list_window::Entry, render_help_action};
 

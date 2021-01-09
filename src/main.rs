@@ -23,8 +23,8 @@ pub extern "C" fn load_main() {
 
     unsafe {
         // init console
-        use common::video::ConsoleOut;
-        let mut consoleOption = &mut platform::CONSOLE_MANAGER;
+        use common::console::ConsoleOut;
+        let mut consoleOption = &mut platform::CONSOLE_OUT;
         let mut console = consoleOption.as_mut().unwrap();
 
         console.init();

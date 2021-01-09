@@ -2,8 +2,8 @@ use super::InputResult;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
+use common::console::ConsoleOut;
 use common::console::{Color, DrawRegion};
-use common::video::ConsoleOut;
 
 /// Trait to be implemented by a UI list entry
 pub trait Entry {

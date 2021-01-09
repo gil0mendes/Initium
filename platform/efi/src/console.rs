@@ -2,9 +2,9 @@ use crate::video::VIDEO_MANAGER;
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
-use common::video::{ConsoleOut, FrameBuffer, PixelFormat, VideoMode};
+use common::video::{FrameBuffer, PixelFormat, VideoMode};
 use common::{
-    console::{Char, Color, DrawRegion, FONT_HEIGHT, FONT_WIDTH},
+    console::{Char, Color, ConsoleOut, DrawRegion, FONT_HEIGHT, FONT_WIDTH},
     font::CONSOLE_FONT,
 };
 use core::fmt;
@@ -29,7 +29,7 @@ macro_rules! print {
 pub fn print(args: fmt::Arguments) -> fmt::Result {
     use core::fmt::Write;
     unsafe {
-        let mut console = &mut CONSOLE_MANAGER;
+        let mut console = &mut CONSOLE_OUT;
         console.as_mut().unwrap().write_fmt(args)
     }
 }
@@ -37,7 +37,7 @@ pub fn print(args: fmt::Arguments) -> fmt::Result {
 /// Type for the cursor position
 type CursorPos = (usize, usize);
 
-pub static mut CONSOLE_MANAGER: Option<ConsoleOutManager> = None;
+pub static mut CONSOLE_OUT: Option<ConsoleOutManager> = None;
 
 /// Convert a hexadecimal color into a rgb vector
 fn hex_to_rgb(color: u32) -> [u8; 3] {
@@ -89,7 +89,7 @@ impl ConsoleOutManager {
         };
 
         unsafe {
-            CONSOLE_MANAGER = Some(manager);
+            CONSOLE_OUT = Some(manager);
         };
     }
 

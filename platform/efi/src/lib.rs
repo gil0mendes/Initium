@@ -34,7 +34,7 @@ mod disk;
 mod memory;
 mod video;
 
-pub use console::CONSOLE_MANAGER;
+pub use console::CONSOLE_OUT;
 pub use video::VIDEO_MANAGER;
 
 extern "C" {

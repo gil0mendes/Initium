@@ -59,3 +59,38 @@ impl Default for Char {
         }
     }
 }
+
+pub trait ConsoleOut {
+    /// Initialize the console when it is made active.
+    fn init(&mut self);
+
+    /// Clear an area to the current background color.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - Start X position (relative to draw region).
+    /// * `y` - Start Y position (relative to draw region).
+    /// * ` width` - Width of the area (if 0, whole width is cleared).
+    /// * ` height` - Height of the area (if 0, whole height is cleared).
+    ///
+    fn clear(&mut self, x: usize, y: usize, width: usize, height: usize);
+
+    /// Set the draw region of the console
+    fn set_region(&mut self, region: DrawRegion);
+
+    /// Reset region to the initial values
+    fn reset_region(&mut self);
+
+    /// Set current colors.
+    fn set_color(&mut self, fg: Color, bg: Color);
+
+    /// Get console resolution
+    fn resolution(&self) -> (usize, usize);
+}
+
+pub trait ConsoleIn {
+    /// Check for a character from a console.
+    ///
+    /// Returns whether a character is available.
+    fn poll(&mut self) -> bool;
+}

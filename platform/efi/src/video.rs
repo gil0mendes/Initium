@@ -2,7 +2,10 @@ use uefi::proto::console::gop::{GraphicsOutput, PixelFormat as EFIPixelFormat};
 use uefi::table::boot::BootServices;
 use uefi::ResultExt;
 
-use common::video::{VideoManager, VideoMode, ConsoleOut, PixelFormat, FrameBuffer};
+use common::{
+    console::ConsoleOut,
+    video::{FrameBuffer, PixelFormat, VideoManager, VideoMode},
+};
 
 /// Converts a PixelFormat from UEFI crate into our common type
 fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {
@@ -30,9 +33,12 @@ impl EFIVideoManager {
             match GRAPHICS_OUTPUT {
                 Some(ref mut gop) => {
                     let mut platform_framebuffer = gop.frame_buffer();
-                    return FrameBuffer::new(platform_framebuffer.as_mut_ptr(), platform_framebuffer.size());
+                    return FrameBuffer::new(
+                        platform_framebuffer.as_mut_ptr(),
+                        platform_framebuffer.size(),
+                    );
                 }
-                _ => panic!()
+                _ => panic!(),
             }
         };
     }
@@ -53,24 +59,30 @@ impl EFIVideoManager {
                 let info = mode.info();
 
                 info.resolution() == (1024, 768)
-            }).unwrap();
+            })
+            .unwrap();
 
-        gop
-            .set_mode(&mode)
+        gop.set_mode(&mode)
             .expect_success("Failed to set graphics mode.");
     }
 
     pub fn init(bt: &BootServices) {
         // Look for a graphics output handler
-        let mut gop_proto = bt.locate_protocol::<GraphicsOutput>().expect_success("UEFI Graphics Output Protocol is not supported");
+        let mut gop_proto = bt
+            .locate_protocol::<GraphicsOutput>()
+            .expect_success("UEFI Graphics Output Protocol is not supported");
         let gop = unsafe { &mut *gop_proto.get() };
 
-        unsafe { GRAPHICS_OUTPUT = Some(gop); };
+        unsafe {
+            GRAPHICS_OUTPUT = Some(gop);
+        };
 
         let mut manager = Self {};
         manager.set_init_graphics_mode();
 
-        unsafe { VIDEO_MANAGER = Some(manager); }
+        unsafe {
+            VIDEO_MANAGER = Some(manager);
+        }
     }
 }
 

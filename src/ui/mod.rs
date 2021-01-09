@@ -3,7 +3,7 @@ mod choice_entry;
 mod list_window;
 
 use alloc::string::String;
-use common::video::ConsoleOut;
+use common::console::ConsoleOut;
 use list_window::Entry;
 
 pub use self::choice_entry::ChoiceEntry;
