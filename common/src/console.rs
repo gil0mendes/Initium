@@ -93,4 +93,7 @@ pub trait ConsoleIn {
     ///
     /// Returns whether a character is available.
     fn poll(&mut self) -> bool;
+
+    /// Read a character from the console.
+    fn get_char(&mut self) -> u16;
 }

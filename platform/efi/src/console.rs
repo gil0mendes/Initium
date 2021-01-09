@@ -1,8 +1,11 @@
-use crate::video::VIDEO_MANAGER;
+use crate::{video::VIDEO_MANAGER, SYSTEM_TABLE};
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
-use common::video::{FrameBuffer, PixelFormat, VideoMode};
+use common::{
+    console::ConsoleIn,
+    video::{FrameBuffer, PixelFormat, VideoMode},
+};
 use common::{
     console::{Char, Color, ConsoleOut, DrawRegion, FONT_HEIGHT, FONT_WIDTH},
     font::CONSOLE_FONT,
@@ -10,6 +13,14 @@ use common::{
 use core::fmt;
 use core::result::Result;
 use rlibc::memset;
+use uefi::{
+    prelude::BootServices,
+    proto::console::text::{
+        Input,
+        Key::{Printable, Special},
+    },
+    Char16,
+};
 
 /// Print with new line to console
 #[macro_export]
@@ -295,5 +306,98 @@ impl fmt::Write for ConsoleOutManager {
         s.chars().for_each(|c| self.putc(c));
 
         Result::Ok(())
+    }
+}
+
+/**
+ * Console output logic
+ * TODO: this is temporary, we need to find a better way to make this more scalable using RUST, on C this was easy 😅
+ */
+
+pub static mut CONSOLE_IN: Option<ConsoleInDevice> = None;
+
+/// EFI console input device
+pub struct ConsoleInDevice<'a> {
+    /// text input protocol
+    efi_input_proto: &'a mut Input,
+    /// key saved when using a poll
+    saved_key: Option<u16>,
+}
+
+impl<'a> ConsoleInDevice<'a> {
+    /// Initialize the input device
+    pub fn init(bt: &BootServices) {
+        use crate::uefi::ResultExt;
+
+        // Look for a text input handler
+        let mut text_proto = bt
+            .locate_protocol::<Input>()
+            .expect_success("UEFI Text Input Protocol is not supported");
+
+        let input = unsafe { &mut *text_proto.get() };
+
+        let device = ConsoleInDevice {
+            saved_key: None,
+            efi_input_proto: input,
+        };
+
+        unsafe {
+            CONSOLE_IN = Some(device);
+        }
+    }
+}
+
+impl ConsoleIn for ConsoleInDevice<'a> {
+    fn poll(&mut self) -> bool {
+        if (self.saved_key.is_some()) {
+            return true;
+        }
+
+        while (true) {
+            // read a key from the console
+            let key = match self.efi_input_proto.read_key() {
+                Ok(result) => {
+                    let maybe_key = result.unwrap();
+                    if maybe_key.is_none() {
+                        continue;
+                    }
+
+                    maybe_key.unwrap()
+                }
+                Err(_) => {
+                    return false;
+                }
+            };
+
+            match key {
+                Printable(unicode_char) => {
+                    let unicode_u16: u16 = unicode_char.into();
+                    if unicode_u16 == '\r' as u16 {
+                        self.saved_key = Some('\n' as u16)
+                    } else {
+                        self.saved_key = Some(unicode_u16)
+                    }
+                }
+                Special(_) => {
+                    // TODO: implement support for special keys
+                    continue;
+                }
+            }
+
+            return true;
+        }
+
+        return true;
+    }
+
+    fn get_char(&mut self) -> u16 {
+        if (self.saved_key.is_none()) {
+            // wait the user hit a key
+            while (!self.poll()) {}
+        }
+
+        let to_return = self.saved_key.unwrap();
+        self.saved_key = None;
+        to_return
     }
 }

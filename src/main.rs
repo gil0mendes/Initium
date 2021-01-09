@@ -5,6 +5,7 @@
 #![feature(panic_info_message)]
 
 use alloc::boxed::Box;
+use common::console::ConsoleIn;
 use ui::{ChoiceEntry, ListWindow};
 
 extern crate alloc;
@@ -41,6 +42,15 @@ pub extern "C" fn load_main() {
         );
 
         window.render(console, 0);
+
+        {
+            use ConsoleIn;
+            let mut consoleInOption = &mut platform::CONSOLE_IN;
+            let mut input = consoleInOption.as_mut().unwrap();
+
+            let key = input.get_char() as u8 as char;
+            print!(">>> '{}'", key);
+        }
     }
 
     loop {}

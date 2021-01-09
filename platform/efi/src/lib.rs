@@ -25,7 +25,7 @@ use uefi::Status;
 
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
-use crate::console::ConsoleOutManager;
+use crate::console::{ConsoleInDevice, ConsoleOutManager};
 use arch::ArchManager;
 use uefi::table::SystemTable;
 
@@ -34,7 +34,7 @@ mod disk;
 mod memory;
 mod video;
 
-pub use console::CONSOLE_OUT;
+pub use console::{CONSOLE_IN, CONSOLE_OUT};
 pub use video::VIDEO_MANAGER;
 
 extern "C" {
@@ -125,6 +125,7 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
 
     // Create a console manager
     ConsoleOutManager::init();
+    ConsoleInDevice::init(boot_services);
 
     // TODO: remove this, is just for testing
     info!(
