@@ -4,7 +4,8 @@
 #![no_main]
 #![feature(panic_info_message)]
 
-use ui::Window;
+use alloc::boxed::Box;
+use ui::{ChoiceEntry, ListWindow};
 
 extern crate alloc;
 #[macro_use]
@@ -29,8 +30,17 @@ pub extern "C" fn load_main() {
         console.init();
 
         // TODO: this is a simple test is to be removed on the future
-        let window = Window::new("example".to_string());
-        window.render(console);
+        let mut window = ListWindow::new("Boot Menu".to_string(), false);
+
+        // create a list of entries
+        window.add_list(
+            Box::new(ChoiceEntry {
+                label: "Example OS Choice".to_string(),
+            }),
+            false,
+        );
+
+        window.render(console, 0);
     }
 
     loop {}
