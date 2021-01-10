@@ -69,6 +69,8 @@ pub struct ConsoleOutManager {
     region: DrawRegion,
     /// Cursor position
     cursor_pos: CursorPos,
+    /// Cursor is enabled
+    cursor_visible: bool,
     /// Console chars
     chars: Box<Vec<Char>>,
 
@@ -94,6 +96,7 @@ impl ConsoleOutManager {
             rows: 0,
             region: default_draw_region,
             cursor_pos: (0, 0),
+            cursor_visible: true,
             chars: Box::new(Vec::new()),
             foreground_color: Color::White,
             background_color: Color::Black,
@@ -147,25 +150,69 @@ impl ConsoleOutManager {
         }
     }
 
+    /// Scroll the draw region down (does not change the cursor).
+    fn scroll_down(&mut self) {
+        unimplemented!("TODO: implement scroll down");
+    }
+
     fn putc(&mut self, ch: char) {
+        self.toggle_cursor();
+
+        match ch {
+            // backspace, move back one character of we can
+            '\x08' => {
+                if self.cursor_pos.0 > self.region.x {
+                    self.cursor_pos.0 - 1;
+                } else if self.cursor_pos.1 > self.region.y {
+                    self.cursor_pos =
+                        (self.region.x + self.region.width - 1, self.cursor_pos.1 - 1);
+                }
+            }
+            // carriage return, move to the start of the line
+            '\r' => {
+                self.cursor_pos.0 = self.region.x;
+            }
+            // newline, treat it as if a carriage return was there
+            '\n' => {
+                self.cursor_pos = (self.region.x, self.cursor_pos.1 + 1);
+            }
+            // tab
+            '\t' => {
+                self.cursor_pos.0 = self.cursor_pos.0 + 8 - (self.cursor_pos.0 % 8);
+            }
+            // only deal with printable chars
+            _ => {
+                if ch >= ' ' {
+                    let idx = (self.cursor_pos.1 * self.cols) + self.cursor_pos.0;
+                    self.chars[idx].char = ch;
+                    self.chars[idx].foreground = self.foreground_color;
+                    self.chars[idx].background = self.background_color;
+
+                    self.draw_glyph(self.cursor_pos.0, self.cursor_pos.1);
+
+                    self.cursor_pos.0 = self.cursor_pos.0 + 1;
+                }
+            }
+        }
+
         let (x, y) = self.cursor_pos;
 
-        let abs_x = self.region.x + x;
-        let abs_y = self.region.y + y;
-        let idx = (abs_y * self.cols) + abs_x;
-
-        self.chars[idx].char = ch;
-        self.chars[idx].foreground = self.foreground_color;
-        self.chars[idx].background = self.background_color;
-
-        self.draw_glyph(abs_x, abs_y);
-
-        // TODO: implement scroll
-        if x + 1 < self.cols {
-            self.cursor_pos = (x + 1, y);
-        } else {
-            self.cursor_pos = (0, y + 1);
+        // if we have reached the edge of the draw region insert a new line
+        if (x >= self.region.x + self.region.width) {
+            self.cursor_pos = (self.region.x, y + 1);
         }
+
+        // if we have reached the bottom of the draw region, scroll
+        if y > self.region.y + self.region.height {
+            if self.region.scrollable {
+                self.scroll_down();
+            }
+
+            // update the cursor position
+            self.cursor_pos.1 = self.region.y + self.region.height - 1;
+        }
+
+        self.toggle_cursor();
     }
 
     /// Get current video mode
@@ -189,8 +236,7 @@ impl ConsoleOutManager {
                 memset(base_addr, rbg as i32, size);
             }
         } else {
-            // TODO: implement a pixel by pixel approach for the other cases
-            unimplemented!()
+            unimplemented!("TODO: implement a pixel by pixel approach for the other cases")
         }
     }
 
@@ -216,6 +262,31 @@ impl ConsoleOutManager {
             }
         }
     }
+
+    /// Toggle the cursor if enabled.
+    fn toggle_cursor(&mut self) {
+        if !self.cursor_visible {
+            return;
+        }
+
+        let idx = (self.cursor_pos.1 * self.cols) + self.cursor_pos.0;
+
+        if (self.chars[idx].char as u8 > 0) {
+            // invert the colors
+            let temp = self.chars[idx].foreground;
+            self.chars[idx].foreground = self.chars[idx].background;
+            self.chars[idx].background = temp;
+        } else {
+            // nothing has yet been written, initialize the character. we must be enabling the cursor if this is the
+            // case, so invert colors.
+            self.chars[idx].char = ' ';
+            self.chars[idx].foreground = Color::Black;
+            self.chars[idx].background = Color::Light_grey;
+        }
+
+        // redraw glyph with the new colors
+        self.draw_glyph(self.cursor_pos.0, self.cursor_pos.1);
+    }
 }
 
 impl ConsoleOut for ConsoleOutManager {
@@ -229,7 +300,7 @@ impl ConsoleOut for ConsoleOutManager {
         let size = self.cols * self.rows;
         self.chars = Box::new(vec![Char::default(); size as usize]);
 
-        self.fillrect(0, 0, current_mode.width, current_mode.height, 0xffffff);
+        self.fillrect(0, 0, current_mode.width, current_mode.height, 0x00);
 
         self.region = DrawRegion {
             x: 0,
@@ -265,8 +336,12 @@ impl ConsoleOut for ConsoleOutManager {
                 self.chars[idx].foreground = self.foreground_color;
                 self.chars[idx].background = self.background_color;
 
-                // TODO: avoid redrawing the glyph twice when cursor is active
-                self.draw_glyph(abs_x, abs_y);
+                if self.cursor_visible && abs_x == self.cursor_pos.0 && abs_y == self.cursor_pos.1 {
+                    // avoid redrawing the glyph twice when cursor is active
+                    self.toggle_cursor();
+                } else {
+                    self.draw_glyph(abs_x, abs_y);
+                }
             }
         }
     }
@@ -278,17 +353,23 @@ impl ConsoleOut for ConsoleOutManager {
 
         self.region = region;
 
-        // TODO: adjust cursor position
+        // adjust cursor position
+        self.set_cursor(0, 0, self.cursor_visible);
+    }
+
+    fn get_region(&self) -> DrawRegion {
+        self.region.clone()
     }
 
     fn reset_region(&mut self) {
-        self.region.x = 0;
-        self.region.y = 0;
-        self.region.width = self.cols;
-        self.region.height = self.rows;
-        self.region.scrollable = true;
-
-        // TODO: adjust cursor position
+        let region = DrawRegion {
+            x: 0,
+            y: 0,
+            width: self.cols,
+            height: self.rows,
+            scrollable: true,
+        };
+        self.set_region(region);
     }
 
     fn set_color(&mut self, fg: common::console::Color, bg: common::console::Color) {
@@ -298,6 +379,16 @@ impl ConsoleOut for ConsoleOutManager {
 
     fn resolution(&self) -> (usize, usize) {
         (self.cols, self.rows)
+    }
+
+    fn set_cursor(&mut self, x: usize, y: usize, visible: bool) {
+        assert!(x < self.region.width);
+        assert!(y < self.region.height);
+
+        self.toggle_cursor();
+        self.cursor_pos = (self.region.x + x, self.region.y + y);
+        self.cursor_visible = visible;
+        self.toggle_cursor();
     }
 }
 
@@ -314,6 +405,7 @@ impl fmt::Write for ConsoleOutManager {
  * TODO: this is temporary, we need to find a better way to make this more scalable using RUST, on C this was easy 😅
  */
 
+/// Console input device
 pub static mut CONSOLE_IN: Option<ConsoleInDevice> = None;
 
 /// EFI console input device
@@ -379,7 +471,7 @@ impl ConsoleIn for ConsoleInDevice<'a> {
                     }
                 }
                 Special(_) => {
-                    // TODO: implement support for special keys
+                    unimplemented!("TODO: implement support for special keys");
                     continue;
                 }
             }

@@ -111,13 +111,52 @@ impl ListWindow {
         // TODO: render back action if is list is exitable
     }
 
+    /// Render an entry from a list
+    fn render_entry(
+        &self,
+        console: &mut dyn ConsoleOut,
+        entry: &Entry,
+        pos: usize,
+        selected: bool,
+    ) {
+        let (console_w, console_h) = console.resolution();
+
+        let content_region = console.get_region();
+
+        // compute the place where to put the entry
+        let region = DrawRegion {
+            x: content_region.x,
+            y: content_region.y + pos,
+            width: content_region.width,
+            height: 1,
+            scrollable: false,
+        };
+        console.set_region(region);
+
+        // clear the area. if there is a entry is selected it should be highlighted
+        let (fg_color, bg_color) = match selected {
+            true => (Color::Black, Color::Light_grey),
+            false => (Color::Light_grey, Color::Black),
+        };
+        console.set_color(fg_color, bg_color);
+        console.clear(0, 0, 0, 0);
+
+        // render the entry
+        entry.render(console);
+
+        // restore content region and color
+        console.set_region(content_region);
+        console.set_color(Color::Light_grey, Color::Black);
+    }
+
     /// Render contents of a window
     pub fn render(&self, console: &mut dyn ConsoleOut, timeout: usize) {
         console.reset_region();
         console.set_color(Color::White, Color::Black);
         console.clear(0, 0, 0, 0);
 
-        // TODO: disable the cursor
+        // disable the cursor
+        console.set_cursor(0, 0, false);
 
         // draw the title
         self.set_title_region(console);
@@ -128,13 +167,12 @@ impl ListWindow {
 
         // draw content last, so console state set by render is preserved
         self.set_content_region(console);
-        // TODO: render window based on type
-        match self.entries.get(0) {
-            Some(entry) => {
-                entry.render(console);
-            }
-            _ => {}
-        };
+
+        /// render all list entries
+        self.entries.iter().enumerate().for_each(|(pos, entry)| {
+            let is_selected = pos == self.selected;
+            self.render_entry(console, entry.as_ref(), pos, is_selected);
+        });
     }
 
     pub fn add_list(&mut self, entry: Box<Entry>, selected: bool) {

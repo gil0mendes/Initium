@@ -40,17 +40,20 @@ pub extern "C" fn load_main() {
             }),
             false,
         );
+        window.add_list(
+            Box::new(ChoiceEntry {
+                label: "Example OS Choice 2".to_string(),
+            }),
+            false,
+        );
+        window.add_list(
+            Box::new(ChoiceEntry {
+                label: "Example OS Choice 3".to_string(),
+            }),
+            false,
+        );
 
         window.render(console, 0);
-
-        {
-            use ConsoleIn;
-            let mut consoleInOption = &mut platform::CONSOLE_IN;
-            let mut input = consoleInOption.as_mut().unwrap();
-
-            let key = input.get_char() as u8 as char;
-            print!(">>> '{}'", key);
-        }
     }
 
     loop {}
@@ -70,5 +73,6 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
+    // TODO: halt in a way that makes sense for the platform
     loop {}
 }

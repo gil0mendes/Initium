@@ -78,6 +78,9 @@ pub trait ConsoleOut {
     /// Set the draw region of the console
     fn set_region(&mut self, region: DrawRegion);
 
+    /// Get the current active region
+    fn get_region(&self) -> DrawRegion;
+
     /// Reset region to the initial values
     fn reset_region(&mut self);
 
@@ -86,6 +89,12 @@ pub trait ConsoleOut {
 
     /// Get console resolution
     fn resolution(&self) -> (usize, usize);
+
+    /// Configure the cursor
+    ///
+    /// The position is relative to current active region. This means, for example, that a (0, 0) position can not means
+    /// that the cursor will be placed on the corner of the screen, if the region is placed elsewhere.
+    fn set_cursor(&mut self, x: usize, y: usize, visible: bool);
 }
 
 pub trait ConsoleIn {
