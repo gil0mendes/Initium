@@ -1,3 +1,5 @@
+use crate::key::Key;
+
 /// font width
 pub const FONT_WIDTH: usize = 8;
 /// font height
@@ -104,5 +106,5 @@ pub trait ConsoleIn {
     fn poll(&mut self) -> bool;
 
     /// Read a character from the console.
-    fn get_char(&mut self) -> u16;
+    fn get_char(&mut self) -> Key;
 }

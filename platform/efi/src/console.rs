@@ -4,6 +4,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use common::{
     console::ConsoleIn,
+    key::{Key, ScanCode},
     video::{FrameBuffer, PixelFormat, VideoMode},
 };
 use common::{
@@ -16,7 +17,7 @@ use rlibc::memset;
 use uefi::{
     prelude::BootServices,
     proto::console::text::{
-        Input,
+        self, Input,
         Key::{Printable, Special},
     },
     Char16,
@@ -413,7 +414,7 @@ pub struct ConsoleInDevice<'a> {
     /// text input protocol
     efi_input_proto: &'a mut Input,
     /// key saved when using a poll
-    saved_key: Option<u16>,
+    saved_key: Option<text::Key>,
 }
 
 impl<'a> ConsoleInDevice<'a> {
@@ -461,35 +462,64 @@ impl ConsoleIn for ConsoleInDevice<'a> {
                 }
             };
 
-            match key {
-                Printable(unicode_char) => {
-                    let unicode_u16: u16 = unicode_char.into();
-                    if unicode_u16 == '\r' as u16 {
-                        self.saved_key = Some('\n' as u16)
-                    } else {
-                        self.saved_key = Some(unicode_u16)
-                    }
-                }
-                Special(_) => {
-                    unimplemented!("TODO: implement support for special keys");
-                    continue;
-                }
-            }
-
+            self.saved_key = Some(key);
             return true;
         }
 
         return true;
     }
 
-    fn get_char(&mut self) -> u16 {
+    fn get_char(&mut self) -> Key {
         if (self.saved_key.is_none()) {
             // wait the user hit a key
             while (!self.poll()) {}
         }
 
-        let to_return = self.saved_key.unwrap();
+        // convert UEFI key into a key understood by the common code
+        let to_return = convert_uefi_key_into_key(self.saved_key.unwrap());
         self.saved_key = None;
         to_return
+    }
+}
+
+/// Convert UEFI key into
+fn convert_uefi_key_into_key(key: text::Key) -> Key {
+    match key {
+        text::Key::Printable(unicode_char) => {
+            let unicode_u16: u16 = unicode_char.into();
+            if unicode_u16 == '\r' as u16 {
+                return Key::Printable('\n');
+            }
+
+            return Key::Printable(unicode_u16 as u8 as char);
+        }
+        text::Key::Special(special_key) => match special_key {
+            text::ScanCode::NULL => Key::Special(ScanCode::NULL),
+            text::ScanCode::UP => Key::Special(ScanCode::UP),
+            text::ScanCode::DOWN => Key::Special(ScanCode::DOWN),
+            text::ScanCode::RIGHT => Key::Special(ScanCode::RIGHT),
+            text::ScanCode::LEFT => Key::Special(ScanCode::LEFT),
+            text::ScanCode::HOME => Key::Special(ScanCode::HOME),
+            text::ScanCode::END => Key::Special(ScanCode::END),
+            text::ScanCode::INSERT => Key::Special(ScanCode::INSERT),
+            text::ScanCode::DELETE => Key::Special(ScanCode::DELETE),
+            text::ScanCode::PAGE_UP => Key::Special(ScanCode::PAGE_UP),
+            text::ScanCode::PAGE_DOWN => Key::Special(ScanCode::PAGE_DOWN),
+            text::ScanCode::FUNCTION_1 => Key::Special(ScanCode::FUNCTION_1),
+            text::ScanCode::FUNCTION_2 => Key::Special(ScanCode::FUNCTION_2),
+            text::ScanCode::FUNCTION_3 => Key::Special(ScanCode::FUNCTION_3),
+            text::ScanCode::FUNCTION_4 => Key::Special(ScanCode::FUNCTION_4),
+            text::ScanCode::FUNCTION_5 => Key::Special(ScanCode::FUNCTION_5),
+            text::ScanCode::FUNCTION_6 => Key::Special(ScanCode::FUNCTION_6),
+            text::ScanCode::FUNCTION_7 => Key::Special(ScanCode::FUNCTION_7),
+            text::ScanCode::FUNCTION_8 => Key::Special(ScanCode::FUNCTION_8),
+            text::ScanCode::FUNCTION_9 => Key::Special(ScanCode::FUNCTION_9),
+            text::ScanCode::FUNCTION_10 => Key::Special(ScanCode::FUNCTION_10),
+            text::ScanCode::FUNCTION_11 => Key::Special(ScanCode::FUNCTION_11),
+            text::ScanCode::FUNCTION_12 => Key::Special(ScanCode::FUNCTION_12),
+            text::ScanCode::ESCAPE => Key::Special(ScanCode::ESCAPE),
+            // for non supported keys return NULL
+            _ => Key::Special(ScanCode::NULL),
+        },
     }
 }
