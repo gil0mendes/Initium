@@ -6,7 +6,10 @@
 
 use alloc::boxed::Box;
 use common::console::ConsoleIn;
+use console::{get_console_in, get_console_out};
 use ui::{ChoiceEntry, ListWindow};
+
+use common::key::{Key, ScanCode};
 
 extern crate alloc;
 #[macro_use]
@@ -16,43 +19,41 @@ extern crate log;
 extern crate common;
 
 mod config;
+mod console;
 mod ui;
 
 #[no_mangle]
 pub extern "C" fn load_main() {
     use crate::alloc::string::ToString;
 
-    unsafe {
-        // init console
-        use common::console::ConsoleOut;
-        let mut consoleOption = &mut platform::CONSOLE_OUT;
-        let mut console = consoleOption.as_mut().unwrap();
+    // init console
+    get_console_out().init();
 
-        console.init();
+    // TODO: this is a simple test is to be removed on the future
+    let mut window = ListWindow::new("Boot Menu".to_string(), false);
 
-        // TODO: this is a simple test is to be removed on the future
-        let mut window = ListWindow::new("Boot Menu".to_string(), false);
+    // create a list of entries
+    window.add_list(
+        Box::new(ChoiceEntry {
+            label: "Example OS Choice".to_string(),
+        }),
+        false,
+    );
+    window.add_list(
+        Box::new(ChoiceEntry {
+            label: "Example OS Choice 2".to_string(),
+        }),
+        false,
+    );
+    window.add_list(
+        Box::new(ChoiceEntry {
+            label: "Example OS Choice 3".to_string(),
+        }),
+        false,
+    );
 
-        // create a list of entries
-        window.add_list(
-            Box::new(ChoiceEntry {
-                label: "Example OS Choice".to_string(),
-            }),
-            false,
-        );
-        window.add_list(
-            Box::new(ChoiceEntry {
-                label: "Example OS Choice 2".to_string(),
-            }),
-            false,
-        );
-        window.add_list(
-            Box::new(ChoiceEntry {
-                label: "Example OS Choice 3".to_string(),
-            }),
-            false,
-        );
-
+    {
+        let console = get_console_out();
         window.render(console, 0);
     }
 

@@ -1,3 +1,5 @@
+use crate::console::get_console_in;
+
 use super::InputResult;
 use alloc::boxed::Box;
 use alloc::string::String;
@@ -150,7 +152,7 @@ impl ListWindow {
     }
 
     /// Render contents of a window
-    pub fn render(&self, console: &mut dyn ConsoleOut, timeout: usize) {
+    pub fn render(&mut self, console: &mut dyn ConsoleOut, timeout: usize) {
         console.reset_region();
         console.set_color(Color::White, Color::Black);
         console.clear(0, 0, 0, 0);
@@ -173,6 +175,68 @@ impl ListWindow {
             let is_selected = pos == self.selected;
             self.render_entry(console, entry.as_ref(), pos, is_selected);
         });
+
+        // TODO: abstract this to be used will all UI components
+        loop {
+            let key = get_console_in().get_char();
+
+            match key {
+                // move selection up
+                common::key::Key::Special(common::key::ScanCode::UP) => {
+                    let target = self.selected;
+
+                    // move selection to bottom if is the first entry, for now prevent navigation to top
+                    self.selected = if self.selected == 0 {
+                        self.entries.len() - 1
+                    } else {
+                        self.selected - 1
+                    };
+
+                    // render the previous selected entry
+                    self.render_entry(
+                        console,
+                        self.entries.get(target).unwrap().as_ref(),
+                        target,
+                        false,
+                    );
+
+                    // render the next entry as select
+                    self.render_entry(
+                        console,
+                        self.entries.get(self.selected).unwrap().as_ref(),
+                        self.selected,
+                        true,
+                    );
+                }
+                // move selection down
+                common::key::Key::Special(common::key::ScanCode::DOWN) => {
+                    let target = self.selected;
+                    // move selection to top if is the last entry, for now prevent navigation to bottom
+                    self.selected = if self.selected == self.entries.len() - 1 {
+                        0
+                    } else {
+                        self.selected + 1
+                    };
+
+                    // render the previous selected entry
+                    self.render_entry(
+                        console,
+                        self.entries.get(target).unwrap().as_ref(),
+                        target,
+                        false,
+                    );
+
+                    // render the next entry as select
+                    self.render_entry(
+                        console,
+                        self.entries.get(self.selected).unwrap().as_ref(),
+                        self.selected,
+                        true,
+                    );
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn add_list(&mut self, entry: Box<Entry>, selected: bool) {
