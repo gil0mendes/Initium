@@ -4,6 +4,8 @@
 #![no_main]
 #![feature(panic_info_message)]
 
+use core::matches;
+
 use alloc::boxed::Box;
 use common::console::ConsoleIn;
 use console::{get_console_in, get_console_out};
@@ -20,6 +22,8 @@ extern crate common;
 
 mod config;
 mod console;
+mod line_editor;
+mod shell;
 mod ui;
 
 #[no_mangle]
@@ -57,6 +61,7 @@ pub extern "C" fn load_main() {
         window.render(console, 0);
     }
 
+    // TODO: remove this as soon as we have the environment loader implemented
     loop {}
 }
 

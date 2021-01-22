@@ -1,4 +1,4 @@
-use crate::console::get_console_in;
+use crate::{console::get_console_in, shell::Shell};
 
 use super::InputResult;
 use alloc::boxed::Box;
@@ -176,7 +176,7 @@ impl ListWindow {
             self.render_entry(console, entry.as_ref(), pos, is_selected);
         });
 
-        // TODO: abstract this to be used will all UI components
+        // TODO: abstract this to be used with all UI components
         loop {
             let key = get_console_in().get_char();
 
@@ -233,6 +233,11 @@ impl ListWindow {
                         self.selected,
                         true,
                     );
+                }
+                // enter on shell
+                common::key::Key::Special(common::key::ScanCode::FUNCTION_2) => {
+                    let mut shell = Shell::new();
+                    shell.start();
                 }
                 _ => {}
             }

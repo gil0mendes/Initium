@@ -1,5 +1,5 @@
 use alloc::string::String;
-use common::console::ConsoleOut;
+use common::{console::ConsoleOut, key::Key};
 
 use super::{list_window::Entry, render_help_action};
 
@@ -13,6 +13,9 @@ impl Entry for ChoiceEntry {
     }
 
     fn help(&self, console: &ConsoleOut) {
-        render_help_action(console, '\n', "Select");
+        render_help_action(console, Key::Printable('\n'), "Select");
+
+        // render help for shell
+        render_help_action(console, Key::Special(common::key::ScanCode::FUNCTION_2), "Shell");
     }
 }
