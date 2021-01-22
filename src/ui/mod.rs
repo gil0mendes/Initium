@@ -3,7 +3,7 @@ mod choice_entry;
 mod list_window;
 
 use alloc::string::String;
-use common::console::ConsoleOut;
+use common::{console::ConsoleOut, key::Key};
 use list_window::Entry;
 
 pub use self::choice_entry::ChoiceEntry;
@@ -24,12 +24,16 @@ pub enum InputResult {
 }
 
 /// Render helper action
-pub fn render_help_action(console: &ConsoleOut, key: char, name: &str) {
+pub fn render_help_action(console: &ConsoleOut, key: Key, name: &str) {
     use crate::alloc::string::ToString;
 
     let label = match key {
-        '\n' => "Enter".to_string(),
-        _ => key.to_string(),
+        Key::Printable(ch) => match ch {
+            '\n' => "Enter".to_string(),
+            _ => ch.to_string(),
+        },
+        Key::Special(common::key::ScanCode::FUNCTION_2) => "F2".to_string(),
+        other => unimplemented!("Implement print for {:?}", other),
     };
 
     print!("{} = {} ", label, name);
