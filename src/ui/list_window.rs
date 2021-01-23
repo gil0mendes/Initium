@@ -1,4 +1,7 @@
-use crate::{console::get_console_in, shell::Shell};
+use crate::{
+    console::{console_end_ui, get_console_in},
+    shell::Shell,
+};
 
 use super::InputResult;
 use alloc::boxed::Box;
@@ -236,6 +239,9 @@ impl ListWindow {
                 }
                 // enter on shell
                 common::key::Key::Special(common::key::ScanCode::FUNCTION_2) => {
+                    // end ui mode
+                    console_end_ui();
+
                     let mut shell = Shell::new();
                     shell.start();
                 }
