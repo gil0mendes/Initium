@@ -163,7 +163,7 @@ impl ConsoleOutManager {
             // backspace, move back one character of we can
             '\x08' => {
                 if self.cursor_pos.0 > self.region.x {
-                    self.cursor_pos.0 - 1;
+                    self.cursor_pos.0 = self.cursor_pos.0 - 1;
                 } else if self.cursor_pos.1 > self.region.y {
                     self.cursor_pos =
                         (self.region.x + self.region.width - 1, self.cursor_pos.1 - 1);
