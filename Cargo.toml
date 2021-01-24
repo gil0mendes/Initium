@@ -5,9 +5,8 @@ authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 publish = false
 edition = "2018"
 
-# [[bin]]
-# name = 'initium'
-# path = "src/lib.rs"
+[[bin]]
+name = 'initium'
 
 [dependencies]
 log = { version = "0.4", default-features = false }
