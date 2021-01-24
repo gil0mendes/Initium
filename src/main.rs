@@ -4,14 +4,14 @@
 #![no_main]
 #![feature(panic_info_message)]
 
-use core::matches;
-
-use alloc::boxed::Box;
-use common::console::ConsoleIn;
+use alloc::{boxed::Box, string::String, vec::Vec};
 use console::{get_console_in, get_console_out};
 use ui::{ChoiceEntry, ListWindow};
 
-use common::key::{Key, ScanCode};
+use common::{
+    key::{Key, ScanCode},
+    BuiltinCommand,
+};
 
 extern crate alloc;
 #[macro_use]
@@ -82,3 +82,16 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     // TODO: halt in a way that makes sense for the platform
     loop {}
 }
+
+fn builtin_about(_: Vec<String>) -> bool {
+    println!("Initium version {}", env!("CARGO_PKG_VERSION"));
+    true
+}
+
+#[used]
+#[link_section = ".builtins"]
+static ABOUT: BuiltinCommand = BuiltinCommand {
+    name: "about",
+    description: "Shows the bootloader version",
+    func: builtin_about,
+};
