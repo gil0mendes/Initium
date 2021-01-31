@@ -2,6 +2,7 @@
 #![feature(asm)]
 #![feature(try_trait)]
 #![feature(abi_efiapi)]
+#![feature(global_asm)]
 #![feature(const_mut_refs)]
 #![feature(alloc_error_handler)]
 #![feature(in_band_lifetimes)]
@@ -36,6 +37,8 @@ mod video;
 
 pub use console::{CONSOLE_IN, CONSOLE_OUT};
 pub use video::VIDEO_MANAGER;
+
+global_asm!(include_str!("start.s"));
 
 extern "C" {
     fn load_main();

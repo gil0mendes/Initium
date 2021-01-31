@@ -1,15 +1,19 @@
-OUTPUT_FORMAT("pei-x86-64")
+/**
+ * AMD64 EFI loader linker script.
+ */
+
+OUTPUT_FORMAT("elf64-x86-64")
 OUTPUT_ARCH("i386:x86-64")
-ENTRY(efi_main)
+ENTRY(_start)
 
-SECTIONS
-{
-  . = 0;
-  __start = .;
+SECTIONS {
+	. = SIZEOF_HEADERS;
+	__start = .;
 
-  .hash : { *(.hash) }
+	.hash : { *(.hash) }
+	.gnu.hash : { *(.gnu.hash) }
 
-  . = ALIGN(0x1000);
+	. = ALIGN(0x1000);
   __text_start = .;
 	.text : {
 		*(.init.text)
@@ -17,23 +21,21 @@ SECTIONS
 		*(.text.*)
 	}
 
-  /* Dummy relocation section for the PE binary so that EFI recognizes
-	 * as as a relocatable image. */
+	/* Dummy relocation section for the PE binary so that EFI recognizes as as a relocatable image. */
 	. = ALIGN(0x1000);
 	.reloc : { *(.reloc) }
 
-  . = ALIGN(0x1000);
+	. = ALIGN(0x1000);
   __data_start = .;
 	.data : {
-		/* Roll the read-only data into the main data section. It would
-		 * not be write protected even if we put it separately, and PE
-		 * requires page aligned sections so we only waste space by
-		 * splitting it into another section. */
+		/* Roll the read-only data into the main data section. It would not be write protected even if we put it 
+		 * separately, and PE  requires page aligned sections so we only waste space by splitting it into another 
+		 * section. */
 		*(.rodata)
 		*(.rodata.*)
 		*(.got)
 		*(.got.plt)
-    *(.init.data)
+    	*(.init.data)
 		*(.data)
 		*(.data.*)
 

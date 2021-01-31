@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  tools:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: initium-tools
+    volumes:
+      - ./:/code
