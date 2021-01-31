@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# from utils.build.toolchain import ToolchainManager
 'Script used automate some common tasks when developing for Initium.'
 
 import os
@@ -13,8 +14,6 @@ from pathlib import Path
 # Add the path to our build utilities to the path
 sys.path = [os.path.abspath(os.path.join('utils', 'build'))] + sys.path
 
-from toolchain import ToolchainManager
-from utils import execute, makedirs, remove
 
 # Target variables
 ARCH = 'x86_64'
@@ -74,10 +73,12 @@ SETTINGS = {
 # from cargo metadata at the first time target_dir function is invoked.
 TARGET_DIR = None
 
+
 def clean():
     'Clean generated objects'
     sp.run(['xargo', 'clean'])
     shutil.rmtree(BUILD_DIR)
+
 
 def target_dir():
     """
@@ -90,9 +91,11 @@ def target_dir():
         TARGET_DIR = Path(json.loads(result.stdout)['target_directory'])
     return TARGET_DIR
 
+
 def get_target_triple():
     arch = SETTINGS['arch']
     return f'{arch}-unknown-efi'
+
 
 def build_dir():
     """
@@ -100,13 +103,16 @@ def build_dir():
     """
     return target_dir() / get_target_triple() / SETTINGS['config']
 
+
 def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'
     return build_dir() / 'esp'
 
+
 def iso_file():
     'Return the path where we will put the ISO file'
     return build_dir() / ISO_FILE_NAME
+
 
 def run_tool(tool, *flags):
     'Runs Cargo with certain arguments'
@@ -124,11 +130,13 @@ def run_tool(tool, *flags):
 
     sp.run(cmd, check=True)
 
+
 def run_build(*flags):
     """
     Runs cargo-build with certain arguments.
     """
     run_tool('build', *flags)
+
 
 def build_command(*test_flags):
     """
@@ -156,19 +164,28 @@ def build_command(*test_flags):
     if arch == 'x86_64':
         output_file = boot_dir / 'BootX64.efi'
 
-    # Copy the built EFI application to the right directory
-    # for running tests.
+    cmd = ('rust-lld -flavor gnu -T./platform/efi/linker.ld -o ./target/x86_64-unknown-efi/debug/esp/EFI/Boot/BootX64.efi ./target/x86_64-unknown-efi/debug/libinitium.a').split(' ')
+    sp.run(cmd, stdout=sp.PIPE, check=True)
+
+    # Copy the built EFI application to the right directory for running tests.
+    # Build the final EFI binary, by translating into a EFI format
     built_file = CARGO_BUILD_DIR / 'initium.efi'
 
-    shutil.copy2(built_file, output_file)
+    cmd = ('objcopy -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.\* -j .rela.\* -j .rel\* -j .rela\* -j .reloc -Opei-x86-64 --subsystem=efi-app ' +
+           './target/x86_64-unknown-efi/debug/esp/EFI/Boot/BootX64.efi').split(' ')
+    sp.run(cmd, stdout=sp.PIPE, check=True)
+
+    # shutil.copy2(built_file, output_file)
 
     # Write startup file to load into loader automatically
     startup_file = open(esp_dir() / "startup.nsh", "w")
     startup_file.write("\EFI\BOOT\BOOTX64.EFI")
     startup_file.close()
 
+
 def build_iso():
     sp.run(['mkisofs', '-V', 'Initium', '-o', iso_file(), BUILD_DIR])
+
 
 def run_command():
     'Runs the code in QEMU'
@@ -192,7 +209,7 @@ def run_command():
 
         # Set up OVMF.
         '-drive', 'if=pflash,format=raw,readonly,file=OVMF_CODE.fd',
-	    '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd',
+        '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd',
 
         # Mount a local directory as a FAT partition
         '-drive', f'format=raw,file=fat:rw:{esp_dir()}',
@@ -205,12 +222,13 @@ def run_command():
 
         # Setup monitor
         '-monitor', 'vc:1024x768',
-        
+
         # Create AHCI controller
         '-device', 'ahci,id=ahci,multifunction=on'
     ]
 
     sp.run([QEMU] + qemu_flags).check_returncode()
+
 
 def toolchain_command():
     # TODO: implement a proper config mechanism
@@ -223,8 +241,9 @@ def toolchain_command():
     }
 
     # Initialise the toolchain manager and add the toolchain build target.
-    toolchain = ToolchainManager(config)
-    toolchain.update()
+    # toolchain = ToolchainManager(config)
+    # toolchain.update()
+
 
 def main(args):
     "Runs the user-requested actions."
@@ -260,6 +279,7 @@ def main(args):
         run_command()
     else:
         raise ValueError(f"Unknown verb {opts.verb}")
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

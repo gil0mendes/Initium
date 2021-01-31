@@ -58,16 +58,16 @@ impl Shell {
 
     /// Execute the given command.
     fn execute_command(&self, list: Command) {
-        extern "C" {
-            static __builtins_start: u8;
-        }
+        // extern "C" {
+        //     static __builtins_start: u8;
+        // }
 
-        // search for the function to execute
-        unsafe {
-            println!("{}", __builtins_start);
-        }
+        // // search for the function to execute
+        // unsafe {
+        //     println!("{}", __builtins_start);
+        // }
 
-        println!(">>> {:?}", list);
+        // println!(">>> {:?}", list);
     }
 
     /// Handle the user input

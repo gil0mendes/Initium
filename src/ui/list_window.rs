@@ -13,10 +13,10 @@ use common::console::{Color, DrawRegion};
 /// Trait to be implemented by a UI list entry
 pub trait Entry {
     /// Render the entry
-    fn render(&self, console: &ConsoleOut);
+    fn render(&self, console: &dyn ConsoleOut);
 
     /// Write the help text for the entry
-    fn help(&self, console: &ConsoleOut);
+    fn help(&self, console: &dyn ConsoleOut);
 
     /// Destroy the entry
     fn destroy(&self) {}
@@ -46,7 +46,7 @@ impl ListWindow {
         Self {
             title,
             exitable,
-            entries: Vec::<Box<Entry>>::new(),
+            entries: Vec::<Box<dyn Entry>>::new(),
             selected: 0,
         }
     }
@@ -120,7 +120,7 @@ impl ListWindow {
     fn render_entry(
         &self,
         console: &mut dyn ConsoleOut,
-        entry: &Entry,
+        entry: &dyn Entry,
         pos: usize,
         selected: bool,
     ) {
@@ -173,7 +173,7 @@ impl ListWindow {
         // draw content last, so console state set by render is preserved
         self.set_content_region(console);
 
-        /// render all list entries
+        // render all list entries
         self.entries.iter().enumerate().for_each(|(pos, entry)| {
             let is_selected = pos == self.selected;
             self.render_entry(console, entry.as_ref(), pos, is_selected);
@@ -250,7 +250,7 @@ impl ListWindow {
         }
     }
 
-    pub fn add_list(&mut self, entry: Box<Entry>, selected: bool) {
+    pub fn add_list(&mut self, entry: Box<dyn Entry>, selected: bool) {
         self.entries.push(entry);
 
         // TODO: implement selected logic
