@@ -8,7 +8,7 @@ pub struct ChoiceEntry {
 }
 
 impl Entry for ChoiceEntry {
-    fn render(&self, console: &ConsoleOut) {
+    fn render(&self, console: &dyn ConsoleOut) {
         print!("{}", self.label);
     }
 
@@ -16,6 +16,10 @@ impl Entry for ChoiceEntry {
         render_help_action(console, Key::Printable('\n'), "Select");
 
         // render help for shell
-        render_help_action(console, Key::Special(common::key::ScanCode::FUNCTION_2), "Shell");
+        render_help_action(
+            console,
+            Key::Special(common::key::ScanCode::FUNCTION_2),
+            "Shell",
+        );
     }
 }

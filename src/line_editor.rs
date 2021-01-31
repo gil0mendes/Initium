@@ -85,7 +85,7 @@ impl LineEditor {
                 self.erase_char(false);
             }
             // Del
-            Key::Printable('\x08') => {
+            Key::Printable('\x78') => {
                 self.erase_char(true);
             }
             Key::Printable('\n') => {

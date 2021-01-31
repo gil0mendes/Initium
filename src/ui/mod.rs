@@ -24,7 +24,7 @@ pub enum InputResult {
 }
 
 /// Render helper action
-pub fn render_help_action(console: &ConsoleOut, key: Key, name: &str) {
+pub fn render_help_action(console: &dyn ConsoleOut, key: Key, name: &str) {
     use crate::alloc::string::ToString;
 
     let label = match key {
