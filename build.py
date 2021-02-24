@@ -151,10 +151,8 @@ def build_command(*test_flags):
     if SETTINGS['config'] == 'release':
         build_args.append('--release')
 
+    # build rust code
     run_build(*build_args)
-
-    # Copy the build test runner file to the right directory for runnings tests
-    build_file = build_dir() / 'initium.efi'
 
     # Create build folder
     boot_dir = esp_dir() / 'EFI' / 'Boot'
@@ -164,18 +162,12 @@ def build_command(*test_flags):
     if arch == 'x86_64':
         output_file = boot_dir / 'BootX64.efi'
 
-    cmd = ('rust-lld -flavor gnu -T./platform/efi/linker.ld -o ./target/x86_64-unknown-efi/debug/esp/EFI/Boot/BootX64.efi ./target/x86_64-unknown-efi/debug/libinitium.a').split(' ')
-    sp.run(cmd, stdout=sp.PIPE, check=True)
-
     # Copy the built EFI application to the right directory for running tests.
     # Build the final EFI binary, by translating into a EFI format
     built_file = CARGO_BUILD_DIR / 'initium.efi'
 
-    cmd = ('objcopy -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.\* -j .rela.\* -j .rel\* -j .rela\* -j .reloc -Opei-x86-64 --subsystem=efi-app ' +
-           './target/x86_64-unknown-efi/debug/esp/EFI/Boot/BootX64.efi').split(' ')
-    sp.run(cmd, stdout=sp.PIPE, check=True)
-
-    # shutil.copy2(built_file, output_file)
+    # Copy the build test runner file to the right directory for runnings tests
+    shutil.copy2(built_file, output_file)
 
     # Write startup file to load into loader automatically
     startup_file = open(esp_dir() / "startup.nsh", "w")
@@ -208,8 +200,8 @@ def run_command():
         '-m', '128M',
 
         # Set up OVMF.
-        '-drive', 'if=pflash,format=raw,readonly,file=OVMF_CODE.fd',
-        '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd',
+        '-drive', 'if=pflash,format=raw,file=OVMF_CODE.fd,readonly=on',
+        '-drive', 'if=pflash,format=raw,file=OVMF_VARS-1024x768.fd,readonly=on',
 
         # Mount a local directory as a FAT partition
         '-drive', f'format=raw,file=fat:rw:{esp_dir()}',

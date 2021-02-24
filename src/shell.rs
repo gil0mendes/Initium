@@ -3,7 +3,7 @@ use alloc::{
     vec::Vec,
 };
 
-use common::key::Key;
+use common::{command_manager::get_command_manager, key::Key};
 
 use crate::{
     console::{get_console_in, get_console_out},
@@ -40,6 +40,12 @@ impl Shell {
             // get a command from the user and process it.
             let raw_command = self.input_handler();
             let command = self.process_command(raw_command);
+
+            // ignore when the command is empty
+            if command.name.len() == 0 {
+                continue;
+            }
+
             self.execute_command(command);
         }
     }
@@ -58,16 +64,16 @@ impl Shell {
 
     /// Execute the given command.
     fn execute_command(&self, list: Command) {
-        // extern "C" {
-        //     static __builtins_start: u8;
-        // }
+        let mut command_manager = get_command_manager();
 
-        // // search for the function to execute
-        // unsafe {
-        //     println!("{}", __builtins_start);
-        // }
-
-        // println!(">>> {:?}", list);
+        match command_manager.get_command(&list.name) {
+            Some(command) => {
+                (command.func)(list.arguments);
+            }
+            None => {
+                println!("Command '{}' not found", &list.name);
+            }
+        }
     }
 
     /// Handle the user input
