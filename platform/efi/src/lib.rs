@@ -146,3 +146,17 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
 
     Status::SUCCESS
 }
+
+/// Reboot the system
+pub fn target_reboot() -> ! {
+    let system_table_option = unsafe { &SYSTEM_TABLE };
+    let system_table = system_table_option.as_ref().unwrap();
+
+    system_table.runtime_services().reset(
+        uefi::table::runtime::ResetType::Warm,
+        Status::SUCCESS,
+        None,
+    );
+
+    panic!("EFI reset failed");
+}

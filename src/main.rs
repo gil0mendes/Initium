@@ -77,7 +77,7 @@ fn register_commands() {
     command_manager.add_command(BuiltinCommand {
         name: "about",
         description: "Shows the bootloader version",
-        func: builtin_about,
+        func: about_command,
     });
 
     // we can't implement the 'help' command on the common crate since the println! macro isn't available there
@@ -86,13 +86,27 @@ fn register_commands() {
         description: "List all available commands",
         func: help_command,
     });
+
+    command_manager.add_command(BuiltinCommand {
+        name: "reboot",
+        description: "Reboot the system",
+        func: reboot_command,
+    });
 }
 
-fn builtin_about(_: Vec<String>) -> bool {
+/// Reboot platform
+fn reboot_command(_: Vec<String>) -> bool {
+    platform::target_reboot();
+    true
+}
+
+/// Show current Initium version
+fn about_command(_: Vec<String>) -> bool {
     println!("Initium version {}", env!("CARGO_PKG_VERSION"));
     true
 }
 
+/// Show all available commands
 fn help_command(_: Vec<String>) -> bool {
     let manager = get_command_manager();
 
