@@ -1,7 +1,7 @@
 {
-  "llvm-target": "x86_64-unknown-uefi",
+  "llvm-target": "x86_64-pc-windows-gnu",
   "env": "gnu",
-  "target-family": "none",
+  "target-family": "windows",
   "target-endian": "little",
   "target-pointer-width": "64",
   "target-c-int-width": "32",
@@ -9,16 +9,12 @@
   "arch": "x86_64",
   "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
   "linker": "rust-lld",
-  "linker-flavor": "ld.lld",
+  "linker-flavor": "lld-link",
   "pre-link-args": {
-      "ld.lld": [ 
-          "-T./platform/efi/linker.ld",
-          "-zmax-page-size=0x1000",
-          "-zcommon-page-size=0x1000",
-          "--build-id=none",
-          "-Bsymbolic",
-          "-znocombreloc"
-      ]
+    "lld-link": [
+      "/Subsystem:EFI_Application",
+      "/Entry:efi_main"
+    ]
   },
   "panic-strategy": "abort",
   "default-hidden-visibility": true,

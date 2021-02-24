@@ -27,7 +27,9 @@ use uefi::Status;
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
 use crate::console::{ConsoleInDevice, ConsoleOutManager};
+use alloc::{string::String, vec::Vec};
 use arch::ArchManager;
+use common::{command_manager, BuiltinCommand};
 use uefi::table::SystemTable;
 
 pub mod console;
@@ -37,8 +39,6 @@ mod video;
 
 pub use console::{CONSOLE_IN, CONSOLE_OUT};
 pub use video::VIDEO_MANAGER;
-
-global_asm!(include_str!("start.s"));
 
 extern "C" {
     fn load_main();
@@ -110,6 +110,9 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
 
     check_revision(system_table.uefi_revision());
 
+    // initialize command manager
+    command_manager::init();
+
     // Get boot services
     let boot_services = system_table.boot_services();
 
@@ -136,8 +139,8 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
         arch_manager.time_manager.current_time()
     );
 
-    // Call loader main function
     unsafe {
+        // Call loader main function
         load_main();
     }
 
