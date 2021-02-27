@@ -11,7 +11,7 @@ use console::{get_console_in, get_console_out};
 use ui::{ChoiceEntry, ListWindow};
 
 use common::{
-    command_manager::get_command_manager,
+    command_manager::{get_command_manager, init},
     key::{Key, ScanCode},
     BuiltinCommand,
 };
@@ -25,6 +25,7 @@ extern crate common;
 
 mod config;
 mod console;
+mod device;
 mod line_editor;
 mod shell;
 mod ui;
@@ -35,6 +36,8 @@ pub extern "C" fn load_main() {
 
     // init console
     get_console_out().init();
+
+    device::init();
 
     register_commands();
 

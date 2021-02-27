@@ -54,6 +54,12 @@ static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 /// Global logger object
 static mut LOGGER: Option<uefi::logger::Logger> = None;
 
+/// Get borrow reference for system table
+pub(crate) fn get_system_table() -> &'static SystemTable<Boot> {
+    let option = unsafe { &SYSTEM_TABLE };
+    option.as_ref().expect("System table not initialized")
+}
+
 /// Check if the UEFI where we are running on is compatible
 /// with the loader.
 fn check_revision(rev: uefi::table::Revision) {
@@ -120,7 +126,7 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     // running an image. Disable it.
     boot_services
         .set_watchdog_timer(0, 0x10000, None)
-        .expect("Could not disable watchdog timer");
+        .expect("efi: could not disable watchdog timer");
 
     // Initialize memory manager
     let memory_manager = MemoryManager::new();
@@ -145,6 +151,13 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     }
 
     Status::SUCCESS
+}
+
+/// Detect and register all the devices
+pub fn target_device_probe() {
+    disk::init();
+
+    // TODO: start and register the network system
 }
 
 /// Reboot the system

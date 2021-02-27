@@ -216,7 +216,7 @@ def run_command():
         '-monitor', 'vc:1024x768',
 
         # Create AHCI controller
-        '-device', 'ahci,id=ahci,multifunction=on'
+        '-device', 'ahci,id=ahci,multifunction=on',
     ]
 
     sp.run([QEMU] + qemu_flags).check_returncode()
