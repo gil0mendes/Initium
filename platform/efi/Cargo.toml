@@ -19,7 +19,7 @@ spin = "0.7.0"
 # the memory functions.
 rlibc = "1.0.0"
 
-uefi = { version = "0.7.0", default-features = false, features = ["logger"] }
+uefi = { path = "../../3rd-party/uefi-rs", default-features = false, features = ["logger"] }
 
 [profile]
 

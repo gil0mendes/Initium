@@ -139,8 +139,8 @@ impl ConsoleOutManager {
         }
 
         let func: PixelWriter = match pixel_format {
-            PixelFormat::RGB => write_pixel_rgb,
-            PixelFormat::BGR => write_pixel_bgr,
+            PixelFormat::Rgb => write_pixel_rgb,
+            PixelFormat::Bgr => write_pixel_bgr,
             _ => panic!("This pixel format is not support by the drawing"),
         };
 

@@ -10,8 +10,8 @@ use common::{
 /// Converts a PixelFormat from UEFI crate into our common type
 fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {
     match format {
-        EFIPixelFormat::RGB => PixelFormat::RGB,
-        EFIPixelFormat::BGR => PixelFormat::BGR,
+        EFIPixelFormat::Rgb => PixelFormat::Rgb,
+        EFIPixelFormat::Bgr => PixelFormat::Bgr,
         EFIPixelFormat::Bitmask => PixelFormat::Bitmask,
         _ => PixelFormat::BltOnly,
     }

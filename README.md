@@ -28,6 +28,12 @@ Here is a list of required tools to build Initium. Note that, currently, the bui
 -   [QEMU](https://www.qemu.org/)
 -   [Python 3](https://www.python.org/)
 
+Before moving with the build, please fetch all submodules:
+
+```shell
+git submodules update --init
+```
+
 ### 2.2 Build
 
 With the dependencies correctly installed the build process is very simples. On the root of the project there is a `build.py` file with some useful commands to assist with the build process.

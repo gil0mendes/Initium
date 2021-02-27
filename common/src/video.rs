@@ -13,9 +13,9 @@ use crate::console::{Color, ConsoleOut, DrawRegion};
 #[repr(u32)]
 pub enum PixelFormat {
     /// Each pixel is 32-bit long, with 24-bit RGB, and the last byte is reserved.
-    RGB = 0,
+    Rgb = 0,
     /// Each pixel is 32-bit long, with 24-bit BGR, and the last byte is reserved.
-    BGR,
+    Bgr,
     /// Custom pixel format, check the associated bitmask.
     Bitmask,
     /// The graphics mode does not support drawing directly to the frame buffer.
@@ -147,15 +147,3 @@ impl<'gop> FrameBuffer<'gop> {
         (self.base.add(index) as *mut T).write_volatile(value)
     }
 }
-
-/*
-pub struct ModeInfo {
-    // The only known version, associated with the current spec, is 0.
-    version: u32,
-    hor_res: u32,
-    ver_res: u32,
-    format: PixelFormat,
-    mask: PixelBitmask,
-    stride: u32,
-}
-*/
