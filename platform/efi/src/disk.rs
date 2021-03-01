@@ -73,6 +73,22 @@ pub fn init() {
 
     info!("efi: number of block devices: {}", handles.len());
 
+    // EFI gives us both raw devices, and any partitions as child devices. We are only interested in the raw devices, as
+    // we handle partition maps internally. We want to pick out the raw devices, and identify the type of these devices.
+    //
+    // It seems like there should be a better way to identify the type, but raw devices don't appear to get flagged with
+    // the type of the device they are: their path nodes are just typed as ATA/SCSI/whatever (except for floppies, which
+    // can be identified by their ACPI HID). Child devices do get flagged with a device type.
+    //
+    // What we do then is make a first pass over all devices to get their block protocol. If a device is a raw device (
+    // is_logical_partition() == true), then we do some guesswork:
+    //
+    // 1. If device path node is ACPI, check HID, mark as floppy if matches.
+    // 2. Otherwise, if removable, read-only, and block size if 2048, mark as CD.
+    // 3. Otherwise, mark as HD.
+    //
+    // We then do a pass ovr the child devices, and if they identify the type of the their parent, then that overrides
+    // the type guessed for the raw device.
     handles.iter().for_each(|&handle| {
         let block_cell = bt
             .handle_protocol::<BlockIO>(handle)
