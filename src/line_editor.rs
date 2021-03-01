@@ -1,10 +1,9 @@
+use alloc::string::String;
+///! Line editor to be used on the shell.
 use core::usize;
 
-///! Line editor to be used on the shell.
-use alloc::string::String;
+use crate::print;
 use common::{console::ConsoleOut, key::Key};
-
-use crate::console::get_console_out;
 
 /// Initial size of the allocated string.
 const DEFAULT_CAPACITY: usize = 128;

@@ -11,8 +11,16 @@ path = "./src/main.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-log = { version = "0.4", default-features = false }
+arch = { path = "./arch/x86_64" }
 common = { path = "./common" }
+log = { version = "0.4", default-features = false }
+spin = "0.7.0"
 
-[dependencies.platform]
-path = "platform/efi"
+# When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
+# does not automatically get enabled. Therefore, we have to manually add support for
+# the memory functions.
+rlibc = "1.0.0"
+
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+uefi = { path = "./3rd-party/uefi-rs", default-features = false, features = ["logger", "exts"] }

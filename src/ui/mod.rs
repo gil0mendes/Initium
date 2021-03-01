@@ -2,9 +2,8 @@
 mod choice_entry;
 mod list_window;
 
-use alloc::string::String;
+use crate::print;
 use common::{console::ConsoleOut, key::Key};
-use list_window::Entry;
 
 pub use self::choice_entry::ChoiceEntry;
 pub use self::list_window::ListWindow;

@@ -1,4 +1,4 @@
-use crate::{video::VIDEO_MANAGER, SYSTEM_TABLE};
+use super::video::VIDEO_MANAGER;
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -16,11 +16,7 @@ use core::result::Result;
 use rlibc::memset;
 use uefi::{
     prelude::BootServices,
-    proto::console::text::{
-        self, Input,
-        Key::{Printable, Special},
-    },
-    Char16,
+    proto::console::text::{self, Input},
 };
 
 /// Print with new line to console
@@ -34,11 +30,11 @@ macro_rules! println {
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ({
-        crate::platform::console::print(format_args!($($arg)*)).unwrap();
+        crate::platform::console::printFmt(format_args!($($arg)*)).unwrap();
     });
 }
 
-pub fn print(args: fmt::Arguments) -> fmt::Result {
+pub fn printFmt(args: fmt::Arguments) -> fmt::Result {
     use core::fmt::Write;
     unsafe {
         let mut console = &mut CONSOLE_OUT;
@@ -113,7 +109,7 @@ impl ConsoleOutManager {
     fn fb_offset(&self, x: usize, y: usize) -> usize {
         use common::video::VideoManager;
         let stride = unsafe { VIDEO_MANAGER.unwrap().get_mode().stride };
-        (((y * stride) + x) * 4)
+        ((y * stride) + x) * 4
     }
 
     fn write_pixel(&mut self, x: usize, y: usize, color: u32) {
@@ -199,7 +195,7 @@ impl ConsoleOutManager {
         let (x, y) = self.cursor_pos;
 
         // if we have reached the edge of the draw region insert a new line
-        if (x >= self.region.x + self.region.width) {
+        if x >= self.region.x + self.region.width {
             self.cursor_pos = (self.region.x, y + 1);
         }
 
@@ -272,7 +268,7 @@ impl ConsoleOutManager {
 
         let idx = (self.cursor_pos.1 * self.cols) + self.cursor_pos.0;
 
-        if (self.chars[idx].char as u8 > 0) {
+        if self.chars[idx].char as u8 > 0 {
             // invert the colors
             let temp = self.chars[idx].foreground;
             self.chars[idx].foreground = self.chars[idx].background;
@@ -420,7 +416,7 @@ pub struct ConsoleInDevice<'a> {
 impl<'a> ConsoleInDevice<'a> {
     /// Initialize the input device
     pub fn init(bt: &BootServices) {
-        use crate::uefi::ResultExt;
+        use uefi::ResultExt;
 
         // Look for a text input handler
         let mut text_proto = bt
@@ -442,11 +438,11 @@ impl<'a> ConsoleInDevice<'a> {
 
 impl ConsoleIn for ConsoleInDevice<'a> {
     fn poll(&mut self) -> bool {
-        if (self.saved_key.is_some()) {
+        if self.saved_key.is_some() {
             return true;
         }
 
-        while (true) {
+        loop {
             // read a key from the console
             let key = match self.efi_input_proto.read_key() {
                 Ok(result) => {
@@ -465,14 +461,12 @@ impl ConsoleIn for ConsoleInDevice<'a> {
             self.saved_key = Some(key);
             return true;
         }
-
-        return true;
     }
 
     fn get_char(&mut self) -> Key {
-        if (self.saved_key.is_none()) {
+        if self.saved_key.is_none() {
             // wait the user hit a key
-            while (!self.poll()) {}
+            while !self.poll() {}
         }
 
         // convert UEFI key into a key understood by the common code

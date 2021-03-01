@@ -3,6 +3,7 @@ use crate::{
     shell::Shell,
 };
 
+use crate::print;
 use super::InputResult;
 use alloc::boxed::Box;
 use alloc::string::String;

@@ -1,3 +1,4 @@
+use crate::platform;
 use common::console::{Color, ConsoleIn, ConsoleOut};
 
 /// Get borrow reference for console output

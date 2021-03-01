@@ -2,36 +2,41 @@
 
 #![no_std]
 #![no_main]
+#![feature(asm)]
+#![feature(try_trait)]
+#![feature(abi_efiapi)]
+#![feature(global_asm)]
+#![feature(const_mut_refs)]
+#![feature(num_as_ne_bytes)]
+#![feature(in_band_lifetimes)]
 #![feature(panic_info_message)]
-
-use core::{borrow::Borrow, cell::Cell};
+#![feature(alloc_error_handler)]
 
 use alloc::{boxed::Box, string::String, vec::Vec};
-use console::{get_console_in, get_console_out};
+use console::get_console_out;
 use ui::{ChoiceEntry, ListWindow};
 
-use common::{
-    command_manager::{get_command_manager, init},
-    key::{Key, ScanCode},
-    BuiltinCommand,
-};
+use common::{command_manager::get_command_manager, BuiltinCommand};
 
 extern crate alloc;
 #[macro_use]
-extern crate platform;
-#[macro_use]
 extern crate log;
 extern crate common;
+
+// HAL(Hardware Abstraction Layer)
+#[macro_use]
+mod platform;
 
 mod config;
 mod console;
 mod device;
 mod line_editor;
+
 mod shell;
 mod ui;
 
 #[no_mangle]
-pub extern "C" fn load_main() {
+pub fn loader_main() {
     use crate::alloc::string::ToString;
 
     // init console
@@ -99,8 +104,7 @@ fn register_commands() {
 
 /// Reboot platform
 fn reboot_command(_: Vec<String>) -> bool {
-    platform::target_reboot();
-    true
+    self::platform::target_reboot();
 }
 
 /// Show current Initium version

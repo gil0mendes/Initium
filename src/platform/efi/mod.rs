@@ -1,35 +1,21 @@
-#![no_std]
-#![feature(asm)]
-#![feature(try_trait)]
-#![feature(abi_efiapi)]
-#![feature(global_asm)]
-#![feature(const_mut_refs)]
-#![feature(alloc_error_handler)]
-#![feature(in_band_lifetimes)]
-#![feature(num_as_ne_bytes)]
-
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
 
 extern crate uefi;
 
-#[macro_use]
-extern crate log;
-extern crate alloc;
 extern crate arch;
 pub mod allocator;
-extern crate common;
 extern crate spin;
 
 use uefi::Status;
 use uefi::{prelude::*, proto::loaded_image::LoadedImage};
 
+use self::console::{ConsoleInDevice, ConsoleOutManager};
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
-use crate::console::{ConsoleInDevice, ConsoleOutManager};
-use alloc::{string::String, vec::Vec};
+use crate::loader_main;
 use arch::ArchManager;
-use common::{command_manager, BuiltinCommand};
+use common::command_manager;
 use uefi::table::SystemTable;
 
 pub mod console;
@@ -39,10 +25,6 @@ mod video;
 
 pub use console::{CONSOLE_IN, CONSOLE_OUT};
 pub use video::VIDEO_MANAGER;
-
-extern "C" {
-    fn load_main();
-}
 
 /// Reference to the system table.
 ///
@@ -71,13 +53,13 @@ pub(crate) fn get_system_table() -> &'static SystemTable<Boot> {
 
 /// Get borrow reference for image handle.
 pub(crate) fn get_image_handle() -> &'static uefi::Handle {
-    let option = unsafe { (&IMAGE_HANDLE) };
+    let option = unsafe { &IMAGE_HANDLE };
     option.as_ref().expect("Image handle not saved")
 }
 
 /// Get borrow reference for loaded image.
 pub(crate) fn get_loaded_image() -> &'static LoadedImage {
-    let option = unsafe { (&LOADED_IMAGE) };
+    let option = unsafe { &LOADED_IMAGE };
     option.as_ref().expect("Loaded image not saved")
 }
 
@@ -176,10 +158,8 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
         arch_manager.time_manager.current_time()
     );
 
-    unsafe {
-        // Call loader main function
-        load_main();
-    }
+    // Call loader main function
+    loader_main();
 
     Status::SUCCESS
 }
@@ -201,6 +181,4 @@ pub fn target_reboot() -> ! {
         Status::SUCCESS,
         None,
     );
-
-    panic!("EFI reset failed");
 }

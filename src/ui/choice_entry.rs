@@ -1,3 +1,4 @@
+use crate::print;
 use alloc::string::String;
 use common::{console::ConsoleOut, key::Key};
 
@@ -12,7 +13,7 @@ impl Entry for ChoiceEntry {
         print!("{}", self.label);
     }
 
-    fn help(&self, console: &ConsoleOut) {
+    fn help(&self, console: &dyn ConsoleOut) {
         render_help_action(console, Key::Printable('\n'), "Select");
 
         // render help for shell

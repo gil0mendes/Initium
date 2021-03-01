@@ -1,4 +1,4 @@
-use platform::target_device_probe;
+use crate::platform::target_device_probe;
 
 /// Initialize the device manager
 pub fn init() {

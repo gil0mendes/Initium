@@ -8,6 +8,7 @@ use common::{command_manager::get_command_manager, key::Key};
 use crate::{
     console::{get_console_in, get_console_out},
     line_editor::LineEditor,
+    print, println,
 };
 
 /// Implementation of the bootloader shell.

@@ -1,13 +1,13 @@
+// use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
 use uefi::{
     proto::loaded_image::{device_path::DeviceType, DevicePath},
     proto::media::block::BlockIO,
-    table::boot::BootServices,
     Handle,
 };
 
-use crate::{get_loaded_image, get_system_table};
+use super::{get_loaded_image, get_system_table};
 
 /// Structure containing EFI disk information
 struct EfiDisk<'a> {
@@ -62,7 +62,7 @@ pub struct EfiDiskManager {}
 
 /// Detect and register all disk devices.
 pub fn init() {
-    use crate::uefi::ResultExt;
+    use uefi::ResultExt;
 
     let bt = get_system_table().boot_services();
 
@@ -113,7 +113,7 @@ pub fn init() {
             // TODO: fix the boot device detection logic
             let loaded_image_device = get_loaded_image().device();
 
-            /// create the new disk
+            // create the new disk
             let disk = EfiDisk {
                 handle,
                 path: device_path_cell,
