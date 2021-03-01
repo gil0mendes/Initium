@@ -21,8 +21,8 @@ pub mod allocator;
 extern crate common;
 extern crate spin;
 
-use uefi::prelude::*;
 use uefi::Status;
+use uefi::{prelude::*, proto::loaded_image::LoadedImage};
 
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
@@ -46,18 +46,39 @@ extern "C" {
 
 /// Reference to the system table.
 ///
-/// This table is only fully safe to use until UEFI boot services have been exited.
-/// After that, some fields and methods are unsafe to use, see the documentation of
-/// UEFI's ExitBootServices entry point for more details.
+/// This table is only fully safe to use until UEFI boot services have been exited. After that, some fields and methods
+/// are unsafe to use, see the documentation of UEFI's ExitBootServices entry point for more details.
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
+
+/// Reference to the boot image handler.
+///
+/// This is used for some platform exit routines.
+static mut IMAGE_HANDLE: Option<uefi::Handle> = None;
+
+/// Reference for the loader image
+///
+/// This is used to determine which device where are booting from.
+static mut LOADED_IMAGE: Option<&LoadedImage> = None;
 
 /// Global logger object
 static mut LOGGER: Option<uefi::logger::Logger> = None;
 
-/// Get borrow reference for system table
+/// Get borrow reference for system table.
 pub(crate) fn get_system_table() -> &'static SystemTable<Boot> {
     let option = unsafe { &SYSTEM_TABLE };
-    option.as_ref().expect("System table not initialized")
+    option.as_ref().expect("System table not saved")
+}
+
+/// Get borrow reference for image handle.
+pub(crate) fn get_image_handle() -> &'static uefi::Handle {
+    let option = unsafe { (&IMAGE_HANDLE) };
+    option.as_ref().expect("Image handle not saved")
+}
+
+/// Get borrow reference for loaded image.
+pub(crate) fn get_loaded_image() -> &'static LoadedImage {
+    let option = unsafe { (&LOADED_IMAGE) };
+    option.as_ref().expect("Loaded image not saved")
 }
 
 /// Check if the UEFI where we are running on is compatible
@@ -92,7 +113,7 @@ unsafe fn init_logging(st: &SystemTable<Boot>) {
 
 /// Entry point for EFI platforms
 #[no_mangle]
-pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
+pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
     // Initialize arch code
     let mut arch_manager = ArchManager::new();
     arch_manager.init();
@@ -131,6 +152,16 @@ pub extern "C" fn efi_main(_image_handle: uefi::Handle, system_table: SystemTabl
     // Initialize memory manager
     let memory_manager = MemoryManager::new();
     memory_manager.init(&boot_services);
+
+    // Get the loader image protocol
+    let loader_image = boot_services
+        .handle_protocol::<LoadedImage>(image_handle)
+        .expect("efi: failed to retrieve `LoaderImage` protocol from handle")
+        .unwrap();
+    unsafe { LOADED_IMAGE = Some(&*loader_image.get()) };
+
+    // save image handle
+    unsafe { IMAGE_HANDLE = Some(image_handle) };
 
     // initialize the video system
     EFIVideoManager::init(boot_services);

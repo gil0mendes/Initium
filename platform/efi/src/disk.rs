@@ -1,8 +1,64 @@
-use uefi::{proto::media::block::BlockIO, table::boot::BootServices};
+use core::cell::UnsafeCell;
 
-use crate::get_system_table;
+use uefi::{
+    proto::loaded_image::{device_path::DeviceType, DevicePath},
+    proto::media::block::BlockIO,
+    table::boot::BootServices,
+    Handle,
+};
 
-pub struct DiskManager {}
+use crate::{get_loaded_image, get_system_table};
+
+/// Structure containing EFI disk information
+struct EfiDisk<'a> {
+    // TODO: add disck device
+    /// Handle to disk
+    handle: Handle,
+    /// Device path
+    path: &'a UnsafeCell<DevicePath>,
+    /// Block I/O protocol
+    block: &'a UnsafeCell<BlockIO>,
+    /// Media ID
+    media_id: u32,
+    /// Whether the device is the boot device
+    boot: bool,
+    /// Lba of the boot partition
+    boot_partition_lba: u64,
+}
+
+impl<'a> EfiDisk<'a> {
+    /// Get a reference to the efi disk's handle.
+    fn handle(&self) -> &Handle {
+        &self.handle
+    }
+
+    /// Get a reference to the efi disk's path.
+    fn path(&self) -> &'a UnsafeCell<DevicePath> {
+        &self.path
+    }
+
+    /// Get a reference to the efi disk's block.
+    fn block(&self) -> &'a UnsafeCell<BlockIO> {
+        &self.block
+    }
+
+    /// Get a reference to the efi disk's media id.
+    fn media_id(&self) -> u32 {
+        self.media_id
+    }
+
+    /// Get a reference to the efi disk's boot.
+    fn is_boot(&self) -> bool {
+        self.boot
+    }
+
+    /// Get a reference to the efi disk's boot partition lba.
+    fn boot_partition_lba(&self) -> u64 {
+        self.boot_partition_lba
+    }
+}
+
+pub struct EfiDiskManager {}
 
 /// Detect and register all disk devices.
 pub fn init() {
@@ -15,22 +71,49 @@ pub fn init() {
         .find_handles::<BlockIO>()
         .expect_success("efi: no block devices available");
 
-    info!("efi: number of block devices {}", handles.len());
+    info!("efi: number of block devices: {}", handles.len());
 
     handles.iter().for_each(|&handle| {
-        let block = bt
+        let block_cell = bt
             .handle_protocol::<BlockIO>(handle)
             .expect("efi: warning: failed to open block I/O")
             .unwrap();
 
         unsafe {
-            let block = &*block.get();
+            let block = &*block_cell.get();
             let media = block.media();
-            info!(
-                "efi: device id {} is removable {}",
-                &media.media_id(),
-                media.is_removable_media()
-            );
+
+            // Get device path and ignore the end of hardware path
+            let device_path_cell = bt
+                .handle_protocol::<DevicePath>(handle)
+                .expect("efi: failed to retrieve `DevicePath` protocol from block image handler")
+                .unwrap();
+            let device_path = unsafe { &mut *device_path_cell.get() };
+            match device_path.device_type {
+                DeviceType::End => return,
+                _ => {}
+            }
+
+            // TODO: fix the boot device detection logic
+            let loaded_image_device = get_loaded_image().device();
+
+            /// create the new disk
+            let disk = EfiDisk {
+                handle,
+                path: device_path_cell,
+                block: block_cell,
+                media_id: media.media_id(),
+                boot: &loaded_image_device as *const _ == &handle as *const _,
+                boot_partition_lba: if media.is_media_preset() {
+                    media.last_block() + 1
+                } else {
+                    0
+                },
+            };
+
+            if disk.is_boot() {
+                info!("efi: boot device is: {:p}", disk.path());
+            }
         }
     });
 
