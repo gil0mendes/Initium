@@ -1,4 +1,4 @@
-// use alloc::vec::Vec;
+use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
 use uefi::{
@@ -7,7 +7,7 @@ use uefi::{
     Handle,
 };
 
-use super::{get_loaded_image, get_system_table};
+use super::{device::last_device_node, get_loaded_image, get_system_table};
 
 /// Structure containing EFI disk information
 struct EfiDisk<'a> {
@@ -63,6 +63,9 @@ pub struct EfiDiskManager {}
 /// Detect and register all disk devices.
 pub fn init() {
     use uefi::ResultExt;
+
+    let mut raw_devices: Vec<EfiDisk> = Vec::new();
+    let mut child_devices: Vec<EfiDisk> = Vec::new();
 
     let bt = get_system_table().boot_services();
 
@@ -129,6 +132,14 @@ pub fn init() {
 
             if disk.is_boot() {
                 info!("efi: boot device is: {:p}", disk.path());
+            }
+
+            if media.is_logical_partition() {
+                child_devices.push(disk);
+            } else {
+                let disk_path = &(*disk.path().get());
+                let last_node = last_device_node(disk_path);
+                info!(">>> {:?}", last_node.device_type);
             }
         }
     });

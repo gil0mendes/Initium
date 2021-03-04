@@ -19,6 +19,7 @@ use common::command_manager;
 use uefi::table::SystemTable;
 
 pub mod console;
+mod device;
 mod disk;
 mod memory;
 mod video;
@@ -125,11 +126,11 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
     // Get boot services
     let boot_services = system_table.boot_services();
 
-    // Firmware is required to set a 5 minute watchdog timer before
-    // running an image. Disable it.
+    // Firmware is required to set a 5 minute watchdog timer before running an image. Disable it.
     boot_services
         .set_watchdog_timer(0, 0x10000, None)
-        .expect("efi: could not disable watchdog timer");
+        .expect("efi: could not disable watchdog timer")
+        .unwrap();
 
     // Initialize memory manager
     let memory_manager = MemoryManager::new();

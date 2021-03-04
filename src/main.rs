@@ -30,8 +30,8 @@ mod platform;
 mod config;
 mod console;
 mod device;
+mod disk;
 mod line_editor;
-
 mod shell;
 mod ui;
 
