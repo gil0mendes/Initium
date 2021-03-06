@@ -1,13 +1,21 @@
 use alloc::vec::Vec;
-use core::cell::UnsafeCell;
+use core::{cell::UnsafeCell, ptr};
 
 use uefi::{
     proto::loaded_image::{device_path::DeviceType, DevicePath},
-    proto::media::block::BlockIO,
+    proto::{loaded_image::device_path::AcpiDevicePath, media::block::BlockIO},
     Handle,
 };
 
+use crate::disk::{Disk, DiskType};
+
 use super::{device::last_device_node, get_loaded_image, get_system_table};
+
+/// Size of a CD sector
+const CD_SECTOR_SIZE: u32 = 2048;
+
+/// floppy HID
+const FLOPPY_HUI: u32 = 0x060441d0;
 
 /// Structure containing EFI disk information
 struct EfiDisk<'a> {
@@ -24,6 +32,8 @@ struct EfiDisk<'a> {
     boot: bool,
     /// Lba of the boot partition
     boot_partition_lba: u64,
+    /// Common disk structure
+    disk: Option<Disk>,
 }
 
 impl<'a> EfiDisk<'a> {
@@ -55,6 +65,16 @@ impl<'a> EfiDisk<'a> {
     /// Get a reference to the efi disk's boot partition lba.
     fn boot_partition_lba(&self) -> u64 {
         self.boot_partition_lba
+    }
+
+    /// Get common disk structure
+    fn get_common_disk(&self) -> Option<&Disk> {
+        self.disk.as_ref()
+    }
+
+    /// Set the common disk structure
+    fn set_common_disk(&mut self, disk: Option<Disk>) {
+        self.disk = disk
     }
 }
 
@@ -107,7 +127,7 @@ pub fn init() {
                 .handle_protocol::<DevicePath>(handle)
                 .expect("efi: failed to retrieve `DevicePath` protocol from block image handler")
                 .unwrap();
-            let device_path = unsafe { &mut *device_path_cell.get() };
+            let device_path = &mut *device_path_cell.get();
             match device_path.device_type {
                 DeviceType::End => return,
                 _ => {}
@@ -117,7 +137,7 @@ pub fn init() {
             let loaded_image_device = get_loaded_image().device();
 
             // create the new disk
-            let disk = EfiDisk {
+            let mut disk = EfiDisk {
                 handle,
                 path: device_path_cell,
                 block: block_cell,
@@ -128,6 +148,7 @@ pub fn init() {
                 } else {
                     0
                 },
+                disk: None,
             };
 
             if disk.is_boot() {
@@ -139,7 +160,28 @@ pub fn init() {
             } else {
                 let disk_path = &(*disk.path().get());
                 let last_node = last_device_node(disk_path);
-                info!(">>> {:?}", last_node.device_type);
+
+                let mut common_disk = Disk::new();
+                if last_node.device_type == DeviceType::Acpi {
+                    let acpi_device =
+                        ptr::read(last_node as *const DevicePath as *const AcpiDevicePath);
+
+                    // Check EISA ID for a floppy
+                    match acpi_device.hid {
+                        FLOPPY_HUI => {
+                            common_disk.disk_type = DiskType::Floppy;
+                        }
+                        _ => {}
+                    }
+                } else if media.is_removable_media()
+                    && media.is_read_only()
+                    && media.block_size() == CD_SECTOR_SIZE
+                {
+                    common_disk.disk_type = DiskType::CDROM;
+                }
+
+                disk.set_common_disk(Some(common_disk));
+                raw_devices.push(disk);
             }
         }
     });
