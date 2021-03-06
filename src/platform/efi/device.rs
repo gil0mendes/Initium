@@ -1,7 +1,7 @@
 use core::ptr;
 use core::usize;
 
-use uefi::proto::loaded_image::{device_path::DeviceType, DevicePath};
+use uefi::proto::device_path::{DevicePath, DeviceType};
 
 pub struct Device {}
 

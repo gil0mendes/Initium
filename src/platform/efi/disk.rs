@@ -2,8 +2,8 @@ use alloc::vec::Vec;
 use core::{cell::UnsafeCell, ptr};
 
 use uefi::{
-    proto::loaded_image::{device_path::DeviceType, DevicePath},
-    proto::{loaded_image::device_path::AcpiDevicePath, media::block::BlockIO},
+    proto::device_path::{AcpiDevicePath, DevicePath, DeviceType},
+    proto::media::block::BlockIO,
     Handle,
 };
 
