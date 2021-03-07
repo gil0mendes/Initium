@@ -1,11 +1,10 @@
 #![no_std]
-
 #![feature(asm)]
 
 #[macro_use]
 extern crate log;
-extern crate x86_64;
 extern crate raw_cpuid;
+extern crate x86_64;
 
 mod time;
 
@@ -28,7 +27,7 @@ impl ArchManager {
         let old_id_val = original_flags.contains(RFlags::ID);
 
         original_flags.toggle(RFlags::ID);
-        rflags::write(original_flags);
+        unsafe { rflags::write(original_flags) };
 
         // Read the flags again to check if it changed
         let new_flags = rflags::read();
