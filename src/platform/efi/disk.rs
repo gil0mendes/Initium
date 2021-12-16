@@ -9,7 +9,10 @@ use uefi::{
 
 use crate::disk::{Disk, DiskType};
 
-use super::{device::last_device_node, get_loaded_image, get_system_table};
+use super::{
+    device::{is_child_device_node, last_device_node},
+    get_loaded_image, get_system_table,
+};
 
 /// Size of a CD sector
 const CD_SECTOR_SIZE: u32 = 2048;
@@ -19,7 +22,6 @@ const FLOPPY_HUI: u32 = 0x060441d0;
 
 /// Structure containing EFI disk information
 struct EfiDisk<'a> {
-    // TODO: add disck device
     /// Handle to disk
     handle: Handle,
     /// Device path
@@ -136,6 +138,10 @@ pub fn init() {
             // TODO: fix the boot device detection logic
             let loaded_image_device = get_loaded_image().device();
 
+            info!("1>> {:x}", (&loaded_image_device as *const _ as usize));
+            let p = 50;
+            info!("2>> {:x}", (&p as *const _ as usize));
+
             // create the new disk
             let mut disk = EfiDisk {
                 handle,
@@ -186,9 +192,39 @@ pub fn init() {
         }
     });
 
-    // TODO: implement list below
-    // - get handlers
-    // - iterate all handlers
-    //  - get device path
-    //  - open protocol
+    // pass over child devices to identify their types
+    child_devices.iter().for_each(|child| {
+        let child_path = unsafe { &(*child.path().get()) };
+        let last_path = last_device_node(child_path);
+
+        // identify the parent device
+        raw_devices.iter_mut().for_each(|parent| {
+            let parent_path = unsafe { &*parent.path().get() };
+            let child_path = unsafe { &*child.path().get() };
+
+            // ignore when there is no relation between the child and the possible parent
+            if !is_child_device_node(parent_path, child_path) {
+                return;
+            }
+
+            // Mark the parent as the boot device if the partition is the boot partition
+            if child.is_boot() {
+                parent.boot = true;
+            }
+
+            if last_path.device_type != DeviceType::Media {
+                return;
+            }
+
+            unsafe {
+                let sub_type = *(&last_path.sub_type as *const _ as *const u8);
+                info!(">>> {:x}", sub_type);
+            }
+
+            // match last_path.sub_type {
+            //     uefi::proto::device_path::DeviceSubType::EndInstance => {}
+            //     uefi::proto::device_path::DeviceSubType::EndEntire => {}
+            // }
+        });
+    });
 }
