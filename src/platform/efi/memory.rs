@@ -5,6 +5,7 @@
 //! is possible for the memory map to change underneath us, we cannot just get the memory map once during init and use
 //! it with the generic MM code.
 
+use log::info;
 use uefi::table::boot::{BootServices, MemoryType};
 
 use crate::alloc::vec::Vec;
@@ -23,18 +24,18 @@ impl MemoryManager {
 
     pub fn init(&self, bt: &BootServices) {
         // Get the estimated map size
-        let map_size = bt.memory_map_size();
+        let mem_map_size = bt.memory_map_size();
 
         // Build a buffer bigger enough to to handle the memory map
-        let mut buffer = Vec::with_capacity(map_size);
+        let mut buffer = Vec::with_capacity(mem_map_size.map_size);
 
         unsafe {
-            buffer.set_len(map_size);
+            buffer.set_len(mem_map_size.map_size);
         }
 
         let (_key, mut desc_iter) = bt
             .memory_map(&mut buffer)
-            .expect_success("Failed to retrieve UEFI memory map");
+            .expect("Failed to retrieve UEFI memory map");
 
         assert!(desc_iter.len() > 0, "Memory map is empty");
 

@@ -1,18 +1,16 @@
 use alloc::vec::Vec;
 use core::{cell::UnsafeCell, ptr};
+use log::info;
 
 use uefi::{
-    proto::device_path::{AcpiDevicePath, DevicePath, DeviceType},
+    proto::device_path::{acpi::Acpi, DevicePath, DeviceType},
     proto::media::block::BlockIO,
     Handle,
 };
 
 use crate::disk::{Disk, DiskType};
 
-use super::{
-    device::{is_child_device_node, last_device_node},
-    get_loaded_image, get_system_table,
-};
+use super::{get_loaded_image, get_system_table};
 
 /// Size of a CD sector
 const CD_SECTOR_SIZE: u32 = 2048;
@@ -94,7 +92,7 @@ pub fn init() {
     // Get a list of all handles supporting the block I/O protocol.
     let handles = bt
         .find_handles::<BlockIO>()
-        .expect_success("efi: no block devices available");
+        .expect("efi: no block devices available");
 
     info!("efi: number of block devices: {}", handles.len());
 
@@ -114,11 +112,12 @@ pub fn init() {
     //
     // We then do a pass ovr the child devices, and if they identify the type of the their parent, then that overrides
     // the type guessed for the raw device.
+
+    /*
     handles.iter().for_each(|&handle| {
         let block_cell = bt
-            .handle_protocol::<BlockIO>(handle)
-            .expect("efi: warning: failed to open block I/O")
-            .unwrap();
+            .open_protocol_exclusive::<BlockIO>(handle)
+            .expect("efi: warning: failed to open block I/O");
 
         unsafe {
             let block = &*block_cell.get();
@@ -126,9 +125,8 @@ pub fn init() {
 
             // Get device path and ignore the end of hardware path
             let device_path_cell = bt
-                .handle_protocol::<DevicePath>(handle)
-                .expect("efi: failed to retrieve `DevicePath` protocol from block image handler")
-                .unwrap();
+                .open_protocol_exclusive::<DevicePath>(handle)
+                .expect("efi: failed to retrieve `DevicePath` protocol from block image handler");
             let device_path = &mut *device_path_cell.get();
             match device_path.device_type {
                 DeviceType::End => return,
@@ -169,8 +167,7 @@ pub fn init() {
 
                 let mut common_disk = Disk::new();
                 if last_node.device_type == DeviceType::Acpi {
-                    let acpi_device =
-                        ptr::read(last_node as *const DevicePath as *const AcpiDevicePath);
+                    let acpi_device = ptr::read(last_node as *const DevicePath as *const Acpi);
 
                     // Check EISA ID for a floppy
                     match acpi_device.hid {
@@ -227,4 +224,5 @@ pub fn init() {
             // }
         });
     });
+    */
 }

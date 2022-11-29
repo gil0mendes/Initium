@@ -2,29 +2,23 @@
 
 #![no_std]
 #![no_main]
-#![feature(asm)]
-#![feature(try_trait)]
 #![feature(abi_efiapi)]
-#![feature(global_asm)]
 #![feature(const_mut_refs)]
-#![feature(num_as_ne_bytes)]
-#![feature(in_band_lifetimes)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
 use alloc::{boxed::Box, string::String, vec::Vec};
+use log::error;
+
+use common::{command_manager::get_command_manager, BuiltinCommand};
 use console::get_console_out;
 use ui::{ChoiceEntry, ListWindow};
 
-use common::{command_manager::get_command_manager, BuiltinCommand};
-
 extern crate alloc;
-#[macro_use]
-extern crate log;
 extern crate common;
+extern crate log;
 
 // HAL(Hardware Abstraction Layer)
-#[macro_use]
 mod platform;
 
 mod config;

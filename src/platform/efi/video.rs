@@ -1,11 +1,13 @@
 use uefi::proto::console::gop::{GraphicsOutput, PixelFormat as EFIPixelFormat};
-use uefi::table::boot::BootServices;
+use uefi::table::boot::{BootServices, ScopedProtocol};
 use uefi::ResultExt;
 
 use common::{
     console::ConsoleOut,
     video::{FrameBuffer, PixelFormat, VideoManager, VideoMode},
 };
+
+use super::allocator::boot_services;
 
 /// Converts a PixelFormat from UEFI crate into our common type
 fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {
@@ -17,7 +19,7 @@ fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {
     }
 }
 
-static mut GRAPHICS_OUTPUT: Option<&mut GraphicsOutput<'static>> = None;
+static mut GRAPHICS_OUTPUT: Option<ScopedProtocol<GraphicsOutput>> = None;
 
 /// Reference for the EFI video manager
 pub static mut VIDEO_MANAGER: Option<EFIVideoManager> = None;
@@ -54,7 +56,6 @@ impl EFIVideoManager {
 
         let mode = gop
             .modes()
-            .map(|mode| mode.expect("Warnings encountered while querying mode"))
             .find(|ref mode| {
                 let info = mode.info();
 
@@ -62,19 +63,23 @@ impl EFIVideoManager {
             })
             .unwrap();
 
-        gop.set_mode(&mode)
-            .expect_success("Failed to set graphics mode.");
+        gop.set_mode(&mode).expect("Failed to set graphics mode.");
     }
 
-    pub fn init(bt: &BootServices) {
+    pub fn init() {
+        let bt = unsafe { boot_services().as_ref() };
+
         // Look for a graphics output handler
+        let handle = bt
+            .get_handle_for_protocol::<GraphicsOutput>()
+            .expect("efi: Graphics Output Protocol is not supported");
+
         let mut gop_proto = bt
-            .locate_protocol::<GraphicsOutput>()
-            .expect_success("UEFI Graphics Output Protocol is not supported");
-        let gop = unsafe { &mut *gop_proto.get() };
+            .open_protocol_exclusive::<GraphicsOutput>(handle)
+            .expect("efi: Graphics Output Protocol is not supported");
 
         unsafe {
-            GRAPHICS_OUTPUT = Some(gop);
+            GRAPHICS_OUTPUT = Some(gop_proto);
         };
 
         let mut manager = Self {};

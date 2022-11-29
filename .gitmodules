@@ -1,3 +1,0 @@
-[submodule "3rd-party/uefi-rs"]
-	path = 3rd-party/uefi-rs
-	url = git@github.com:gil0mendes/uefi-rs.git

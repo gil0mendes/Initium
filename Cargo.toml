@@ -3,7 +3,7 @@ name = "initium"
 version = "0.1.0"
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [lib]
 name = 'initium'
@@ -23,4 +23,4 @@ rlibc = "1.0.0"
 
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-uefi = { path = "./3rd-party/uefi-rs", default-features = false, features = ["logger", "exts"] }
+uefi = { version = "0.18.0", default-features = false, features = ["logger", "exts"] }

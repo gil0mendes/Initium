@@ -7,6 +7,7 @@ extern crate arch;
 pub mod allocator;
 extern crate spin;
 
+use log::info;
 use uefi::Status;
 use uefi::{prelude::*, proto::loaded_image::LoadedImage};
 
@@ -19,7 +20,7 @@ use common::command_manager;
 use uefi::table::SystemTable;
 
 pub mod console;
-mod device;
+// mod device;
 mod disk;
 mod memory;
 mod video;
@@ -78,7 +79,7 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
-unsafe fn init_logging(st: &SystemTable<Boot>) {
+unsafe fn init_logging(st: &mut SystemTable<Boot>) {
     let stdout = st.stdout();
 
     // Construct the logger.
@@ -94,9 +95,8 @@ unsafe fn init_logging(st: &SystemTable<Boot>) {
     log::set_max_level(log::LevelFilter::Info);
 }
 
-/// Entry point for EFI platforms
-#[no_mangle]
-pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable<Boot>) -> Status {
+#[entry]
+fn efi_main(image_handle: uefi::Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Initialize arch code
     let mut arch_manager = ArchManager::new();
     arch_manager.init();
@@ -106,7 +106,7 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
         SYSTEM_TABLE = Some(system_table.unsafe_clone());
 
         // setup logging
-        init_logging(&system_table);
+        init_logging(&mut system_table);
 
         //setup memory allocator
         allocator::init(system_table.boot_services());
@@ -116,7 +116,7 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
     system_table
         .stdout()
         .reset(false)
-        .expect_success("Failed to reset stdout");
+        .expect("Failed to reset stdout");
 
     check_revision(system_table.uefi_revision());
 
@@ -129,8 +129,7 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
     // Firmware is required to set a 5 minute watchdog timer before running an image. Disable it.
     boot_services
         .set_watchdog_timer(0, 0x10000, None)
-        .expect("efi: could not disable watchdog timer")
-        .unwrap();
+        .expect("efi: could not disable watchdog timer");
 
     // Initialize memory manager
     let memory_manager = MemoryManager::new();
@@ -138,20 +137,20 @@ pub extern "C" fn efi_main(image_handle: uefi::Handle, system_table: SystemTable
 
     // Get the loader image protocol
     let loader_image = boot_services
-        .handle_protocol::<LoadedImage>(image_handle)
-        .expect("efi: failed to retrieve `LoaderImage` protocol from handle")
-        .unwrap();
-    unsafe { LOADED_IMAGE = Some(&*loader_image.get()) };
+        .open_protocol_exclusive::<LoadedImage>(image_handle)
+        .expect("efi: failed to retrieve `LoaderImage` protocol from handle");
+
+    unsafe { LOADED_IMAGE = Some(&*loader_image.interface.get()) };
 
     // save image handle
     unsafe { IMAGE_HANDLE = Some(image_handle) };
 
     // initialize the video system
-    EFIVideoManager::init(boot_services);
+    EFIVideoManager::init();
 
     // Create a console manager
     ConsoleOutManager::init();
-    ConsoleInDevice::init(boot_services);
+    ConsoleInDevice::init();
 
     // TODO: remove this, is just for testing
     info!(

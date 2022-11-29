@@ -1,3 +1,5 @@
+use crate::platform::allocator::boot_services;
+
 use super::video::VIDEO_MANAGER;
 use alloc::boxed::Box;
 use alloc::vec;
@@ -17,6 +19,7 @@ use rlibc::memset;
 use uefi::{
     prelude::BootServices,
     proto::console::text::{self, Input},
+    table::boot::ScopedProtocol,
 };
 
 /// Print with new line to console
@@ -406,37 +409,40 @@ impl fmt::Write for ConsoleOutManager {
 pub static mut CONSOLE_IN: Option<ConsoleInDevice> = None;
 
 /// EFI console input device
-pub struct ConsoleInDevice<'a> {
+pub struct ConsoleInDevice {
     /// text input protocol
-    efi_input_proto: &'a mut Input,
+    efi_input_proto: ScopedProtocol<'static, Input>,
     /// key saved when using a poll
     saved_key: Option<text::Key>,
 }
 
-impl<'a> ConsoleInDevice<'a> {
+impl ConsoleInDevice {
     /// Initialize the input device
-    pub fn init(bt: &BootServices) {
+    pub fn init() {
         use uefi::ResultExt;
 
-        // Look for a text input handler
-        let mut text_proto = bt
-            .locate_protocol::<Input>()
-            .expect_success("UEFI Text Input Protocol is not supported");
+        let bt = unsafe { boot_services().as_ref() };
 
-        let input = unsafe { &mut *text_proto.get() };
+        if let Ok(handle) = bt.get_handle_for_protocol::<Input>() {
+            let text_proto = bt
+                .open_protocol_exclusive(handle)
+                .expect("efi: Text Input Protocol is not supported");
 
-        let device = ConsoleInDevice {
-            saved_key: None,
-            efi_input_proto: input,
-        };
+            let device = ConsoleInDevice {
+                saved_key: None,
+                efi_input_proto: text_proto,
+            };
 
-        unsafe {
-            CONSOLE_IN = Some(device);
+            unsafe {
+                CONSOLE_IN = Some(device);
+            }
+        } else {
+            panic!("efi: no handle found for Text Input Protocol")
         }
     }
 }
 
-impl ConsoleIn for ConsoleInDevice<'a> {
+impl ConsoleIn for ConsoleInDevice {
     fn poll(&mut self) -> bool {
         if self.saved_key.is_some() {
             return true;
@@ -445,14 +451,8 @@ impl ConsoleIn for ConsoleInDevice<'a> {
         loop {
             // read a key from the console
             let key = match self.efi_input_proto.read_key() {
-                Ok(result) => {
-                    let maybe_key = result.unwrap();
-                    if maybe_key.is_none() {
-                        continue;
-                    }
-
-                    maybe_key.unwrap()
-                }
+                Ok(Some(key)) => key,
+                Ok(_) => continue,
                 Err(_) => {
                     return false;
                 }

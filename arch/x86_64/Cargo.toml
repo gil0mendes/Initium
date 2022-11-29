@@ -2,12 +2,12 @@
 authors = ["Gil Mendes <gil00mendes@gmail.com>"]
 name = "arch"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
 log = { version = "0.4", default-features = false }
-x86_64 = "0.13.2"
+x86_64 = "0.14.10"
 raw-cpuid = "8.1.1"

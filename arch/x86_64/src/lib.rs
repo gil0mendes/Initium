@@ -1,7 +1,5 @@
 #![no_std]
-#![feature(asm)]
 
-#[macro_use]
 extern crate log;
 extern crate raw_cpuid;
 extern crate x86_64;
