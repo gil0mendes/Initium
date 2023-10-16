@@ -73,6 +73,8 @@ SETTINGS = {
 # from cargo metadata at the first time target_dir function is invoked.
 TARGET_DIR = None
 
+def is_linux():
+    return sys.platform == "linux"
 
 def clean():
     'Clean generated objects'
@@ -194,7 +196,7 @@ def run_command():
 
         # Use a modern machine, with acceleration if possible.
         # '-machine', 'q35,accel=kvm:tcg', - only for Linux
-        '-machine', 'type=q35,accel=hvf',
+        '-machine', ('q35,accel=kvm:tcg' if is_linux() else 'type=q35,accel=hvf'),
 
         # Allocate some memory.
         '-m', '128M',

@@ -33,9 +33,10 @@ impl MemoryManager {
             buffer.set_len(mem_map_size.map_size);
         }
 
-        let (_key, mut desc_iter) = bt
+        let memory_map = bt
             .memory_map(&mut buffer)
             .expect("Failed to retrieve UEFI memory map");
+        let desc_iter = memory_map.entries();
 
         assert!(desc_iter.len() > 0, "Memory map is empty");
 

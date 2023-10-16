@@ -2,10 +2,10 @@
 
 #![no_std]
 #![no_main]
-#![feature(abi_efiapi)]
 #![feature(const_mut_refs)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
+#![feature(sync_unsafe_cell)]
 
 use alloc::{boxed::Box, string::String, vec::Vec};
 use log::error;

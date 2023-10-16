@@ -1,6 +1,5 @@
 use uefi::proto::console::gop::{GraphicsOutput, PixelFormat as EFIPixelFormat};
 use uefi::table::boot::{BootServices, ScopedProtocol};
-use uefi::ResultExt;
 
 use common::{
     console::ConsoleOut,

@@ -419,8 +419,6 @@ pub struct ConsoleInDevice {
 impl ConsoleInDevice {
     /// Initialize the input device
     pub fn init() {
-        use uefi::ResultExt;
-
         let bt = unsafe { boot_services().as_ref() };
 
         if let Ok(handle) = bt.get_handle_for_protocol::<Input>() {

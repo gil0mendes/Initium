@@ -7,6 +7,10 @@ extern crate arch;
 pub mod allocator;
 extern crate spin;
 
+use core::cell::SyncUnsafeCell;
+use core::ops::Deref;
+use core::ptr::NonNull;
+
 use log::info;
 use uefi::Status;
 use uefi::{prelude::*, proto::loaded_image::LoadedImage};
@@ -42,7 +46,7 @@ static mut IMAGE_HANDLE: Option<uefi::Handle> = None;
 /// Reference for the loader image
 ///
 /// This is used to determine which device where are booting from.
-static mut LOADED_IMAGE: Option<&LoadedImage> = None;
+static mut LOADED_IMAGE: Option<NonNull<LoadedImage>> = None;
 
 /// Global logger object
 static mut LOGGER: Option<uefi::logger::Logger> = None;
@@ -60,7 +64,7 @@ pub(crate) fn get_image_handle() -> &'static uefi::Handle {
 }
 
 /// Get borrow reference for loaded image.
-pub(crate) fn get_loaded_image() -> &'static LoadedImage {
+pub(crate) fn get_loaded_image() -> &'static NonNull<LoadedImage> {
     let option = unsafe { &LOADED_IMAGE };
     option.as_ref().expect("Loaded image not saved")
 }
@@ -140,7 +144,7 @@ fn efi_main(image_handle: uefi::Handle, mut system_table: SystemTable<Boot>) -> 
         .open_protocol_exclusive::<LoadedImage>(image_handle)
         .expect("efi: failed to retrieve `LoaderImage` protocol from handle");
 
-    unsafe { LOADED_IMAGE = Some(&*loader_image.interface.get()) };
+    unsafe { LOADED_IMAGE = NonNull::new(&loader_image as *const _ as *mut _) };
 
     // save image handle
     unsafe { IMAGE_HANDLE = Some(image_handle) };
@@ -177,7 +181,7 @@ pub fn target_reboot() -> ! {
     let system_table = system_table_option.as_ref().unwrap();
 
     system_table.runtime_services().reset(
-        uefi::table::runtime::ResetType::Warm,
+        uefi::table::runtime::ResetType::WARM,
         Status::SUCCESS,
         None,
     );

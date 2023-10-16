@@ -2,7 +2,6 @@ use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
 
 use uefi::table::boot::{BootServices, MemoryType};
-use uefi::ResultExt;
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
 ///
