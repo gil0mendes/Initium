@@ -1,0 +1,31 @@
+{ sources ? import ./nix/sources.nix { }
+, pkgs ? import sources.nixpkgs { }
+}:
+
+pkgs.mkShell {
+  nativeBuildInputs = with pkgs; [
+    # nix related stuff (such as dependency management)
+    niv
+    nixpkgs-fmt
+
+    # Integration test dependencies
+    swtpm
+    qemu
+
+    # Rust toolchain
+    rustup
+
+    # Other
+    yamlfmt
+    which # used by "cargo xtask fmt"
+  ];
+
+  # Set ENV vars.
+  # OVMF_CODE="${pkgs.OVMF.firmware}";
+  # OVMF_VARS="${pkgs.OVMF.variables}";
+  # OVMF_SHELL="${pkgs.edk2-uefi-shell}";
+
+  # For better reproducibility inside the Nix shell, we override this channel
+  # with the pinned nixpkgs version.
+  NIX_PATH = "nixpkgs=${sources.nixpkgs}";
+}

@@ -1,6 +1,8 @@
 {
-  "editor.tabSize": 4,
-  "python.pythonPath": "/usr/local/bin/python3",
-  // Auto-save configurations
-  "editor.formatOnSave": true
+	"editor.tabSize": 4,
+	"python.pythonPath": "/usr/local/bin/python3",
+	// Auto-save configurations
+	"editor.formatOnSave": true,
+	"nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
+	"editor.insertSpaces": false
 }
