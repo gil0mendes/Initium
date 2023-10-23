@@ -82,8 +82,6 @@ pub struct EfiDiskManager {}
 
 /// Detect and register all disk devices.
 pub fn init() {
-    use uefi::ResultExt;
-
     let mut raw_devices: Vec<EfiDisk> = Vec::new();
     let mut child_devices: Vec<EfiDisk> = Vec::new();
 
@@ -113,82 +111,81 @@ pub fn init() {
     // We then do a pass ovr the child devices, and if they identify the type of the their parent, then that overrides
     // the type guessed for the raw device.
 
+    // handles.iter().for_each(|&handle| {
+    //     let block_cell = bt
+    //         .open_protocol_exclusive::<BlockIO>(handle)
+    //         .expect("efi: warning: failed to open block I/O");
+
+    //     unsafe {
+    //         let block = &*block_cell.get();
+    //         let media = block.media();
+
+    //         // Get device path and ignore the end of hardware path
+    //         let device_path_cell = bt
+    //             .open_protocol_exclusive::<DevicePath>(handle)
+    //             .expect("efi: failed to retrieve `DevicePath` protocol from block image handler");
+    //         let device_path = &mut *device_path_cell.get();
+    //         match device_path.device_type {
+    //             DeviceType::End => return,
+    //             _ => {}
+    //         }
+
+    //         // TODO: fix the boot device detection logic
+    //         let loaded_image_device = get_loaded_image().device();
+
+    //         info!("1>> {:x}", (&loaded_image_device as *const _ as usize));
+    //         let p = 50;
+    //         info!("2>> {:x}", (&p as *const _ as usize));
+
+    //         // create the new disk
+    //         let mut disk = EfiDisk {
+    //             handle,
+    //             path: device_path_cell,
+    //             block: block_cell,
+    //             media_id: media.media_id(),
+    //             boot: &loaded_image_device as *const _ == &handle as *const _,
+    //             boot_partition_lba: if media.is_media_preset() {
+    //                 media.last_block() + 1
+    //             } else {
+    //                 0
+    //             },
+    //             disk: None,
+    //         };
+
+    //         if disk.is_boot() {
+    //             info!("efi: boot device is: {:p}", disk.path());
+    //         }
+
+    //         if media.is_logical_partition() {
+    //             child_devices.push(disk);
+    //         } else {
+    //             let disk_path = &(*disk.path().get());
+    //             let last_node = last_device_node(disk_path);
+
+    //             let mut common_disk = Disk::new();
+    //             if last_node.device_type == DeviceType::Acpi {
+    //                 let acpi_device = ptr::read(last_node as *const DevicePath as *const Acpi);
+
+    //                 // Check EISA ID for a floppy
+    //                 match acpi_device.hid {
+    //                     FLOPPY_HUI => {
+    //                         common_disk.disk_type = DiskType::Floppy;
+    //                     }
+    //                     _ => {}
+    //                 }
+    //             } else if media.is_removable_media()
+    //                 && media.is_read_only()
+    //                 && media.block_size() == CD_SECTOR_SIZE
+    //             {
+    //                 common_disk.disk_type = DiskType::CDROM;
+    //             }
+
+    //             disk.set_common_disk(Some(common_disk));
+    //             raw_devices.push(disk);
+    //         }
+    //     }
+    // });
     /*
-    handles.iter().for_each(|&handle| {
-        let block_cell = bt
-            .open_protocol_exclusive::<BlockIO>(handle)
-            .expect("efi: warning: failed to open block I/O");
-
-        unsafe {
-            let block = &*block_cell.get();
-            let media = block.media();
-
-            // Get device path and ignore the end of hardware path
-            let device_path_cell = bt
-                .open_protocol_exclusive::<DevicePath>(handle)
-                .expect("efi: failed to retrieve `DevicePath` protocol from block image handler");
-            let device_path = &mut *device_path_cell.get();
-            match device_path.device_type {
-                DeviceType::End => return,
-                _ => {}
-            }
-
-            // TODO: fix the boot device detection logic
-            let loaded_image_device = get_loaded_image().device();
-
-            info!("1>> {:x}", (&loaded_image_device as *const _ as usize));
-            let p = 50;
-            info!("2>> {:x}", (&p as *const _ as usize));
-
-            // create the new disk
-            let mut disk = EfiDisk {
-                handle,
-                path: device_path_cell,
-                block: block_cell,
-                media_id: media.media_id(),
-                boot: &loaded_image_device as *const _ == &handle as *const _,
-                boot_partition_lba: if media.is_media_preset() {
-                    media.last_block() + 1
-                } else {
-                    0
-                },
-                disk: None,
-            };
-
-            if disk.is_boot() {
-                info!("efi: boot device is: {:p}", disk.path());
-            }
-
-            if media.is_logical_partition() {
-                child_devices.push(disk);
-            } else {
-                let disk_path = &(*disk.path().get());
-                let last_node = last_device_node(disk_path);
-
-                let mut common_disk = Disk::new();
-                if last_node.device_type == DeviceType::Acpi {
-                    let acpi_device = ptr::read(last_node as *const DevicePath as *const Acpi);
-
-                    // Check EISA ID for a floppy
-                    match acpi_device.hid {
-                        FLOPPY_HUI => {
-                            common_disk.disk_type = DiskType::Floppy;
-                        }
-                        _ => {}
-                    }
-                } else if media.is_removable_media()
-                    && media.is_read_only()
-                    && media.block_size() == CD_SECTOR_SIZE
-                {
-                    common_disk.disk_type = DiskType::CDROM;
-                }
-
-                disk.set_common_disk(Some(common_disk));
-                raw_devices.push(disk);
-            }
-        }
-    });
-
     // pass over child devices to identify their types
     child_devices.iter().for_each(|child| {
         let child_path = unsafe { &(*child.path().get()) };

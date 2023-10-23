@@ -1,0 +1,31 @@
+[package]
+name = "initium"
+version = "0.1.0"
+publish = false
+
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = 'initium'
+path = "./src/main.rs"
+crate-type = ["staticlib"]
+
+[dependencies]
+arch = { path = "./arch/x86_64" }
+common = { path = "./common" }
+log = { version = "0.4", default-features = false }
+spin = "0.7.0"
+
+# When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
+# does not automatically get enabled. Therefore, we have to manually add support for
+# the memory functions.
+rlibc = "1.0.0"
+
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+uefi = { version = "0.25.0", default-features = false, features = ["logger", "alloc"] }

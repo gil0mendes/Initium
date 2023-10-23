@@ -1,6 +1,9 @@
-[unstable]
-build-std-features = ["compiler-builtins-mem"]
-build-std = ["core", "compiler_builtins", "alloc"]
+# [unstable]
+# build-std-features = ["compiler-builtins-mem"]
+# build-std = ["core", "compiler_builtins", "alloc"]
 
-[build]
-target = "targets/x86_64-unknown-efi.json"
+# [build]
+# target = "targets/x86_64-unknown-efi.json"
+
+[alias]
+xtask = "run --package xtask --"
