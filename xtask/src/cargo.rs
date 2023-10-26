@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::{Ok, Result};
+use anyhow::{bail, Ok, Result};
 
 use crate::arch::InitiumArch;
 
@@ -11,8 +11,28 @@ pub enum Package {
 }
 
 impl Package {
+    fn as_str(self) -> &'static str {
+        match self {
+            Package::Initium => "initium",
+            Package::Xtask => "xtask",
+        }
+    }
+
     pub fn all_except_xtask() -> Vec<Package> {
         vec![Self::Initium]
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum TargetType {
+    Default,
+}
+
+impl TargetType {
+    const fn args(self) -> &'static [&'static str] {
+        match self {
+            TargetType::Default => &[],
+        }
     }
 }
 
@@ -28,6 +48,7 @@ pub struct Cargo {
     pub release: bool,
     pub target: Option<InitiumArch>,
     pub warning_as_error: bool,
+    pub target_types: TargetType,
 }
 
 impl Cargo {
@@ -57,6 +78,15 @@ impl Cargo {
         if let Some(target) = self.target {
             cmd.args(["--target", target.as_triple()]);
         }
+
+        if self.packages.is_empty() {
+            bail!("packages cannot be empty");
+        }
+        for package in &self.packages {
+            cmd.args(["--package", package.as_str()]);
+        }
+
+        cmd.args(self.target_types.args());
 
         cmd.args(extra_args);
 

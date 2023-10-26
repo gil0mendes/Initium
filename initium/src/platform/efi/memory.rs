@@ -5,6 +5,7 @@
 //! is possible for the memory map to change underneath us, we cannot just get the memory map once during init and use
 //! it with the generic MM code.
 
+use alloc::vec;
 use log::info;
 use uefi::table::boot::{BootServices, MemoryType};
 
@@ -25,25 +26,21 @@ impl MemoryManager {
     pub fn init(&self, bt: &BootServices) {
         // Get the estimated map size
         let mem_map_size = bt.memory_map_size();
+        let buffer_size = mem_map_size.map_size + 2 * mem_map_size.entry_size;
 
         // Build a buffer bigger enough to to handle the memory map
-        let mut buffer = Vec::with_capacity(mem_map_size.map_size);
-
-        unsafe {
-            buffer.set_len(mem_map_size.map_size);
-        }
+        let mut buffer = vec![0_u8; buffer_size];
 
         let memory_map = bt
             .memory_map(&mut buffer)
-            .expect("Failed to retrieve UEFI memory map");
+            .expect("EFI: failed to retrieve UEFI memory map");
         let desc_iter = memory_map.entries();
 
         assert!(desc_iter.len() > 0, "Memory map is empty");
 
-        // For information purposes, we print out a list of all the usable memory
-        // we see in the memory map. Don't print out everything, the memory map
-        // is probably pretty big (e.g. OVMF under QEMU returns a map with nearly
-        // 50 entries here).
+        // For information purposes, we print out a list of all the usable memory we see in the memory map. Don't print
+        // out everything, the memory map is probably pretty big (e.g. OVMF under QEMU returns a map with nearly 50
+        // entries here).
         info!("efi: usable memory ranges ({} total)", desc_iter.len());
         for (j, descriptor) in desc_iter.enumerate() {
             match descriptor.ty {
