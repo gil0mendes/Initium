@@ -5,10 +5,7 @@
 - [Initium](#initium)
   - [Introduction](#introduction)
   - [Development](#development)
-  - [Build](#build)
-    - [Requirements](#requirements)
-    - [Build](#build-1)
-    - [Test](#test)
+  - [Build and Testing](#build-and-testing)
   - [License](#license)
 
 ---
@@ -29,41 +26,17 @@ nix-shell
 
 > **📔 Note:** If you use VSCode for the development you can install the Nix IDE extension that will automatically load the environment for you.
 
-## Build
+## Build and Testing
 
-### Requirements
+Use the `cargo xtask` command to build and test Initium.
 
-Here is a list of required tools to build Initium. Note that, currently, the build system only support Unix-like Operating Systems.
+Available commands:
 
-- [Rust](https://www.rust-lang.org/)
-- [QEMU](https://www.qemu.org/)
-- [Python 3](https://www.python.org/)
-
-Before moving with the build, please fetch all submodules:
-
-```shell
-git submodules update --init
-```
-
-### Build
-
-With the dependencies correctly installed the build process is very simples. On the root of the project there is a `build.py` file with some useful commands to assist with the build process.
-
-To compile the bootloader you must simply run the following command:
-
-```shell
-$ ./build.py build
-```
-
-The first build will take longer to download and compile the dependencies, but the consequent ones will be incremental.
-
-### Test
-
-There is a simples test environment that uses QEMU to test the Initium. The build script also has a command to launch it:
-
-```shell
-$ ./build.py run
-```
+- `build`: build all the Initium packages and binary
+  - `--release`: build in release mode
+- `run`: run Initium in QEMU
+  - `--disable-kvm`: disable hardware accelerated virtualization support in QEMU.
+  - `--release`: build in release mode
 
 ## License
 
