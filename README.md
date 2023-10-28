@@ -40,6 +40,7 @@ Available commands:
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+The code in this repository is licensed under the Mozilla Public License 2.
+This license allows you to use Initium in proprietary scenarios, but any modifications to the files must be open-sourced.
 
-Copyright (c) 2014-present, [Gil Mendes](https://gil0mendes.io)
+The full text of the license is available in the [license file](LICENSE).
