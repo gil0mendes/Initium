@@ -6,6 +6,7 @@
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 #![feature(sync_unsafe_cell)]
+#![feature(strict_provenance)]
 
 use alloc::{boxed::Box, string::String, vec::Vec};
 use log::error;

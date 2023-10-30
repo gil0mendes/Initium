@@ -9,7 +9,7 @@ pub struct ChoiceEntry {
 }
 
 impl Entry for ChoiceEntry {
-    fn render(&self, console: &dyn ConsoleOut) {
+    fn render(&self, _console: &dyn ConsoleOut) {
         print!("{}", self.label);
     }
 

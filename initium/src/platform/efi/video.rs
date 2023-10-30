@@ -45,7 +45,7 @@ impl EFIVideoManager {
     }
 
     /// Set a large graphics mode.
-    fn set_init_graphics_mode(&mut self) {
+    fn set_init_graphics_mode(&mut self, bt: &BootServices) {
         let mut gop = unsafe {
             match GRAPHICS_OUTPUT {
                 Some(ref mut gop) => gop,
@@ -54,7 +54,7 @@ impl EFIVideoManager {
         };
 
         let mode = gop
-            .modes()
+            .modes(bt)
             .find(|ref mode| {
                 let info = mode.info();
 
@@ -82,7 +82,7 @@ impl EFIVideoManager {
         };
 
         let mut manager = Self {};
-        manager.set_init_graphics_mode();
+        manager.set_init_graphics_mode(&bt);
 
         unsafe {
             VIDEO_MANAGER = Some(manager);

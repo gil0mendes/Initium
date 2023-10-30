@@ -3,8 +3,8 @@ use crate::{
     shell::Shell,
 };
 
-use crate::print;
 use super::InputResult;
+use crate::print;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -23,7 +23,7 @@ pub trait Entry {
     fn destroy(&self) {}
 
     /// Handle input on the entry
-    fn input(&mut self, key: u16) -> InputResult {
+    fn input(&mut self, _key: u16) -> InputResult {
         InputResult::Handled
     }
 }
@@ -105,7 +105,7 @@ impl ListWindow {
     }
 
     /// Render help text for a windows
-    fn render_help(&self, console: &mut dyn ConsoleOut, timeout: usize, update: bool) {
+    fn render_help(&self, console: &mut dyn ConsoleOut, _timeout: usize, _update: bool) {
         self.set_help_region(console);
 
         // render the helper text for the selected component
@@ -125,8 +125,6 @@ impl ListWindow {
         pos: usize,
         selected: bool,
     ) {
-        let (console_w, console_h) = console.resolution();
-
         let content_region = console.get_region();
 
         // compute the place where to put the entry
@@ -251,7 +249,7 @@ impl ListWindow {
         }
     }
 
-    pub fn add_list(&mut self, entry: Box<dyn Entry>, selected: bool) {
+    pub fn add_list(&mut self, entry: Box<dyn Entry>, _selected: bool) {
         self.entries.push(entry);
 
         // TODO: implement selected logic

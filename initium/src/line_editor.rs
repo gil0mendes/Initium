@@ -33,7 +33,7 @@ impl LineEditor {
     }
 
     /// Output the line and place the cursor at the current position.
-    pub fn output(&self, console: &dyn ConsoleOut) {
+    pub fn output(&self, _console: &dyn ConsoleOut) {
         unimplemented!();
     }
 

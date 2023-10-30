@@ -65,7 +65,7 @@ impl Shell {
 
     /// Execute the given command.
     fn execute_command(&self, list: Command) {
-        let mut command_manager = get_command_manager();
+        let command_manager = get_command_manager();
 
         match command_manager.get_command(&list.name) {
             Some(command) => {
