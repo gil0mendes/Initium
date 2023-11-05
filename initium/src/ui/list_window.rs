@@ -84,7 +84,7 @@ impl ListWindow {
         };
 
         console.set_region(region);
-        console.set_color(Color::Light_grey, Color::Black);
+        console.set_color(Color::LightGrey, Color::Black);
     }
 
     #[inline]
@@ -139,8 +139,8 @@ impl ListWindow {
 
         // clear the area. if there is a entry is selected it should be highlighted
         let (fg_color, bg_color) = match selected {
-            true => (Color::Black, Color::Light_grey),
-            false => (Color::Light_grey, Color::Black),
+            true => (Color::Black, Color::LightGrey),
+            false => (Color::LightGrey, Color::Black),
         };
         console.set_color(fg_color, bg_color);
         console.clear(0, 0, 0, 0);
@@ -150,7 +150,7 @@ impl ListWindow {
 
         // restore content region and color
         console.set_region(content_region);
-        console.set_color(Color::Light_grey, Color::Black);
+        console.set_color(Color::LightGrey, Color::Black);
     }
 
     /// Render contents of a window

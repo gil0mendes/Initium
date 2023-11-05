@@ -17,28 +17,42 @@ use core::fmt;
 use core::result::Result;
 use rlibc::memset;
 use uefi::{
-    prelude::BootServices,
     proto::console::text::{self, Input},
     table::boot::ScopedProtocol,
 };
 
-/// Print with new line to console
-#[macro_export]
-macro_rules! println {
-    ($fmt:expr) => (print!(concat!($fmt, "\n")));
-    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
-}
-
-/// Print to console
+/// Prints to the standard output.
+///
+/// # Examples
+/// ```
+/// print!("");
+/// print!("Hello World\n");
+/// print!("Hello {}", "World");
+/// ```
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ({
-        crate::platform::console::printFmt(format_args!($($arg)*)).unwrap();
-    });
+    ($($arg:tt)*) => (
+        $crate::platform::console::print_fmt(core::format_args!($($arg)*)).unwrap();
+    );
 }
 
-pub fn printFmt(args: fmt::Arguments) -> fmt::Result {
+/// Print to the standard output with a new line.
+///
+/// # Examples
+/// ```
+/// println!();
+/// println!("Hello World");
+/// println!("Hello {}", "World");
+/// ```
+#[macro_export]
+macro_rules! println {
+    () => ($crate::platform::console::print!("\n"));
+    ($($arg:tt)*) => ($crate::platform::console::print_fmt(core::format_args!("{}{}", core::format_args!($($arg)*), "\n")));
+}
+
+pub fn print_fmt(args: fmt::Arguments) -> fmt::Result {
     use core::fmt::Write;
+
     unsafe {
         let mut console = &mut CONSOLE_OUT;
         console.as_mut().unwrap().write_fmt(args)
@@ -281,7 +295,7 @@ impl ConsoleOutManager {
             // case, so invert colors.
             self.chars[idx].char = ' ';
             self.chars[idx].foreground = Color::Black;
-            self.chars[idx].background = Color::Light_grey;
+            self.chars[idx].background = Color::LightGrey;
         }
 
         // redraw glyph with the new colors
