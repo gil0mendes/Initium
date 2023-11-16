@@ -9,9 +9,6 @@ use alloc::vec;
 use log::info;
 use uefi::table::boot::{BootServices, MemoryType};
 
-use crate::alloc::vec::Vec;
-use uefi::ResultExt;
-
 // EFI specifies page size as 4KB regardless of the system.
 const EFI_PAGE_SIZE: u64 = 0x1000;
 

@@ -1,10 +1,5 @@
 use crate::key::Key;
 
-/// font width
-pub const FONT_WIDTH: usize = 8;
-/// font height
-pub const FONT_HEIGHT: usize = 16;
-
 /// Console colors
 #[derive(Clone, Copy)]
 pub enum Color {
@@ -26,6 +21,39 @@ pub enum Color {
     White = 0xffffff,
 }
 
+/// Type for the cursor position
+#[derive(Clone, Copy)]
+pub struct Cursor {
+    pub x: usize,
+    pub y: usize,
+    pub visible: bool,
+}
+
+impl Cursor {
+    pub fn new(x: usize, y: usize, visible: bool) -> Self {
+        Cursor { x, y, visible }
+    }
+
+    pub fn position(&self) -> (usize, usize) {
+        (self.x, self.y)
+    }
+
+    pub fn set_position(&mut self, position: (usize, usize)) {
+        self.x = position.0;
+        self.y = position.1;
+    }
+}
+
+impl Default for Cursor {
+    fn default() -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            visible: false,
+        }
+    }
+}
+
 /// Console draw region structure
 #[derive(Copy, Clone)]
 pub struct DrawRegion {
@@ -41,30 +69,42 @@ pub struct DrawRegion {
     pub scrollable: bool,
 }
 
-/// Framebuffer character information
-#[derive(Copy, Clone)]
-pub struct Char {
-    /// Character to display (0 == space)
-    pub char: char,
-    /// Foreground color
-    pub foreground: Color,
-    /// Background color
-    pub background: Color,
-}
-
-impl Default for Char {
-    fn default() -> Self {
-        Self {
-            char: ' ',
-            foreground: Color::White,
-            background: Color::Black,
-        }
-    }
-}
-
 pub trait ConsoleOut {
     /// Initialize the console when it is made active.
     fn init(&mut self);
+
+    /// Deinitialize the console when it is being made inactive.
+    fn deinit(&mut self);
+
+    /// Write a character to the console.
+    fn put_char(&mut self, ch: char);
+
+    /// Set current colors.
+    fn set_color(&mut self, _fg: Color, _bg: Color) {}
+
+    /// Being UI mode
+    fn begin_ui(&mut self) {}
+
+    /// End UI mode
+    fn end_ui(&mut self);
+
+    /// Set the draw region of the console
+    ///
+    /// Set the draw region of the console. All operations on the console (i.e. writing, scrolling) will be contained to
+    /// this region. The cursor will be moved to 0,0 within this region.
+    fn set_region(&mut self, region: DrawRegion);
+
+    /// Get the current draw region.
+    fn get_region(&self) -> DrawRegion;
+
+    /// Configure the cursor
+    ///
+    /// The position is relative to current active region. This means, for example, that a (0, 0) position can not means
+    /// that the cursor will be placed on the corner of the screen, if the region is placed elsewhere.
+    fn set_cursor(&mut self, cursor: Cursor);
+
+    /// Get the current cursor state.
+    fn get_cursor(&self) -> Cursor;
 
     /// Clear an area to the current background color.
     ///
@@ -77,26 +117,14 @@ pub trait ConsoleOut {
     ///
     fn clear(&mut self, x: usize, y: usize, width: usize, height: usize);
 
-    /// Set the draw region of the console
-    fn set_region(&mut self, region: DrawRegion);
+    /// Scroll the draw region up (move contents down)
+    fn scroll_up(&mut self);
 
-    /// Get the current active region
-    fn get_region(&self) -> DrawRegion;
+    /// Scroll the draw region down (move contents up)
+    fn scroll_down(&mut self);
 
-    /// Reset region to the initial values
-    fn reset_region(&mut self);
-
-    /// Set current colors.
-    fn set_color(&mut self, fg: Color, bg: Color);
-
-    /// Get console resolution
+    /// Get the console resolution.
     fn resolution(&self) -> (usize, usize);
-
-    /// Configure the cursor
-    ///
-    /// The position is relative to current active region. This means, for example, that a (0, 0) position can not means
-    /// that the cursor will be placed on the corner of the screen, if the region is placed elsewhere.
-    fn set_cursor(&mut self, x: usize, y: usize, visible: bool);
 }
 
 pub trait ConsoleIn {

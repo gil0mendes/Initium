@@ -1,10 +1,15 @@
-use uefi::proto::console::gop::{GraphicsOutput, PixelFormat as EFIPixelFormat};
+use alloc::boxed::Box;
+use common::video::{VideoMode, VideoModeOps};
+use log::info;
+use uefi::proto::console::gop::{GraphicsOutput, Mode, PixelFormat as EFIPixelFormat};
 use uefi::table::boot::{BootServices, ScopedProtocol};
 
 use common::{
     console::ConsoleOut,
-    video::{FrameBuffer, PixelFormat, VideoManager, VideoMode},
+    video::{FrameBuffer, PixelFormat, VideoManager},
 };
+
+use crate::drivers::console::framebuffer::{self, FramebufferConsole};
 
 use super::allocator::boot_services;
 
@@ -23,9 +28,28 @@ static mut GRAPHICS_OUTPUT: Option<ScopedProtocol<GraphicsOutput>> = None;
 /// Reference for the EFI video manager
 pub static mut VIDEO_MANAGER: Option<EFIVideoManager> = None;
 
+struct EfiVideoMode {
+    index: u32,
+    video_mode: VideoMode,
+}
+
+impl VideoModeOps for EfiVideoMode {
+    fn set_mode() {
+        todo!()
+    }
+
+    fn create_console() -> Option<Box<dyn ConsoleOut>> {
+        Some(Box::new(FramebufferConsole::new()))
+    }
+}
+
 /// Manager for EFI video related opetations
-#[derive(Copy, Clone)]
-pub struct EFIVideoManager;
+pub struct EFIVideoManager {
+    /// Original video mode
+    ///
+    /// We use this to return to if we exit Initium.
+    original_mode: Mode,
+}
 
 impl EFIVideoManager {
     /// Get the framebuffer
@@ -66,23 +90,31 @@ impl EFIVideoManager {
     }
 
     pub fn init() {
-        let bt = unsafe { boot_services().as_ref() };
+        let bs = unsafe { boot_services().as_ref() };
 
         // Look for a graphics output handler
-        let handle = bt
+        let handle = bs
             .get_handle_for_protocol::<GraphicsOutput>()
             .expect("efi: Graphics Output Protocol is not supported");
 
-        let mut gop_proto = bt
+        let mut gop_proto = bs
             .open_protocol_exclusive::<GraphicsOutput>(handle)
             .expect("efi: Graphics Output Protocol is not supported");
+
+        let current_mode = gop_proto.current_mode_info();
+        let original_mode = gop_proto
+            .modes(bs)
+            .find(|m| current_mode == *m.info())
+            .expect("efi: impossible to get the current video mode");
 
         unsafe {
             GRAPHICS_OUTPUT = Some(gop_proto);
         };
 
-        let mut manager = Self {};
-        manager.set_init_graphics_mode(&bt);
+        let mut manager = Self {
+            original_mode: original_mode,
+        };
+        manager.set_init_graphics_mode(&bs);
 
         unsafe {
             VIDEO_MANAGER = Some(manager);
@@ -90,27 +122,27 @@ impl EFIVideoManager {
     }
 }
 
-impl VideoManager for EFIVideoManager {
-    fn get_mode(&self) -> VideoMode {
-        let graphics = unsafe {
-            match GRAPHICS_OUTPUT {
-                Some(ref mut gop) => gop,
-                _ => panic!(),
-            }
-        };
+// impl VideoManager for EFIVideoManager {
+//     fn get_mode(&self) -> VideoMode {
+//         let graphics = unsafe {
+//             match GRAPHICS_OUTPUT {
+//                 Some(ref mut gop) => gop,
+//                 _ => panic!(),
+//             }
+//         };
 
-        let current_mode = graphics.current_mode_info();
-        let resolution = current_mode.resolution();
+//         let current_mode = graphics.current_mode_info();
+//         let resolution = current_mode.resolution();
 
-        VideoMode {
-            width: resolution.0,
-            height: resolution.1,
-            format: convert_pixel_format(current_mode.pixel_format()),
-            stride: current_mode.stride(),
-        }
-    }
+//         VideoMode {
+//             width: resolution.0,
+//             height: resolution.1,
+//             format: convert_pixel_format(current_mode.pixel_format()),
+//             stride: current_mode.stride(),
+//         }
+//     }
 
-    fn get_console_out(&self) -> &dyn ConsoleOut {
-        todo!()
-    }
-}
+//     fn get_console_out(&self) -> &dyn ConsoleOut {
+//         todo!()
+//     }
+// }

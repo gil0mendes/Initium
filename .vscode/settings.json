@@ -1,8 +1,9 @@
 {
 	"editor.tabSize": 4,
-	"python.pythonPath": "/usr/local/bin/python3",
 	// Auto-save configurations
 	"editor.formatOnSave": true,
 	"nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
-	"editor.insertSpaces": false
+	"editor.insertSpaces": false,
+	"cSpell.words": ["framebuffer"],
+	"rust-analyzer.imports.prefer.no.std": true
 }

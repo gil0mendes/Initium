@@ -26,16 +26,15 @@ mod config;
 mod console;
 mod device;
 mod disk;
+mod drivers;
 mod line_editor;
 mod shell;
 mod ui;
+mod video;
 
 #[no_mangle]
 pub fn loader_main() {
     use crate::alloc::string::ToString;
-
-    // init console
-    get_console_out().init();
 
     device::init();
 
@@ -129,7 +128,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             "Panic in {} at ({}, {}):",
             location.file(),
             location.line(),
-            location.column()
+            location.column(),
         );
         if let Some(message) = info.message() {
             error!("{}", message);

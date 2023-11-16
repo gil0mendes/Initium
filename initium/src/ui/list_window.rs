@@ -8,8 +8,8 @@ use crate::print;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use common::console::ConsoleOut;
 use common::console::{Color, DrawRegion};
+use common::console::{ConsoleOut, Cursor};
 
 /// Trait to be implemented by a UI list entry
 pub trait Entry {
@@ -26,6 +26,23 @@ pub trait Entry {
     fn input(&mut self, _key: u16) -> InputResult {
         InputResult::Handled
     }
+}
+
+/// Set the draw region to the content region
+#[inline]
+fn set_content_region(console: &mut dyn ConsoleOut) {
+    let (width, height) = console.resolution();
+
+    let region = DrawRegion {
+        x: 2,
+        y: 3,
+        width,
+        height,
+        scrollable: false,
+    };
+
+    console.set_region(region);
+    console.set_color(Color::LightGrey, Color::Black);
 }
 
 /// Structure defining a window type
@@ -155,12 +172,12 @@ impl ListWindow {
 
     /// Render contents of a window
     pub fn render(&mut self, console: &mut dyn ConsoleOut, timeout: usize) {
-        console.reset_region();
+        set_content_region(console);
         console.set_color(Color::White, Color::Black);
         console.clear(0, 0, 0, 0);
 
         // disable the cursor
-        console.set_cursor(0, 0, false);
+        console.set_cursor(Cursor::default());
 
         // draw the title
         self.set_title_region(console);

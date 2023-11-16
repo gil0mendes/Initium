@@ -1,6 +1,6 @@
 use alloc::string::String;
 
-use crate::platform::target_device_probe;
+use crate::{platform::target_device_probe, println};
 
 /// Types of devices.
 enum DeviceType {

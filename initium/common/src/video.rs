@@ -1,12 +1,13 @@
+//! Video module
+//!
+//! This files defines all the necessary structures to manage video and graphics inside Initium
+
 use core::marker::PhantomData;
 use core::mem;
-use core::ops::Add;
 
-use crate::console::{Color, ConsoleOut, DrawRegion};
+use alloc::boxed::Box;
 
-///! Video module
-///!
-///! This files defines all the necessary structures to manage video and graphics inside Initium
+use crate::console::ConsoleOut;
 
 /// Represents the format of the pixels in a frame buffer.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -29,37 +30,33 @@ pub enum PixelFormat {
     //         is safe to model this C enum as a Rust enum.
 }
 
+/// Video mode types
+pub enum VideoModeType {
+    VGA = (1 << 0),
+    LFB = (1 << 1),
+}
+
 /// Video mode information
+#[derive(Clone, Copy)]
 pub struct VideoMode {
     /// Number of pixels on the width
     pub width: usize,
     /// Number os pixels on the height
     pub height: usize,
     /// Pixel format
-    pub format: PixelFormat,
+    // pub format: PixelFormat,
     /// Number of pixels per scanline
     pub stride: usize,
 }
 
-impl VideoMode {
-    /// Returns the (horizontal, vertical) resolution.
-    ///
-    /// On desktop monitors, this usually means (width, height).
-    pub fn resolution(&self) -> (usize, usize) {
-        (self.width as usize, self.height as usize)
-    }
+/// Operations that a mode needs to implement
+pub trait VideoModeOps {
+    /// Set the mode.
+    fn set_mode();
 
-    /// Returns the format of the frame buffer.
-    pub fn pixel_format(&self) -> PixelFormat {
-        self.format
-    }
-
-    /// Returns the number of pixels per scanline.
-    ///
-    /// Due to performance reasons, the stride might not be equal to the width, instead the stride might be bigger for
-    /// better alignment.
-    pub fn stride(&self) -> usize {
-        self.stride as usize
+    /// Create a console for the mode.
+    fn create_console() -> Option<Box<dyn ConsoleOut>> {
+        None
     }
 }
 
@@ -68,25 +65,22 @@ impl VideoMode {
 /// This is the way that we have to enforce the use of the same structure across platforms. The code on the platform can
 /// change of the the implementation on the main bootloader code can remain abstract.
 pub trait VideoManager {
-    /// Get the current video mode set
-    fn get_mode(&self) -> VideoMode;
-
     /// Get console output
     fn get_console_out(&self) -> &dyn ConsoleOut;
 }
 
 /// Framebuffer console state
 #[derive(Copy, Clone)]
-pub struct FrameBuffer<'gop> {
+pub struct FrameBuffer<'a> {
     /// base address of the framebuffer mapping
     base: *mut u8,
     /// Size of the virtual memory size
     size: usize,
     /// Use a phantom to assign a lifetime to the unsafe pointer
-    _lifetime: PhantomData<&'gop mut u8>,
+    _lifetime: PhantomData<&'a mut u8>,
 }
 
-impl<'gop> FrameBuffer<'gop> {
+impl<'a> FrameBuffer<'a> {
     /// Create a new Framebuffer instance
     pub fn new(base: *mut u8, size: usize) -> Self {
         Self {

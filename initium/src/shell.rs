@@ -28,8 +28,6 @@ impl Shell {
     pub fn start(&mut self) -> ! {
         let console_out = get_console_out();
 
-        // reset the region and clear the console
-        console_out.reset_region();
         console_out.clear(0, 0, 0, 0);
 
         // reset console color

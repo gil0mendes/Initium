@@ -1,3 +1,5 @@
+//! EFI platform main functions.
+
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
 
@@ -16,7 +18,6 @@ use uefi::table::boot::{EventType, Tpl};
 use uefi::{prelude::*, proto::loaded_image::LoadedImage};
 use uefi::{Event, Status};
 
-use self::console::{ConsoleInDevice, ConsoleOutManager};
 use self::memory::MemoryManager;
 use self::video::EFIVideoManager;
 use crate::loader_main;
@@ -30,8 +31,7 @@ mod disk;
 mod memory;
 mod video;
 
-pub use console::{CONSOLE_IN, CONSOLE_OUT};
-pub use video::VIDEO_MANAGER;
+pub use console::CONSOLE_IN;
 
 /// Reference to the system table.
 ///
@@ -132,6 +132,9 @@ fn efi_main(image_handle: uefi::Handle, mut system_table: SystemTable<Boot>) -> 
             .map(Some);
     }
 
+    crate::console::init();
+
+    // TODO: move this into the console code
     // Reset the console before continue
     get_system_table()
         .stdout()
@@ -164,10 +167,6 @@ fn efi_main(image_handle: uefi::Handle, mut system_table: SystemTable<Boot>) -> 
 
     // initialize the video system
     EFIVideoManager::init();
-
-    // Create a console manager
-    ConsoleOutManager::init();
-    ConsoleInDevice::init();
 
     // TODO: remove this, is just for testing
     info!(
