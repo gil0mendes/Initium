@@ -24,10 +24,6 @@ pub enum PixelFormat {
     /// This means you will have to use the `blt` function which will convert the graphics data to the device's internal
     /// pixel format.
     BltOnly,
-    // SAFETY: UEFI also defines a PixelFormatMax variant, and states that all
-    //         valid enum values are guaranteed to be smaller. Since that is the
-    //         case, adding a new enum variant would be a breaking change, so it
-    //         is safe to model this C enum as a Rust enum.
 }
 
 /// Video mode types
@@ -38,13 +34,13 @@ pub enum VideoModeType {
 
 /// Video mode information
 #[derive(Clone, Copy)]
-pub struct VideoMode {
+pub struct VideoModeInfo {
     /// Number of pixels on the width
     pub width: usize,
     /// Number os pixels on the height
     pub height: usize,
     /// Pixel format
-    // pub format: PixelFormat,
+    pub format: PixelFormat,
     /// Number of pixels per scanline
     pub stride: usize,
 }
@@ -52,10 +48,15 @@ pub struct VideoMode {
 /// Operations that a mode needs to implement
 pub trait VideoModeOps {
     /// Set the mode.
-    fn set_mode();
+    fn set_mode(&mut self);
+
+    /// Get video mode info/
+    ///
+    /// This is used to share mode information with the common code.
+    fn get_mode_info(&self) -> VideoModeInfo;
 
     /// Create a console for the mode.
-    fn create_console() -> Option<Box<dyn ConsoleOut>> {
+    fn create_console(&self) -> Option<Box<dyn ConsoleOut>> {
         None
     }
 }

@@ -1,10 +1,8 @@
-use core::{
-    fmt, ptr,
-    sync::atomic::{AtomicPtr, Ordering},
-};
+use core::fmt::{self, Write};
 
 use crate::platform;
-use common::console::{Color, ConsoleIn, ConsoleOut, Cursor, DrawRegion};
+use alloc::{boxed::Box, string};
+use common::console::{Color, ConsoleIn, ConsoleOut, Cursor};
 
 /// Prints to the standard output.
 ///
@@ -36,41 +34,48 @@ macro_rules! println {
 }
 
 pub fn print_fmt(args: fmt::Arguments) -> fmt::Result {
-    use core::fmt::Write;
+    let primary_console = console_manager().primary_console.as_mut();
 
-    // TODO: implement
-    return Ok(());
+    if primary_console.is_none() {
+        return Ok(());
+    }
 
-    // unsafe {
-    //     let mut console = CONSOLE_OUT.expect("The platform console was not initialized");
-    //     console.as_mut().write_fmt(args)
-    // }
+    let console = primary_console.unwrap();
+    console.as_mut().write_fmt(args)
 }
 
 /// Reference for the console manager
 static mut CONSOLE_MANAGER: ConsoleManager = ConsoleManager::new();
 
 pub struct ConsoleManager {
-    primary_console: AtomicPtr<&'static mut dyn ConsoleOut>,
-    debug_console: AtomicPtr<&'static mut dyn ConsoleOut>,
+    pub primary_console: Option<Box<dyn ConsoleOut>>,
+    pub debug_console: Option<Box<dyn ConsoleOut>>,
 }
 
 impl ConsoleManager {
     /// Const method to initialize the console manager code
     pub const fn new() -> Self {
         Self {
-            primary_console: AtomicPtr::new(ptr::null_mut()),
-            debug_console: AtomicPtr::new(ptr::null_mut()),
+            primary_console: None,
+            debug_console: None,
         }
     }
 
-    pub fn primary_console(&self) -> Option<&'static mut dyn ConsoleOut> {
-        let console = self.primary_console.load(Ordering::Acquire);
+    pub fn primary_console(&mut self) -> Option<&mut dyn ConsoleOut> {
+        match self.primary_console {
+            Some(ref mut console) => Some(console.as_mut()),
+            None => None,
+        }
+    }
 
-        if console.is_null() {
-            None
-        } else {
-            unsafe { Some(*console) }
+    pub fn set_primary_console(&mut self, console: Option<Box<dyn ConsoleOut>>) {
+        match console {
+            Some(ref con) => {
+                self.primary_console = console;
+            }
+            None => {
+                self.primary_console = None;
+            }
         }
     }
 }
@@ -88,12 +93,7 @@ pub fn console_manager() -> &'static mut ConsoleManager {
 
 /// Get borrow reference for console output
 pub fn get_console_out<'a>() -> &'a mut dyn ConsoleOut {
-    loop {}
-    // TODO: implement
-    // unsafe {
-    //     let mut console_option = platform::CONSOLE_OUT.expect("platform console not initialized");
-    //     console_option.as_mut()
-    // }
+    console_manager().primary_console().unwrap()
 }
 
 /// Get borrow reference for console input
@@ -109,18 +109,10 @@ pub fn get_console_in<'a>() -> &'a mut dyn ConsoleIn {
 /// End UI mode reset the console.
 pub fn console_end_ui() {
     // TODO: check if we are on UI mode
-    let console = console_manager().primary_console().unwrap();
-
-    let (width, height) = console.resolution();
+    let console = get_console_out();
 
     // reset state and clear the default colors
-    console.set_region(DrawRegion {
-        x: 0,
-        y: 0,
-        width,
-        height,
-        scrollable: false,
-    });
+    console.reset_region();
     console.set_cursor(Cursor::new(0, 0, true));
     console.set_color(Color::White, Color::Black);
     console.clear(0, 0, 0, 0);

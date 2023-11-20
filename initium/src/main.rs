@@ -9,7 +9,7 @@
 #![feature(strict_provenance)]
 
 use alloc::{boxed::Box, string::String, vec::Vec};
-use log::error;
+use log::{error, info};
 
 use common::{command_manager::get_command_manager, BuiltinCommand};
 use console::get_console_out;
@@ -63,10 +63,8 @@ pub fn loader_main() {
         false,
     );
 
-    {
-        let console = get_console_out();
-        window.render(console, 0);
-    }
+    let console = get_console_out();
+    window.render(console, 0);
 
     // TODO: remove this as soon as we have the environment loader implemented
     loop {}
@@ -135,6 +133,12 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    // TODO: halt in a way that makes sense for the platform
-    loop {}
+    // TODO: use the platform to make the system hold for a bit, before restart
+
+    loop {
+        unsafe {
+            // Try to at least keep CPU from running at 100%
+            core::arch::asm!("hlt", options(nomem, nostack));
+        }
+    }
 }

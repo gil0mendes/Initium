@@ -1,11 +1,19 @@
 //! Framebuffer console implementation
 
-use core::cell::RefCell;
+use core::fmt;
 
-use alloc::{boxed::Box, rc::Rc, vec::Vec};
-use common::console::{Color, ConsoleOut, Cursor, DrawRegion};
+use alloc::{
+    boxed::Box,
+    vec::{self, Vec},
+};
+use common::{
+    console::{Color, ConsoleOut, Cursor, DrawRegion},
+    video::{FrameBuffer, PixelFormat},
+};
+use log::info;
+use rlibc::memset;
 
-use crate::video::VIDEO_MANAGER;
+use crate::video::get_video_manager;
 
 use super::font::CONSOLE_FONT;
 
@@ -13,6 +21,9 @@ use super::font::CONSOLE_FONT;
 pub const FONT_WIDTH: usize = 8;
 /// font height
 pub const FONT_HEIGHT: usize = 16;
+
+const COLOR_FG: Color = Color::LightGrey;
+const COLOR_BG: Color = Color::Black;
 
 /// Framebuffer character information
 #[derive(Copy, Clone)]
@@ -38,7 +49,9 @@ impl Default for Char {
 /// Get the byte offset of a pixel.
 #[inline]
 fn fb_offset(x: usize, y: usize) -> usize {
-    let stride = unsafe { VIDEO_MANAGER.get_mode().unwrap().stride };
+    let mode = get_video_manager().get_mode_info().unwrap();
+
+    let stride = mode.stride;
     ((y * stride) + x) * 4
 }
 
@@ -52,9 +65,8 @@ fn hex_to_rgb(color: u32) -> [u8; 3] {
     ]
 }
 
-pub struct FramebufferConsole {
-    /// Console output device
-    console: Rc<RefCell<dyn ConsoleOut>>,
+pub struct FramebufferConsole<'a> {
+    framebuffer: FrameBuffer<'a>,
 
     /// number of columns on the console
     cols: usize,
@@ -74,80 +86,88 @@ pub struct FramebufferConsole {
     background_color: Color,
 }
 
-impl FramebufferConsole {
+impl<'a> FramebufferConsole<'a> {
     /// Create a new console out manager instance
-    pub fn new() -> Self {
+    pub fn new(width: usize, height: usize, framebuffer: FrameBuffer<'a>) -> Self {
+        // Compute the number of rows and cols based ont the resolution and font size
+        let cols = width / FONT_WIDTH;
+        let rows = height / FONT_HEIGHT;
+
         let default_draw_region = DrawRegion {
             x: 0,
             y: 0,
-            width: 0,
-            height: 0,
+            width: cols,
+            height,
             scrollable: false,
         };
 
+        // initialize chars array and zero the vector
+        let size = cols * rows;
+        let chars = Box::new(alloc::vec![Char::default(); size as usize]);
+
         Self {
-            console: todo!(),
-            cols: 0,
-            rows: 0,
+            framebuffer,
+            cols,
+            rows,
             region: default_draw_region,
             cursor: Cursor::default(),
-            chars: Box::new(Vec::new()),
+            chars,
             foreground_color: Color::White,
             background_color: Color::Black,
-        };
+        }
     }
 
     /// Put a pixel on the framebuffer.
     fn put_pixel(&mut self, x: usize, y: usize, color: u32) {
         let pixel_base = fb_offset(x, y);
-        unimplemented!("Implement the remaining part");
-        // let pixel_format = unsafe { VIDEO_MANAGER.unwrap().get_mode().format };
 
-        // // convert rgb url into a rgb vector
-        // let rgb: [u8; 3] = hex_to_rgb(color);
+        let current_mode = get_video_manager().get_mode_info().unwrap();
+        let pixel_format = current_mode.format;
 
-        // type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
+        // convert rgb url into a rgb vector
+        let rgb: [u8; 3] = hex_to_rgb(color);
 
-        // /// Write a RGB pixel into the framebuffer
-        // unsafe fn write_pixel_rgb(framebuffer: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        //     framebuffer.write_value(pixel_base, rgb)
-        // }
+        type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
 
-        // /// Write a BGR pixel into the framebuffer
-        // unsafe fn write_pixel_bgr(framebuffer: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        //     framebuffer.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]])
-        // }
+        /// Write a RGB pixel into the framebuffer
+        unsafe fn write_pixel_rgb(framebuffer: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+            framebuffer.write_value(pixel_base, rgb)
+        }
 
-        // let func: PixelWriter = match pixel_format {
-        //     PixelFormat::Rgb => write_pixel_rgb,
-        //     PixelFormat::Bgr => write_pixel_bgr,
-        //     _ => panic!("This pixel format is not support by the drawer"),
-        // };
+        /// Write a BGR pixel into the framebuffer
+        unsafe fn write_pixel_bgr(framebuffer: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+            framebuffer.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]])
+        }
 
-        // unsafe {
-        //     let mut framebuffer = VIDEO_MANAGER.get_framebuffer();
-        //     func(&mut framebuffer, pixel_base, rgb);
-        // }
+        let func: PixelWriter = match pixel_format {
+            PixelFormat::Rgb => write_pixel_rgb,
+            PixelFormat::Bgr => write_pixel_bgr,
+            _ => panic!("This pixel format is not support by the drawer"),
+        };
+
+        unsafe {
+            func(&mut self.framebuffer, pixel_base, rgb);
+        }
     }
 
     /// Draw a rectangle in a solid color.
-    fn fillrect(&self, x: u32, y: u32, width: usize, height: usize, rbg: u32) {
-        unimplemented!("Implement this function");
-        // let current_mode = self.get_current_mode();
+    fn fillrect(&mut self, x: u32, y: u32, width: usize, height: usize, rbg: u32) {
+        let current_mode = get_video_manager().get_mode_info().unwrap();
 
-        // if x == 0 && width == current_mode.width && (rbg == 0 || rbg == 0xffffff) {
-        //     unsafe {
-        //         unimplemented!("Implement framebuffer get function");
-        //         // let mut framebuffer = VIDEO_MANAGER.get_framebuffer();
-
-        //         // let offset = fb_offset(x as usize, y as usize);
-        //         // let base_addr = framebuffer.as_mut_ptr().add(offset);
-        //         // let size = (height * current_mode.stride) * 4;
-        //         // memset(base_addr, rbg as i32, size);
-        //     }
-        // } else {
-        //     unimplemented!("TODO: implement a pixel by pixel approach for the other cases")
-        // }
+        if x == 0 && width == current_mode.width && (rbg == 0 || rbg == 0xffffff) {
+            unsafe {
+                let offset = fb_offset(x as usize, y as usize);
+                let base_addr = self.framebuffer.as_mut_ptr().add(offset);
+                let size = (height * current_mode.stride) * 4;
+                memset(base_addr, rbg as i32, size);
+            }
+        } else {
+            for i in 0..=height {
+                for j in 0..=width {
+                    self.put_pixel(x as usize + j as usize, y as usize + i, rbg);
+                }
+            }
+        }
     }
 
     /// Draw the glyph at the specified position of the console.
@@ -199,15 +219,7 @@ impl FramebufferConsole {
     }
 }
 
-impl ConsoleOut for FramebufferConsole {
-    fn init(&mut self) {
-        todo!()
-    }
-
-    fn deinit(&mut self) {
-        todo!()
-    }
-
+impl<'a> ConsoleOut for FramebufferConsole<'a> {
     fn put_char(&mut self, ch: char) {
         self.toggle_cursor();
 
@@ -273,23 +285,72 @@ impl ConsoleOut for FramebufferConsole {
     }
 
     fn set_region(&mut self, region: DrawRegion) {
-        todo!()
+        assert!(region.width > 0 && region.height > 0);
+        assert!(region.x + region.width <= self.cols);
+        assert!(region.y + region.height <= self.rows);
+
+        self.region = region;
+
+        // adjust cursor position
+        self.set_cursor(Cursor::new(0, 0, self.cursor.visible));
+    }
+
+    fn reset_region(&mut self) {
+        self.region.x = 0;
+        self.region.y = 0;
+        self.region.width = self.cols;
+        self.region.height = self.rows;
+        self.region.scrollable = true;
     }
 
     fn get_region(&self) -> DrawRegion {
-        todo!()
+        self.region.clone()
     }
 
     fn set_cursor(&mut self, cursor: Cursor) {
-        todo!()
+        assert!(cursor.x < self.region.width);
+        assert!(cursor.y < self.region.height);
+
+        self.toggle_cursor();
+        self.cursor
+            .set_position((self.region.x + cursor.x, self.region.y + cursor.y));
+        self.cursor.visible = cursor.visible;
+        self.toggle_cursor();
     }
 
     fn get_cursor(&self) -> Cursor {
-        todo!()
+        self.cursor
     }
 
-    fn clear(&mut self, x: usize, y: usize, width: usize, height: usize) {
-        todo!()
+    fn clear(&mut self, x: usize, y: usize, mut width: usize, mut height: usize) {
+        assert!(x + width <= self.region.width);
+        assert!(y + height <= self.region.height);
+
+        if width == 0 {
+            width = self.region.width - x;
+        }
+        if height == 0 {
+            height = self.region.height - y;
+        }
+
+        for row in 0..height {
+            for col in 0..width {
+                let abs_x = self.region.x + col;
+                let abs_y = self.region.y + row;
+                let idx = (abs_y * self.cols) + abs_x;
+
+                self.chars[idx].char = ' ';
+                self.chars[idx].foreground = self.foreground_color;
+                self.chars[idx].background = self.background_color;
+
+                if self.cursor.visible && abs_x == self.cursor.x && abs_y == self.cursor.y {
+                    // avoid redrawing the glyph twice when cursor is active
+                    self.toggle_cursor();
+                } else {
+                    self.draw_glyph(abs_x, abs_y);
+                }
+            }
+        }
     }
 
     fn scroll_up(&mut self) {
@@ -302,5 +363,34 @@ impl ConsoleOut for FramebufferConsole {
 
     fn resolution(&self) -> (usize, usize) {
         (self.cols, self.rows)
+    }
+
+    fn set_color(&mut self, fg: Color, bg: Color) {
+        self.foreground_color = fg;
+        self.background_color = bg;
+    }
+
+    fn init(&mut self) {
+        // TODO: add video type validation. For that, we need to stope the type on VideoMode
+
+        let current_mode = get_video_manager().get_mode_info().unwrap();
+
+        // clear console
+        self.fillrect(
+            0,
+            0,
+            current_mode.width,
+            current_mode.height,
+            COLOR_BG as u32,
+        );
+        self.toggle_cursor();
+    }
+}
+
+impl<'a> fmt::Write for FramebufferConsole<'a> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        s.chars().for_each(|c| self.put_char(c));
+
+        Ok(())
     }
 }

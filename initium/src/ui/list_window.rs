@@ -10,6 +10,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use common::console::{Color, DrawRegion};
 use common::console::{ConsoleOut, Cursor};
+use log::info;
 
 /// Trait to be implemented by a UI list entry
 pub trait Entry {
@@ -172,7 +173,7 @@ impl ListWindow {
 
     /// Render contents of a window
     pub fn render(&mut self, console: &mut dyn ConsoleOut, timeout: usize) {
-        set_content_region(console);
+        console.reset_region();
         console.set_color(Color::White, Color::Black);
         console.clear(0, 0, 0, 0);
 

@@ -1,3 +1,5 @@
+use core::fmt::Write;
+
 use crate::key::Key;
 
 /// Console colors
@@ -22,7 +24,7 @@ pub enum Color {
 }
 
 /// Type for the cursor position
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Cursor {
     pub x: usize,
     pub y: usize,
@@ -55,7 +57,7 @@ impl Default for Cursor {
 }
 
 /// Console draw region structure
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct DrawRegion {
     /// X position
     pub x: usize,
@@ -69,12 +71,12 @@ pub struct DrawRegion {
     pub scrollable: bool,
 }
 
-pub trait ConsoleOut {
+pub trait ConsoleOut: Write {
     /// Initialize the console when it is made active.
-    fn init(&mut self);
+    fn init(&mut self) {}
 
     /// Deinitialize the console when it is being made inactive.
-    fn deinit(&mut self);
+    fn deinit(&mut self) {}
 
     /// Write a character to the console.
     fn put_char(&mut self, ch: char);
@@ -93,6 +95,9 @@ pub trait ConsoleOut {
     /// Set the draw region of the console. All operations on the console (i.e. writing, scrolling) will be contained to
     /// this region. The cursor will be moved to 0,0 within this region.
     fn set_region(&mut self, region: DrawRegion);
+
+    /// Reset region for the original console dimensions.
+    fn reset_region(&mut self);
 
     /// Get the current draw region.
     fn get_region(&self) -> DrawRegion;

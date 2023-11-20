@@ -1,15 +1,15 @@
 use alloc::boxed::Box;
-use common::video::{VideoMode, VideoModeOps};
-use log::info;
+use common::video::{VideoModeInfo, VideoModeOps};
 use uefi::proto::console::gop::{GraphicsOutput, Mode, PixelFormat as EFIPixelFormat};
 use uefi::table::boot::{BootServices, ScopedProtocol};
 
 use common::{
     console::ConsoleOut,
-    video::{FrameBuffer, PixelFormat, VideoManager},
+    video::{FrameBuffer, PixelFormat},
 };
 
-use crate::drivers::console::framebuffer::{self, FramebufferConsole};
+use crate::drivers::console::framebuffer::FramebufferConsole;
+use crate::video::get_video_manager;
 
 use super::allocator::boot_services;
 
@@ -26,20 +26,39 @@ fn convert_pixel_format(format: EFIPixelFormat) -> PixelFormat {
 static mut GRAPHICS_OUTPUT: Option<ScopedProtocol<GraphicsOutput>> = None;
 
 /// Reference for the EFI video manager
-pub static mut VIDEO_MANAGER: Option<EFIVideoManager> = None;
+pub static mut EFI_VIDEO_MANAGER: Option<EFIVideoManager> = None;
 
 struct EfiVideoMode {
-    index: u32,
-    video_mode: VideoMode,
+    mode: Mode,
+    video_mode: VideoModeInfo,
 }
 
 impl VideoModeOps for EfiVideoMode {
-    fn set_mode() {
-        todo!()
+    fn set_mode(&mut self) {
+        let gop = unsafe { GRAPHICS_OUTPUT.as_mut().unwrap() };
+
+        gop.set_mode(&self.mode);
+
+        // TODO: set the mem_phys, mem_virt, mem_size
     }
 
-    fn create_console() -> Option<Box<dyn ConsoleOut>> {
-        Some(Box::new(FramebufferConsole::new()))
+    fn create_console(&self) -> Option<Box<dyn ConsoleOut>> {
+        let gop = unsafe { GRAPHICS_OUTPUT.as_mut().unwrap() };
+        let mut platform_framebuffer = gop.frame_buffer();
+        let framebuffer = FrameBuffer::new(
+            platform_framebuffer.as_mut_ptr(),
+            platform_framebuffer.size(),
+        );
+
+        Some(Box::new(FramebufferConsole::new(
+            self.video_mode.width,
+            self.video_mode.height,
+            framebuffer,
+        )))
+    }
+
+    fn get_mode_info(&self) -> VideoModeInfo {
+        self.video_mode
     }
 }
 
@@ -87,6 +106,22 @@ impl EFIVideoManager {
             .unwrap();
 
         gop.set_mode(&mode).expect("Failed to set graphics mode.");
+
+        let mode_info = mode.info();
+        let (width, height) = mode_info.resolution();
+        let video_mode_info = VideoModeInfo {
+            width,
+            height,
+            stride: mode_info.stride(),
+            format: convert_pixel_format(mode_info.pixel_format()),
+        };
+
+        let mut video_mode = EfiVideoMode {
+            mode,
+            video_mode: video_mode_info,
+        };
+
+        get_video_manager().set_mode(Some(Box::new(video_mode)), true);
     }
 
     pub fn init() {
@@ -117,7 +152,7 @@ impl EFIVideoManager {
         manager.set_init_graphics_mode(&bs);
 
         unsafe {
-            VIDEO_MANAGER = Some(manager);
+            EFI_VIDEO_MANAGER = Some(manager);
         }
     }
 }
